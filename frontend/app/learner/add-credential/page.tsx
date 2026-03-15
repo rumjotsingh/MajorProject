@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { uploadCredential, getPathways, getLearnerProfile } from '@/lib/slices/learnerSlice';
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems';
 import type { RootState } from '@/lib/store';
 import type { LearnerState } from '@/lib/slices/learnerSlice';
 import { DashboardLayout } from '@/components/dashboard-layout';
@@ -16,15 +17,6 @@ import { ROUTES } from '@/lib/constants';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: Award, label: 'Credentials', path: '/learner/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/learner/pathways' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: PlusIcon, label: 'Add Credential', path: '/learner/add-credential' },
-];
-
 export default function AddCredential() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -32,6 +24,9 @@ export default function AddCredential() {
   const error = useAppSelector((state: RootState) => (state.learner as LearnerState).error);
   const pathways = useAppSelector((state: RootState) => (state.learner as LearnerState).pathways);
   const profile = useAppSelector((state: RootState) => (state.learner as LearnerState).profile);
+
+  const hasJoinedInstitute = !!profile?.user?.instituteId;
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute);
 
   const [formData, setFormData] = useState({
     title: '',

@@ -8,26 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { getPathways, enrollPathway } from '@/lib/slices/learnerSlice'
+import { getPathways, enrollPathway, getLearnerProfile } from '@/lib/slices/learnerSlice'
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems'
 import { toast } from 'sonner'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: FileText, label: 'Credentials', path: '/learner/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/learner/pathways' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-]
 
 export default function PathwaysPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { pathways, loading } = useAppSelector((state) => state.learner)
+  const { pathways, profile, loading } = useAppSelector((state) => state.learner)
   const [enrolling, setEnrolling] = useState<string | null>(null)
 
   useEffect(() => {
     dispatch(getPathways())
+    dispatch(getLearnerProfile())
   }, [dispatch])
+
+  const hasJoinedInstitute = !!profile?.user?.instituteId
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute)
 
   const handleEnroll = async (pathwayId: string) => {
     setEnrolling(pathwayId)
@@ -69,7 +66,7 @@ export default function PathwaysPage() {
         </div>
 
         {pathways.length === 0 ? (
-          <Card className="border-0 shadow-lg">
+          <Card className="shadow-lg">
             <CardContent className="p-12 text-center">
               <Compass className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-700 mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
@@ -83,7 +80,7 @@ export default function PathwaysPage() {
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {pathways.map((pathway: any) => (
-              <Card key={pathway._id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+              <Card key={pathway._id} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">

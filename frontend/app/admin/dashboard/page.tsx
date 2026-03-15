@@ -37,7 +37,7 @@ export default function AdminDashboard() {
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.label} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <Card key={stat.label} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
                 <CardContent className="p-6">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-lg`}>
                     <Icon className="w-6 h-6 text-white" />

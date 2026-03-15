@@ -29,6 +29,8 @@ export function DashboardLayout({ children, sidebarItems }: DashboardLayoutProps
     toast.success('Logged out successfully', {
       description: 'See you next time!'
     })
+    // Redirect to home page after logout
+    window.location.href = '/'
   }
 
   return (
@@ -37,14 +39,14 @@ export function DashboardLayout({ children, sidebarItems }: DashboardLayoutProps
       <header className="fixed top-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-7xl">
         <div className="px-6 py-3 rounded-full backdrop-blur-2xl bg-white/70 dark:bg-black/70 shadow-2xl shadow-slate-900/5 dark:shadow-slate-900/50">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <div className="w-7 h-7 bg-black dark:bg-white rounded-lg flex items-center justify-center">
                 <span className="text-white dark:text-black font-bold text-xs">CM</span>
               </div>
               <span className="text-base font-semibold text-black dark:text-white">
                 CredMatrix
               </span>
-            </Link>
+            </div>
 
             <div className="flex items-center gap-2">
               <NotificationBell />
@@ -84,8 +86,8 @@ export function DashboardLayout({ children, sidebarItems }: DashboardLayoutProps
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 md:ml-64 pb-24 md:pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="py-8">
+        <main className="flex-1 md:ml-64 pb-24 md:pb-8 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-7xl mx-auto py-8">
             {children}
           </div>
         </main>

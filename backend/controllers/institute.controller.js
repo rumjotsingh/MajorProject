@@ -446,3 +446,154 @@ export const getInstituteLearners = async (req, res) => {
     });
   }
 };
+
+// ==============================================================================
+// PATHWAY MANAGEMENT
+// ==============================================================================
+
+export const getPathways = async (req, res) => {
+  try {
+    const pathways = await Pathway.find({
+      instituteId: req.user.userId,
+      isDeleted: { $ne: true },
+    }).sort("-createdAt");
+
+    res.status(200).json({
+      success: true,
+      data: pathways,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const createPathway = async (req, res) => {
+  try {
+    const { name, description, category, levels, totalLevels } = req.body;
+
+    if (!name || !description || !levels || levels.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Name, description, and levels are required",
+      });
+    }
+
+    // Check if pathway with same name already exists for this institute
+    const existing = await Pathway.findOne({
+      instituteId: req.user.userId,
+      name: { $regex: new RegExp(`^${name}$`, "i") },
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: "A pathway with this name already exists",
+      });
+    }
+
+    const pathway = await Pathway.create({
+      name,
+      description,
+      category: category || "Other",
+      instituteId: req.user.userId,
+      isGlobal: false,
+      levels,
+      totalLevels: totalLevels || levels.length,
+      isActive: true,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Pathway created successfully",
+      data: pathway,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const updatePathway = async (req, res) => {
+  try {
+    const { pathwayId } = req.params;
+    const updates = req.body;
+
+    const pathway = await Pathway.findOne({
+      _id: pathwayId,
+      instituteId: req.user.userId,
+    });
+
+    if (!pathway) {
+      return res.status(404).json({
+        success: false,
+        message: "Pathway not found",
+      });
+    }
+
+    // Don't allow changing instituteId or isGlobal
+    delete updates.instituteId;
+    delete updates.isGlobal;
+
+    Object.assign(pathway, updates);
+    await pathway.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Pathway updated successfully",
+      data: pathway,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+export const deletePathway = async (req, res) => {
+  try {
+    const { pathwayId } = req.params;
+
+    const pathway = await Pathway.findOne({
+      _id: pathwayId,
+      instituteId: req.user.userId,
+    });
+
+    if (!pathway) {
+      return res.status(404).json({
+        success: false,
+        message: "Pathway not found",
+      });
+    }
+
+    // Check if any learners are enrolled
+    const enrolledCount = await Enrollment.countDocuments({
+      pathwayId,
+      status: "active",
+    });
+
+    if (enrolledCount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete pathway with ${enrolledCount} active enrollments. Deactivate it instead.`,
+      });
+    }
+
+    await pathway.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "Pathway deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

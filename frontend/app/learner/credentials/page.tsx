@@ -2,28 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Home, FileText, Compass, User, Award, Plus, Search, Filter, ExternalLink, Building2 } from 'lucide-react'
+import { Home, FileText, Compass, User, Award, Plus, Search, ExternalLink, Building2 } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { getCredentials } from '@/lib/slices/learnerSlice'
+import { getCredentials, getLearnerProfile } from '@/lib/slices/learnerSlice'
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems'
 import { formatDistanceToNow } from 'date-fns'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: FileText, label: 'Credentials', path: '/learner/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/learner/pathways' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-]
 
 export default function CredentialsPage() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { credentials, pagination, loading } = useAppSelector((state) => state.learner)
+  const { credentials, pagination, profile, loading } = useAppSelector((state) => state.learner)
   
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -31,7 +24,11 @@ export default function CredentialsPage() {
 
   useEffect(() => {
     dispatch(getCredentials({ page: currentPage, limit: 10 }))
+    dispatch(getLearnerProfile())
   }, [dispatch, currentPage])
+
+  const hasJoinedInstitute = !!profile?.user?.instituteId
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -98,7 +95,7 @@ export default function CredentialsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
           </div>
         ) : filteredCredentials.length === 0 ? (
-          <Card className="border-0 shadow-lg">
+          <Card className="shadow-lg">
             <CardContent className="p-12 text-center">
               <Award className="w-16 h-16 mx-auto text-slate-300 dark:text-slate-700 mb-4" />
               <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
@@ -117,7 +114,7 @@ export default function CredentialsPage() {
           <>
             <div className="grid grid-cols-1 gap-6">
               {filteredCredentials.map((cred: any) => (
-                <Card key={cred._id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
+                <Card key={cred._id} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">

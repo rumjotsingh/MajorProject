@@ -158,7 +158,7 @@ export default function JoinInstitutePage() {
         </div>
 
         {/* Join with Code */}
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Have an Institute Code?</CardTitle>
           </CardHeader>
@@ -181,7 +181,7 @@ export default function JoinInstitutePage() {
         </Card>
 
         {/* Search Institutes */}
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Search Institutes</CardTitle>
           </CardHeader>
@@ -310,7 +310,7 @@ export default function JoinInstitutePage() {
 
         {/* Create Institute Manually */}
         {showCreateForm && (
-          <Card className="border-0 shadow-lg">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Create New Institute</CardTitle>
             </CardHeader>
@@ -397,7 +397,7 @@ export default function JoinInstitutePage() {
 
         {/* All Available Institutes */}
         {showAllInstitutes && institutions.length > 0 && (
-          <Card className="border-0 shadow-lg">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>All Approved Institutes</CardTitle>
             </CardHeader>

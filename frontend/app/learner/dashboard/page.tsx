@@ -9,17 +9,10 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { getDashboard, getLearnerProfile, updateLearnerProfile } from '@/lib/slices/learnerSlice'
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems'
 import { formatDistanceToNow } from 'date-fns'
 import api from '@/lib/api'
 import { toast } from 'sonner'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: FileText, label: 'Credentials', path: '/learner/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/learner/pathways' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-]
 
 export default function LearnerDashboard() {
   const router = useRouter()
@@ -34,6 +27,10 @@ export default function LearnerDashboard() {
     dispatch(getDashboard())
     dispatch(getLearnerProfile())
   }, [dispatch])
+
+  // Check if learner has joined an institute
+  const hasJoinedInstitute = !!profile?.user?.instituteId
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute)
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -166,7 +163,7 @@ export default function LearnerDashboard() {
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.label} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
+              <Card key={stat.label} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
@@ -187,7 +184,7 @@ export default function LearnerDashboard() {
 
         {/* Level Progress */}
         {dashboard?.levelProgress && (
-          <Card className="border-0 shadow-lg">
+          <Card className="shadow-lg">
             <CardHeader>
               <CardTitle>Level Progress</CardTitle>
             </CardHeader>
@@ -216,7 +213,7 @@ export default function LearnerDashboard() {
         )}
 
         {/* Recent Credentials */}
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Credentials</CardTitle>

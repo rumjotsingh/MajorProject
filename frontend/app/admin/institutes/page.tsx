@@ -43,7 +43,7 @@ export default function AllInstitutesPage() {
           <Input placeholder="Search institutes..." className="pl-12 h-12 rounded-xl" />
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Institutes ({institutesPagination.total})</CardTitle>
           </CardHeader>

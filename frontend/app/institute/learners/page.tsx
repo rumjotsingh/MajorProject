@@ -69,7 +69,7 @@ export default function InstituteLearnersPage() {
           </div>
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>All Learners ({pagination?.total || 0})</CardTitle>
           </CardHeader>

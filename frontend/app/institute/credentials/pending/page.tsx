@@ -145,7 +145,7 @@ export default function PendingCredentials() {
             {pendingCredentials.map((credential: any) => (
               <Card
                 key={credential._id}
-                className="border-0 shadow-lg overflow-hidden border-l-4 border-l-amber-500"
+                className="shadow-lg overflow-hidden border-l-4 border-l-amber-500"
               >
                 <CardHeader className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20">
                   <CardTitle className="flex items-center justify-between">

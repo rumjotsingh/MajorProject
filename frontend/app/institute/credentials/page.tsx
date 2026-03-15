@@ -179,7 +179,7 @@ export default function InstituteCredentialsPage() {
           </div>
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>All Credentials ({filteredCredentials.length})</CardTitle>
           </CardHeader>

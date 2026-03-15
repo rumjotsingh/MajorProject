@@ -9,22 +9,18 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { getLearnerProfile, updateLearnerProfile } from '@/lib/slices/learnerSlice'
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems'
 import api from '@/lib/api'
 import { toast } from 'sonner'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: FileText, label: 'Credentials', path: '/learner/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/learner/pathways' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-]
 
 export default function ProfilePage() {
   const dispatch = useAppDispatch()
   const { profile, loading } = useAppSelector((state) => state.learner)
   const { user } = useAppSelector((state) => state.auth)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const hasJoinedInstitute = !!profile?.user?.instituteId
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute)
 
   const [formData, setFormData] = useState({
     bio: '',
@@ -137,7 +133,7 @@ export default function ProfilePage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <Card className="border-0 shadow-lg lg:col-span-1">
+          <Card className="shadow-lg lg:col-span-1">
             <CardContent className="p-6 text-center">
               <div className="relative inline-block mb-4">
                 <div className="w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center overflow-hidden">
@@ -178,7 +174,7 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg lg:col-span-2">
+          <Card className="shadow-lg lg:col-span-2">
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
             </CardHeader>

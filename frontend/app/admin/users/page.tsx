@@ -58,7 +58,7 @@ export default function AllUsersPage() {
           </Button>
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Users ({usersPagination.total})</CardTitle>
           </CardHeader>
