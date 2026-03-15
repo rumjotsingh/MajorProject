@@ -3,7 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
-import { getMyPathway } from '@/lib/slices/learnerSlice';
+import { getMyPathway, getLearnerProfile } from '@/lib/slices/learnerSlice';
+import { getLearnerSidebarItems } from '@/lib/learnerSidebarItems';
 import type { RootState } from '@/lib/store';
 import type { LearnerState } from '@/lib/slices/learnerSlice';
 import { DashboardLayout } from '@/components/dashboard-layout';
@@ -13,23 +14,19 @@ import { Button } from '@/components/ui/button';
 import { Home, Award, TrendingUp, User, Plus, BookOpen, CheckCircle, Lock, Building2 } from 'lucide-react';
 import { ROUTES } from '@/lib/constants';
 
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/learner/dashboard' },
-  { icon: Award, label: 'Credentials', path: '/learner/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/learner/pathways' },
-  { icon: Building2, label: 'Join Institute', path: '/learner/join-institute' },
-  { icon: User, label: 'Profile', path: '/learner/profile' },
-  { icon: Plus, label: 'Add Credential', path: '/learner/add-credential' },
-];
-
 export default function MyPathway() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const myPathway = useAppSelector((state: RootState) => (state.learner as LearnerState).myPathway);
+  const profile = useAppSelector((state: RootState) => (state.learner as LearnerState).profile);
   const loading = useAppSelector((state: RootState) => (state.learner as LearnerState).loading);
+
+  const hasJoinedInstitute = !!profile?.user?.instituteId;
+  const sidebarItems = getLearnerSidebarItems(hasJoinedInstitute);
 
   useEffect(() => {
     dispatch(getMyPathway());
+    dispatch(getLearnerProfile());
   }, [dispatch]);
 
   if (loading && !myPathway) {

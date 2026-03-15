@@ -38,7 +38,7 @@ export default function ForgotPasswordPage() {
           </Link>
         </div>
 
-        <Card className="border-0 shadow-xl rounded-3xl">
+        <Card className="shadow-xl rounded-3xl">
           <CardHeader className="space-y-2 pb-6">
             <CardTitle className="text-3xl font-bold text-center">
               Forgot Password?

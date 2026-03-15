@@ -102,7 +102,7 @@ export default function InstituteDashboard() {
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.label} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
+              <Card key={stat.label} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden group">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
@@ -121,7 +121,7 @@ export default function InstituteDashboard() {
           })}
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Credentials</CardTitle>

@@ -15,6 +15,12 @@ router.use(requireApproval);
 // Dashboard
 router.get("/dashboard", instituteController.getDashboard);
 
+// Pathway Management
+router.get("/pathways", instituteController.getPathways);
+router.post("/pathways", instituteController.createPathway);
+router.patch("/pathways/:pathwayId", instituteController.updatePathway);
+router.delete("/pathways/:pathwayId", instituteController.deletePathway);
+
 // Credential Management
 router.get("/credentials", instituteController.getIssuedCredentials);
 router.get("/credentials/pending", instituteController.getPendingCredentials);

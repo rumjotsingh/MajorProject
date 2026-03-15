@@ -46,7 +46,7 @@ export default function PendingInstitutesPage() {
           </p>
         </div>
 
-        <Card className="border-0 shadow-lg">
+        <Card className="shadow-lg">
           <CardHeader>
             <CardTitle>Pending Approvals ({pendingInstitutes.length})</CardTitle>
           </CardHeader>

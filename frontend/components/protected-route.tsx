@@ -17,10 +17,18 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login')
+      return
     }
     
     if (!loading && isAuthenticated && user && allowedRoles && !allowedRoles.includes(user.role)) {
-      router.push('/')
+      // Redirect to appropriate dashboard based on role
+      const dashboardMap: Record<string, string> = {
+        learner: '/learner/dashboard',
+        institute: '/institute/dashboard',
+        admin: '/admin/dashboard',
+        employer: '/employer/dashboard',
+      }
+      router.push(dashboardMap[user.role] || '/')
     }
   }, [isAuthenticated, user, loading, allowedRoles, router])
 
