@@ -106,6 +106,7 @@ const corsOptions = {
       "http://127.0.0.1:3000",
       "http://127.0.0.1:5173",
       "http://127.0.0.1:5174",
+      "https://major-project-rho-vert.vercel.app",
       process.env.CLIENT_URL,
     ].filter(Boolean);
 
