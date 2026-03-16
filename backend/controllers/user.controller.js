@@ -1,225 +1,77 @@
-import Enrollment from "../models/Enrollment.model.js";
-import Pathway from "../models/Pathway.model.js";
-import {
-  findUserByIdAcrossRoles,
-  getModelForRole,
-} from "../utils/userModel.util.js";
-// import { createOTP, verifyOTP } from "../utils/otp.util.js";
-// import { sendOTPEmail } from "../utils/email.util.js";
+import User from '../models/User.model.js';
 
-const getProfile = async (req, res) => {
+// GET /users (Admin only)
+export const getAllUsers = async (req, res, next) => {
   try {
-    const user = await findUserByIdAcrossRoles(
-      req.user.userId,
-      "-password -refreshToken",
-    );
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: user,
-    });
+    const users = await User.find().select('-passwordHash').limit(100);
+    res.json(users);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const updateProfile = async (req, res) => {
+// GET /users/:id
+export const getUserById = async (req, res, next) => {
   try {
-    const updates = req.body;
-    delete updates.email;
-    delete updates.password;
-    delete updates.role;
-    delete updates.isApproved;
+    const user = await User.findById(req.params.id).select('-passwordHash');
 
-    const existingUser = await findUserByIdAcrossRoles(req.user.userId);
-
-    if (!existingUser) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const roleModel = getModelForRole(existingUser.role);
-    const user = await roleModel
-      .findByIdAndUpdate(
-        req.user.userId,
-        { $set: updates },
-        { new: true, runValidators: true },
-      )
-      .select("-password -refreshToken");
+    // Check permissions
+    if (req.user.role !== 'Admin' && req.user.userId.toString() !== req.params.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
 
-    res.status(200).json({
-      success: true,
-      message: "Profile updated successfully",
-      data: user,
-    });
+    res.json(user);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const changePassword = async (req, res) => {
+// PUT /users/:id
+export const updateUser = async (req, res, next) => {
   try {
-    const { currentPassword, newPassword } = req.body;
-
-    const user = await findUserByIdAcrossRoles(req.user.userId, "+password");
+    const { name, password, role } = req.body;
+    const user = await User.findById(req.params.id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const isPasswordValid = await user.comparePassword(currentPassword);
+    // Check permissions
+    const isSelf = req.user.userId.toString() === req.params.id;
+    const isAdmin = req.user.role === 'Admin';
 
-    if (!isPasswordValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password is incorrect",
-      });
+    if (!isSelf && !isAdmin) {
+      return res.status(403).json({ error: 'Access denied' });
     }
 
-    user.password = newPassword;
+    if (name) user.name = name;
+    if (password) user.passwordHash = password;
+    if (role && isAdmin) user.role = role;
+
     await user.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Password changed successfully",
-    });
+    res.json(user);
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-const getPathwayData = async (req, res) => {
+// DELETE /users/:id (Admin only)
+export const deleteUser = async (req, res, next) => {
   try {
-    const user = await findUserByIdAcrossRoles(
-      req.user.userId,
-      "role instituteId",
-    );
+    const user = await User.findByIdAndUpdate(req.params.id, { isActive: false });
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const pathwayQuery = { isActive: true };
-    if (user.role === "learner") {
-      pathwayQuery.$or = [{ isGlobal: true }];
-      if (user.instituteId) {
-        pathwayQuery.$or.push({ instituteId: user.instituteId });
-      }
-    }
-
-    const [enrollments, pathways] = await Promise.all([
-      Enrollment.find({ learnerId: req.user.userId, status: "active" })
-        .populate("pathwayId", "name category description isGlobal instituteId")
-        .sort("-createdAt"),
-      Pathway.find(pathwayQuery)
-        .select("name category description isGlobal instituteId isActive")
-        .sort("name"),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      data: {
-        enrollments,
-        pathways,
-      },
-    });
+    res.status(204).send();
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-// const claimAccount = async (req, res) => {
-//   try {
-//     const { email, otp } = req.body;
-
-//     const learner = await Learner.findOne({ email, isClaimed: false });
-
-//     if (!learner) {
-//       return res.status(404).json({
-//         success: false,
-//         message: 'No unclaimed account found with this email'
-//       });
-//     }
-
-//     const verification = await verifyOTP(email, otp, 'account_claim');
-
-//     if (!verification.valid) {
-//       return res.status(400).json({
-//         success: false,
-//         message: verification.message
-//       });
-//     }
-
-//     learner.isClaimed = true;
-//     learner.claimedBy = req.user.userId;
-//     learner.claimedAt = new Date();
-//     await learner.save();
-
-//     res.status(200).json({
-//       success: true,
-//       message: 'Account claimed successfully'
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message
-//     });
-//   }
-// };
-
-// const requestAccountClaim = async (req, res) => {
-//   try {
-//     const { email } = req.body;
-
-//     const learner = await Learner.findOne({ email, isClaimed: false });
-
-//     if (!learner) {
-//       return res.status(404).json({
-//         success: false,
-//         message: "No unclaimed account found with this email",
-//       });
-//     }
-
-//     const otp = await createOTP(email, "account_claim");
-//     await sendOTPEmail(email, otp, "account_claim");
-
-//     res.status(200).json({
-//       success: true,
-//       message: "OTP sent to your email for account claim verification",
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: error.message,
-//     });
-//   }
-// };
-
-export { getProfile, updateProfile, changePassword, getPathwayData };

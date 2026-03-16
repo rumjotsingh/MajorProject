@@ -1,14 +1,11 @@
-import express from "express";
-import * as userController from "../controllers/user.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
-
+import express from 'express';
 const router = express.Router();
+import * as userController from '../controllers/user.controller.js';
+import { authenticate, authorize } from '../middleware/auth.middleware.js';
 
-router.use(authenticate);
-
-router.get("/profile", userController.getProfile);
-router.put("/profile", userController.updateProfile);
-router.put("/change-password", userController.changePassword);
-router.get("/pathways", userController.getPathwayData);
+router.get('/', authenticate, authorize('Admin'), userController.getAllUsers);
+router.get('/:id', authenticate, userController.getUserById);
+router.put('/:id', authenticate, userController.updateUser);
+router.delete('/:id', authenticate, authorize('Admin'), userController.deleteUser);
 
 export default router;

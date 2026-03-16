@@ -1,32 +1,28 @@
-import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { Providers } from '@/components/providers'
-import { MobileBottomNav } from '@/components/mobile-bottom-nav'
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "@/components/providers";
 
-const inter = Inter({ 
-  subsets: ['latin'],
-  variable: '--font-inter',
-})
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
-  title: 'CredMatrix - Digital Credential Wallet',
-  description: 'Aggregate, verify, and showcase your micro-credentials from multiple institutions',
-}
+  title: "MicroCred - Micro-Credential Aggregator Platform",
+  description: "Unified digital skill portfolio for learners, employers, and training providers",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <Providers>
-          {children}
-          <MobileBottomNav />
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }
