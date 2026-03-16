@@ -94,4 +94,9 @@ router.put("/pathways/:id", adminController.updatePathway);
 router.patch("/pathways/:id/toggle", adminController.togglePathwayStatus);
 router.delete("/pathways/:id", adminController.deletePathway);
 
+// ==============================================================================
+// AUDIT LOGS
+// ==============================================================================
+router.get("/audit-logs", adminController.getAuditLogs);
+
 export default router;

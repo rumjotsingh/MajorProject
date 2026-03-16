@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/empty-state';
 import api from '@/lib/api';
+import { adminSidebarItems } from '@/lib/adminSidebarItems';
 import {
   Award,
   CheckCircle,
@@ -19,26 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Home,
-  Users,
-  GraduationCap,
-  TrendingUp,
-  Briefcase,
-  Shield,
-  BarChart3,
 } from 'lucide-react';
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: GraduationCap, label: 'Learners', path: '/admin/learners' },
-  { icon: Award, label: 'Credentials', path: '/admin/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Briefcase, label: 'Employers', path: '/admin/employers' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
 
 export default function AdminCredentials() {
   const [credentials, setCredentials] = useState<any[]>([]);
@@ -59,17 +41,27 @@ export default function AdminCredentials() {
     try {
       setLoading(true);
       const response = await api.get('/admin/credentials');
-      const data = response.data.data || [];
-      setCredentials(data);
+      const data = response.data.data;
+      
+      // Backend returns paginated data with credentials array
+      let credentialsArray = [];
+      if (data?.credentials && Array.isArray(data.credentials)) {
+        credentialsArray = data.credentials;
+      } else if (Array.isArray(data)) {
+        credentialsArray = data;
+      }
+      
+      setCredentials(credentialsArray);
 
       setStats({
-        total: data.length,
-        verified: data.filter((c: any) => c.verificationStatus === 'verified').length,
-        pending: data.filter((c: any) => c.verificationStatus === 'pending').length,
-        rejected: data.filter((c: any) => c.verificationStatus === 'rejected').length,
+        total: credentialsArray.length,
+        verified: credentialsArray.filter((c: any) => c.verificationStatus === 'verified' || c.status === 'approved').length,
+        pending: credentialsArray.filter((c: any) => c.verificationStatus === 'pending' || c.status === 'pending').length,
+        rejected: credentialsArray.filter((c: any) => c.verificationStatus === 'rejected' || c.status === 'rejected').length,
       });
     } catch (error) {
       console.error('Error fetching credentials:', error);
+      setCredentials([]);
     } finally {
       setLoading(false);
     }
@@ -95,14 +87,14 @@ export default function AdminCredentials() {
     return styles[status as keyof typeof styles] || styles.pending;
   };
 
-  const filteredCredentials = credentials.filter((cred) => {
-    const matchesFilter = filter === 'all' || cred.verificationStatus === filter;
+  const filteredCredentials = Array.isArray(credentials) ? credentials.filter((cred) => {
+    const matchesFilter = filter === 'all' || cred.verificationStatus === filter || cred.status === filter;
     const matchesSearch =
       cred.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cred.learnerId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       cred.institutionId?.instituteName?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
-  });
+  }) : [];
 
   const paginatedCredentials = filteredCredentials.slice(
     (currentPage - 1) * itemsPerPage,
@@ -113,16 +105,16 @@ export default function AdminCredentials() {
 
   if (loading) {
     return (
-      <DashboardLayout sidebarItems={sidebarItems}>
+      <DashboardLayout sidebarItems={adminSidebarItems}>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">All Credentials</h1>

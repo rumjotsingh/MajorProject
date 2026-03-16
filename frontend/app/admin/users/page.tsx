@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Home, Users, FileText, Compass, Shield, Building2, Search, Filter } from 'lucide-react'
+import { Search, Filter } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -9,15 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { fetchAllUsers } from '@/lib/slices/adminSlice'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: FileText, label: 'Credentials', path: '/admin/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-]
+import { adminSidebarItems } from '@/lib/adminSidebarItems'
 
 export default function AllUsersPage() {
   const dispatch = useAppDispatch()
@@ -29,7 +21,7 @@ export default function AllUsersPage() {
   }, [dispatch])
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

@@ -6,6 +6,7 @@ import Pathway from "../models/Pathway.model.js";
 import LearnerProfile from "../models/LearnerProfile.model.js";
 import Employer from "../models/Employer.model.js";
 import Enrollment from "../models/Enrollment.model.js";
+import AuditLog from "../models/AuditLog.model.js";
 import { sendApprovalEmail } from "../utils/email.util.js";
 import {
   emailExistsAcrossRoles,
@@ -260,6 +261,19 @@ export const approveInstitute = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Institute not found" });
     }
+
+    // Create audit log
+    await AuditLog.create({
+      action: 'institute_approve',
+      performedBy: req.user.userId,
+      performedByRole: req.user.role,
+      targetUser: institute._id,
+      targetUserModel: 'Institute',
+      targetId: institute._id.toString(),
+      details: `Approved institute: ${institute.instituteName}`,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent'),
+    });
 
     await sendApprovalEmail(institute.email, institute.instituteName);
 
@@ -1188,6 +1202,83 @@ export const getEmployerVerifications = async (req, res) => {
         totalPages: Math.ceil(total / limit),
         currentPage: parseInt(page),
         total,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+// ==============================================================================
+// AUDIT LOGS
+// ==============================================================================
+
+export const getAuditLogs = async (req, res) => {
+  try {
+    const { page = 1, limit = 50, action, startDate, endDate } = req.query;
+    
+    const query = {};
+    
+    // Filter by action type
+    if (action && action !== 'all') {
+      query.action = action;
+    }
+    
+    // Filter by date range
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) query.createdAt.$gte = new Date(startDate);
+      if (endDate) query.createdAt.$lte = new Date(endDate);
+    }
+    
+    const logs = await AuditLog.find(query)
+      .populate('performedBy', 'email role')
+      .populate('targetUser', 'email')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
+    
+    const count = await AuditLog.countDocuments(query);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        logs,
+        totalPages: Math.ceil(count / limit),
+        currentPage: parseInt(page),
+        total: count,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const getAuditLogStats = async (req, res) => {
+  try {
+    const [
+      totalLogs,
+      approvals,
+      rejections,
+      suspensions,
+      deletions,
+    ] = await Promise.all([
+      AuditLog.countDocuments(),
+      AuditLog.countDocuments({ action: { $in: ['institute_approve', 'employer_approve', 'credential_verify'] } }),
+      AuditLog.countDocuments({ action: { $in: ['institute_reject', 'credential_reject'] } }),
+      AuditLog.countDocuments({ action: { $in: ['institute_suspend', 'learner_suspend', 'employer_suspend'] } }),
+      AuditLog.countDocuments({ action: { $in: ['institute_delete', 'learner_delete', 'employer_delete', 'pathway_delete'] } }),
+    ]);
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        totalLogs,
+        approvals,
+        rejections,
+        suspensions,
+        deletions,
       },
     });
   } catch (error) {

@@ -9,32 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import EmptyState from '@/components/empty-state';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
 import { fetchAllEmployers } from '@/lib/slices/employerSlice';
+import { adminSidebarItems } from '@/lib/adminSidebarItems';
 import {
   Building2,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Briefcase,
-  Home,
-  Users,
-  GraduationCap,
-  Award,
-  TrendingUp,
-  Shield,
-  BarChart3,
 } from 'lucide-react';
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: GraduationCap, label: 'Learners', path: '/admin/learners' },
-  { icon: Award, label: 'Credentials', path: '/admin/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Briefcase, label: 'Employers', path: '/admin/employers' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
 
 export default function Employers() {
   const dispatch = useAppDispatch();
@@ -64,16 +46,16 @@ export default function Employers() {
 
   if (loading.list) {
     return (
-      <DashboardLayout sidebarItems={sidebarItems}>
+      <DashboardLayout sidebarItems={adminSidebarItems}>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -93,7 +75,7 @@ export default function Employers() {
               </div>
               <div>
                 <p className="text-sm text-blue-600 font-medium">Total</p>
-                <p className="text-xl font-bold text-blue-700">{pagination.total}</p>
+                <p className="text-xl font-bold text-blue-700">{pagination?.total || 0}</p>
               </div>
             </div>
           </Card>
@@ -105,7 +87,7 @@ export default function Employers() {
               <div>
                 <p className="text-sm text-green-600 font-medium">Active</p>
                 <p className="text-xl font-bold text-green-700">
-                  {employers.filter((e: any) => e.isActive && !e.isSuspended).length}
+                  {employers?.filter((e: any) => e.isActive && !e.isSuspended).length || 0}
                 </p>
               </div>
             </div>
@@ -118,7 +100,7 @@ export default function Employers() {
               <div>
                 <p className="text-sm text-amber-600 font-medium">Suspended</p>
                 <p className="text-xl font-bold text-amber-700">
-                  {employers.filter((e: any) => e.isSuspended).length}
+                  {employers?.filter((e: any) => e.isSuspended).length || 0}
                 </p>
               </div>
             </div>
@@ -131,14 +113,14 @@ export default function Employers() {
               <div>
                 <p className="text-sm text-slate-600 font-medium">Inactive</p>
                 <p className="text-xl font-bold text-slate-700">
-                  {employers.filter((e: any) => !e.isActive).length}
+                  {employers?.filter((e: any) => !e.isActive).length || 0}
                 </p>
               </div>
             </div>
           </Card>
         </div>
 
-        {employers.length === 0 ? (
+        {!employers || employers.length === 0 ? (
           <Card className="p-12">
             <EmptyState
               icon={Building2}

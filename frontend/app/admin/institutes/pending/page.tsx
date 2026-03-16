@@ -1,22 +1,14 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Home, Users, FileText, Compass, Shield, Building2, CheckCircle, X } from 'lucide-react'
+import { CheckCircle, X } from 'lucide-react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAppDispatch, useAppSelector } from '@/lib/hooks'
 import { fetchPendingInstitutes, approveInstitute, rejectInstitute } from '@/lib/slices/adminSlice'
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: FileText, label: 'Credentials', path: '/admin/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-]
+import { adminSidebarItems } from '@/lib/adminSidebarItems'
 
 export default function PendingInstitutesPage() {
   const dispatch = useAppDispatch()
@@ -35,7 +27,7 @@ export default function PendingInstitutesPage() {
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">

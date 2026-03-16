@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/empty-state';
 import api from '@/lib/api';
+import { adminSidebarItems } from '@/lib/adminSidebarItems';
 import {
   Shield,
   Activity,
@@ -21,27 +22,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Home,
-  Users,
-  Building2,
-  GraduationCap,
-  Award,
-  TrendingUp,
-  Briefcase,
-  BarChart3,
 } from 'lucide-react';
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: GraduationCap, label: 'Learners', path: '/admin/learners' },
-  { icon: Award, label: 'Credentials', path: '/admin/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Briefcase, label: 'Employers', path: '/admin/employers' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
 
 export default function AdminSecurity() {
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -67,8 +48,12 @@ export default function AdminSecurity() {
       } else {
         setAuditLogs([]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching audit logs:', error);
+      // If endpoint doesn't exist (404), just show empty state
+      if (error.response?.status === 404) {
+        console.log('Audit logs endpoint not implemented yet');
+      }
       setAuditLogs([]);
     } finally {
       setLoading(false);
@@ -136,16 +121,16 @@ export default function AdminSecurity() {
 
   if (loading) {
     return (
-      <DashboardLayout sidebarItems={sidebarItems}>
+      <DashboardLayout sidebarItems={adminSidebarItems}>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -358,8 +343,8 @@ export default function AdminSecurity() {
             <div className="p-12">
               <EmptyState
                 icon={Activity}
-                title="No Activity Logs"
-                description="No audit events have been recorded yet"
+                title="Audit Logs Coming Soon"
+                description="Security audit logging will be available in a future update. This feature will track all administrative actions and security events."
               />
             </div>
           )}

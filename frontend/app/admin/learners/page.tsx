@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import EmptyState from '@/components/empty-state';
 import api from '@/lib/api';
+import { adminSidebarItems } from '@/lib/adminSidebarItems';
 import {
   GraduationCap,
   Search,
@@ -21,24 +22,7 @@ import {
   Calendar,
   BarChart3,
   AlertCircle,
-  Home,
-  Users,
-  Building2,
-  Briefcase,
-  Shield,
 } from 'lucide-react';
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: GraduationCap, label: 'Learners', path: '/admin/learners' },
-  { icon: Award, label: 'Credentials', path: '/admin/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Briefcase, label: 'Employers', path: '/admin/employers' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
 
 export default function AdminLearners() {
   const [learners, setLearners] = useState<any[]>([]);
@@ -59,11 +43,20 @@ export default function AdminLearners() {
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get('/admin/advanced/learners');
-      setLearners(response.data.data || []);
+      const response = await api.get('/admin/learners');
+      const data = response.data.data;
+      // Backend returns paginated data with learners array
+      if (data?.learners && Array.isArray(data.learners)) {
+        setLearners(data.learners);
+      } else if (Array.isArray(data)) {
+        setLearners(data);
+      } else {
+        setLearners([]);
+      }
     } catch (error) {
       console.error('Error fetching learners:', error);
       setError('Failed to load learners');
+      setLearners([]);
     } finally {
       setLoading(false);
     }
@@ -74,7 +67,7 @@ export default function AdminLearners() {
 
     try {
       setActionLoading(learnerId);
-      await api.patch(`/admin/advanced/learners/${learnerId}/deactivate`);
+      await api.patch(`/admin/learners/${learnerId}/suspend`);
       fetchLearners();
     } catch (error) {
       console.error('Error deactivating learner:', error);
@@ -86,7 +79,7 @@ export default function AdminLearners() {
 
   const handleViewProfile = async (learner: any) => {
     try {
-      const response = await api.get(`/admin/advanced/learners/${learner._id}`);
+      const response = await api.get(`/admin/learners/${learner._id}`);
       setSelectedLearner(response.data.data);
       setShowModal(true);
     } catch (error) {
@@ -97,41 +90,38 @@ export default function AdminLearners() {
   };
 
   const stats = {
-    total: learners.length,
-    verified: learners.filter((l) => l.userId?.isVerified).length,
-    active: learners.filter((l) => l.userId?.isActive !== false).length,
-    avgLevel:
-      learners.length > 0
-        ? Math.round(
-            (learners.reduce((acc, l) => acc + (l.currentLevel || 1), 0) / learners.length) * 10
-          ) / 10
-        : 0,
+    total: Array.isArray(learners) ? learners.length : 0,
+    verified: Array.isArray(learners) ? learners.filter((l) => l.isApproved).length : 0,
+    active: Array.isArray(learners) ? learners.filter((l) => l.isActive && !l.isSuspended).length : 0,
+    avgLevel: 0, // Will be calculated from learner profiles if needed
   };
 
-  const filteredLearners = learners.filter(
+  const filteredLearners = Array.isArray(learners) ? learners.filter(
     (learner) =>
-      learner.userId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      learner.userId?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      learner.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      learner.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      learner.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) : [];
 
   const totalPages = Math.ceil(filteredLearners.length / itemsPerPage);
   const paginatedLearners = filteredLearners.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+  console.log(paginatedLearners)
 
   if (loading) {
     return (
-      <DashboardLayout sidebarItems={sidebarItems}>
+      <DashboardLayout sidebarItems={adminSidebarItems}>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -261,12 +251,12 @@ export default function AdminLearners() {
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
                               <span className="text-white font-semibold text-sm">
-                                {learner.userId?.name?.charAt(0)?.toUpperCase() || 'L'}
+                                {learner?.firstName?.charAt(0)?.toUpperCase() || 'L'}
                               </span>
                             </div>
                             <div>
                               <p className="font-medium text-slate-900 dark:text-white">
-                                {learner.userId?.name || 'Unknown'}
+                                {learner?.firstName || 'Unknown'}
                               </p>
                               <p className="text-sm text-slate-500">{learner.userId?.email}</p>
                             </div>
@@ -275,12 +265,12 @@ export default function AdminLearners() {
                         <td className="py-4 px-6">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                              learner.userId?.isVerified
+                              learner?.isVerified
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                                 : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
                             }`}
                           >
-                            {learner.userId?.isVerified ? (
+                            {learner?.isVerified ? (
                               <>
                                 <CheckCircle className="w-3 h-3" /> Verified
                               </>

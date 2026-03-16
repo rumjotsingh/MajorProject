@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import EmptyState from '@/components/empty-state';
 import api from '@/lib/api';
+import { adminSidebarItems } from '@/lib/adminSidebarItems';
 import {
   TrendingUp,
   Plus,
@@ -21,29 +22,10 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-  Home,
-  Building2,
-  GraduationCap,
-  Award,
-  Briefcase,
-  Shield,
-  BarChart3,
   FileText,
 } from 'lucide-react';
 
 const CATEGORIES = ['Technology', 'Business', 'Healthcare', 'Engineering', 'Arts', 'Science', 'Other'];
-
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: GraduationCap, label: 'Learners', path: '/admin/learners' },
-  { icon: Award, label: 'Credentials', path: '/admin/credentials' },
-  { icon: TrendingUp, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Briefcase, label: 'Employers', path: '/admin/employers' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-];
 
 export default function AdminPathways() {
   const [pathways, setPathways] = useState<any[]>([]);
@@ -166,16 +148,16 @@ export default function AdminPathways() {
 
   if (loading) {
     return (
-      <DashboardLayout sidebarItems={sidebarItems}>
+      <DashboardLayout sidebarItems={adminSidebarItems}>
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black dark:border-white"></div>
         </div>
       </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
+    <DashboardLayout sidebarItems={adminSidebarItems}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
