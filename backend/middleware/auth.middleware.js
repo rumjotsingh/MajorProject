@@ -1,5 +1,7 @@
 import { verifyAccessToken } from '../utils/jwt.util.js';
+import { isValidObjectId } from '../utils/validation.util.js';
 import User from '../models/User.model.js';
+import logger from '../utils/logger.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -11,13 +13,20 @@ export const authenticate = async (req, res, next) => {
     const token = authHeader.substring(7);
     const decoded = verifyAccessToken(token);
 
+    // Validate userId is a valid ObjectId
+    if (!decoded.userId || !isValidObjectId(decoded.userId)) {
+      logger.warn('Invalid userId in token:', { userId: decoded.userId });
+      return res.status(401).json({ error: 'Invalid token: malformed user ID' });
+    }
+
     const user = await User.findById(decoded.userId);
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'User not found or inactive' });
     }
 
+    // Ensure userId is converted to string for consistency
     req.user = {
-      userId: user._id,
+      userId: user._id.toString(),
       role: user.role,
       email: user.email,
       name: user.name,

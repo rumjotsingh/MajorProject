@@ -3,6 +3,7 @@ import User from '../models/User.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import Credential from '../models/Credential.model.js';
 import Notification from '../models/Notification.model.js';
+import { validateObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 
 // POST /employer/register
@@ -67,6 +68,8 @@ export const searchLearners = async (req, res, next) => {
 // GET /employer/profile/:learnerId
 export const getLearnerProfile = async (req, res, next) => {
   try {
+    validateObjectId(req.params.learnerId, 'Learner ID');
+    
     const profile = await LearnerProfile.findOne({ userId: req.params.learnerId }).populate(
       'userId',
       'name email'
@@ -93,6 +96,8 @@ export const getLearnerProfile = async (req, res, next) => {
 export const verifyCredential = async (req, res, next) => {
   try {
     const { credentialId } = req.body;
+
+    validateObjectId(credentialId, 'Credential ID');
 
     const credential = await Credential.findById(credentialId);
     if (!credential) {

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Mail, Lock, User, Loader2, GraduationCap, Briefcase, Building2, ArrowLeft } from "lucide-react";
+import { Award, Mail, Lock, User, Loader2, GraduationCap, Briefcase, Building2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -41,9 +41,14 @@ export default function SignupPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    mobile: "",
+    companyName: "",
+    institutionName: "",
     role: "" as "Learner" | "Employer" | "Issuer" | "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +57,43 @@ export default function SignupPage() {
       toast({
         title: "Role required",
         description: "Please select your role to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate role-specific required fields
+    if (formData.role === "Employer" && !formData.companyName.trim()) {
+      toast({
+        title: "Company name required",
+        description: "Please enter your company name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (formData.role === "Issuer" && !formData.institutionName.trim()) {
+      toast({
+        title: "Institution name required",
+        description: "Please enter your institution name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if ((formData.role === "Employer" || formData.role === "Issuer") && !formData.mobile.trim()) {
+      toast({
+        title: "Mobile number required",
+        description: "Please enter your mobile number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if ((formData.role === "Employer" || formData.role === "Issuer") && formData.mobile.length !== 10) {
+      toast({
+        title: "Invalid mobile number",
+        description: "Mobile number must be exactly 10 digits",
         variant: "destructive",
       });
       return;
@@ -66,10 +108,10 @@ export default function SignupPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
+    if (formData.password.length < 8) {
       toast({
         title: "Password too short",
-        description: "Password must be at least 6 characters",
+        description: "Password must be at least 8 characters",
         variant: "destructive",
       });
       return;
@@ -83,6 +125,9 @@ export default function SignupPage() {
         email: formData.email,
         password: formData.password,
         role: formData.role,
+        mobile: formData.mobile || undefined,
+        companyName: formData.companyName || undefined,
+        institutionName: formData.institutionName || undefined,
       });
 
       toast({
@@ -98,7 +143,7 @@ export default function SignupPage() {
       console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: error.response?.data?.message || error.message || "Something went wrong. Please try again.",
+        description: error.response?.data?.error || error.message || "Something went wrong. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -135,7 +180,7 @@ export default function SignupPage() {
               <Award className="h-10 w-10 text-primary" />
             </motion.div>
             <span className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              MicroCred
+              CredMatrix
             </span>
           </Link>
         </div>
@@ -191,15 +236,50 @@ export default function SignupPage() {
                 </div>
               </div>
 
+              {/* Company/Institution Name (for Employer/Issuer) */}
+              {formData.role === "Employer" && (
+                <div className="space-y-2">
+                  <label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    Company Name
+                  </label>
+                  <Input
+                    id="companyName"
+                    placeholder="Your company name"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              )}
+
+              {formData.role === "Issuer" && (
+                <div className="space-y-2">
+                  <label htmlFor="institutionName" className="text-sm font-medium flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-primary" />
+                    Institution Name
+                  </label>
+                  <Input
+                    id="institutionName"
+                    placeholder="Your institution name"
+                    value={formData.institutionName}
+                    onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              )}
+
               {/* Name */}
               <div className="space-y-2">
                 <label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
                   <User className="h-4 w-4 text-primary" />
-                  Full Name
+                  {formData.role === "Employer" || formData.role === "Issuer" ? "Contact Person Name" : "Full Name"}
                 </label>
                 <Input
                   id="name"
-                  placeholder="John Doe"
+                  placeholder={formData.role === "Employer" || formData.role === "Issuer" ? "Contact person name" : "John Doe"}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
@@ -207,22 +287,61 @@ export default function SignupPage() {
                 />
               </div>
 
-              {/* Email */}
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-primary" />
-                  Email Address
-                </label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="h-11"
-                />
-              </div>
+              {/* Email and Mobile */}
+              {(formData.role === "Employer" || formData.role === "Issuer") ? (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-primary" />
+                      Email Address
+                    </label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="name@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="mobile" className="text-sm font-medium">
+                      Mobile Number
+                    </label>
+                    <Input
+                      id="mobile"
+                      type="tel"
+                      placeholder="10-digit number"
+                      value={formData.mobile}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+                        setFormData({ ...formData, mobile: value });
+                      }}
+                      maxLength={10}
+                      pattern="\d{10}"
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-primary" />
+                    Email Address
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    required
+                    className="h-11"
+                  />
+                </div>
+              )}
 
               {/* Password */}
               <div className="grid grid-cols-2 gap-4">
@@ -231,29 +350,55 @@ export default function SignupPage() {
                     <Lock className="h-4 w-4 text-primary" />
                     Password
                   </label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    required
-                    className="h-11"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      required
+                      className="h-11 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="confirmPassword" className="text-sm font-medium">
                     Confirm Password
                   </label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="••••••••"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    required
-                    className="h-11"
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      required
+                      className="h-11 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 

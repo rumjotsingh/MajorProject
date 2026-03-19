@@ -27,7 +27,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Agreement to Terms</h2>
                 <p className="text-muted-foreground">
-                  By accessing or using MicroCred, you agree to be bound by these Terms of Service
+                  By accessing or using CredMatrix, you agree to be bound by these Terms of Service
                   and all applicable laws and regulations.
                 </p>
               </section>
@@ -35,7 +35,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Use License</h2>
                 <p className="text-muted-foreground mb-4">
-                  Permission is granted to temporarily use MicroCred for personal, non-commercial use only.
+                  Permission is granted to temporarily use CredMatrix for personal, non-commercial use only.
                   This license shall automatically terminate if you violate any of these restrictions.
                 </p>
               </section>
@@ -81,7 +81,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Contact</h2>
                 <p className="text-muted-foreground">
-                  For questions about these Terms, contact us at legal@microcred.com
+                  For questions about these Terms, contact us at legal@CredMatrix.com
                 </p>
               </section>
             </div>

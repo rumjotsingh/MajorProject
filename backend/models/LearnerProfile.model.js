@@ -17,20 +17,33 @@ const learnerProfileSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    totalCredits: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     nsqfLevel: {
       type: Number,
       min: 1,
       max: 10,
       default: 1,
     },
-    education: {
+    levelName: {
       type: String,
-      default: '',
+      default: 'Basic/Foundation',
     },
-    experience: {
-      type: String,
-      default: '',
-    },
+    education: [{
+      degree: String,
+      institution: String,
+      year: String,
+      fieldOfStudy: String,
+    }],
+    experience: [{
+      role: String,
+      company: String,
+      duration: String,
+      description: String,
+    }],
     preferences: {
       language: {
         type: String,

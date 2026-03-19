@@ -16,6 +16,16 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    mobile: {
+      type: String,
+      trim: true,
+      validate: {
+        validator: function(v) {
+          return !v || /^\d{10}$/.test(v);
+        },
+        message: 'Mobile number must be exactly 10 digits'
+      }
+    },
     passwordHash: {
       type: String,
       required: true,

@@ -22,6 +22,16 @@ const credentialSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    credits: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 40,
+      validate: {
+        validator: Number.isInteger,
+        message: 'Credits must be an integer value',
+      },
+    },
     nsqfLevel: {
       type: Number,
       min: 1,

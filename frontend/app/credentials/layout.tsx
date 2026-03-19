@@ -1,5 +1,4 @@
-import { Header } from "@/components/navigation/header";
-import { Sidebar } from "@/components/navigation/sidebar";
+import { CollapsibleSidebar } from "@/components/navigation/collapsible-sidebar";
 import { MobileNav } from "@/components/navigation/mobile-nav";
 
 export default function CredentialsLayout({
@@ -9,14 +8,13 @@ export default function CredentialsLayout({
 }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar role="learner" />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto p-6 pb-24 md:pb-6">
+      <CollapsibleSidebar role="learner" />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">
           {children}
         </main>
+        <MobileNav role="learner" />
       </div>
-      <MobileNav />
     </div>
   );
 }

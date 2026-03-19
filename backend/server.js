@@ -4,6 +4,8 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import { createClient } from 'redis';
 import logger from './utils/logger.js';
 import errorHandler from './middleware/errorHandler.js';
@@ -21,6 +23,8 @@ import nsqfRoutes from './routes/nsqf.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import notificationRoutes from './routes/notification.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
+import careerPathRoutes from './routes/careerPath.routes.js';
+import recommendationRoutes from './routes/recommendation.routes.js';
 
 dotenv.config();
 
@@ -28,7 +32,44 @@ dotenv.config();
 configureCloudinary();
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+    credentials: true,
+  },
+});
+
 const PORT = process.env.PORT || 5000;
+
+// Store connected users
+const connectedUsers = new Map();
+
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+  logger.info(`Client connected: ${socket.id}`);
+
+  // Authenticate user
+  socket.on('authenticate', (userId) => {
+    connectedUsers.set(userId, socket.id);
+    logger.info(`User ${userId} authenticated with socket ${socket.id}`);
+  });
+
+  socket.on('disconnect', () => {
+    // Remove user from connected users
+    for (const [userId, socketId] of connectedUsers.entries()) {
+      if (socketId === socket.id) {
+        connectedUsers.delete(userId);
+        logger.info(`User ${userId} disconnected`);
+        break;
+      }
+    }
+  });
+});
+
+// Make io and connectedUsers available to routes
+app.locals.io = io;
+app.locals.connectedUsers = connectedUsers;
 
 // Redis client setup (optional)
 let redisClient;
@@ -73,6 +114,8 @@ app.use('/api/nsqf', nsqfRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/career-paths', careerPathRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -90,8 +133,9 @@ mongoose
   })
   .then(() => {
     logger.info('MongoDB connected successfully');
-    app.listen(PORT, () => {
+    httpServer.listen(PORT, () => {
       logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
+      logger.info(`WebSocket server ready`);
     });
   })
   .catch((error) => {

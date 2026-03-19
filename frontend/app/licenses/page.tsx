@@ -61,14 +61,14 @@ export default function LicensesPage() {
                 Open Source Licenses
               </h1>
               <p className="text-muted-foreground text-lg">
-                MicroCred is built with amazing open source software
+                CredMatrix is built with amazing open source software
               </p>
             </div>
 
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>MicroCred Platform</CardTitle>
+                  <CardTitle>CredMatrix Platform</CardTitle>
                   <CardDescription>Our platform license</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -79,10 +79,10 @@ export default function LicensesPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="font-medium">Copyright:</span>
-                      <span className="text-muted-foreground">© 2026 MicroCred</span>
+                      <span className="text-muted-foreground">© 2026 CredMatrix</span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-4">
-                      All rights reserved. The MicroCred platform and its original content are
+                      All rights reserved. The CredMatrix platform and its original content are
                       proprietary and protected by copyright laws.
                     </p>
                   </div>

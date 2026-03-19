@@ -24,3 +24,50 @@ export const getNotifications = async (req, res, next) => {
   }
 };
 
+// GET /notifications/unread-count
+export const getUnreadCount = async (req, res, next) => {
+  try {
+    const count = await Notification.countDocuments({ 
+      userId: req.user.userId,
+      read: false 
+    });
+
+    res.json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PUT /notifications/:id/read
+export const markAsRead = async (req, res, next) => {
+  try {
+    const notification = await Notification.findOneAndUpdate(
+      { _id: req.params.id, userId: req.user.userId },
+      { read: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    res.json(notification);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// PUT /notifications/mark-all-read
+export const markAllAsRead = async (req, res, next) => {
+  try {
+    await Notification.updateMany(
+      { userId: req.user.userId, read: false },
+      { read: true }
+    );
+
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    next(error);
+  }
+};
+

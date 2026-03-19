@@ -44,7 +44,7 @@ const posts = [
   },
   {
     title: "Employer's Guide to Skill Verification",
-    excerpt: "How employers can use MicroCred to verify candidate credentials and find the right talent faster.",
+    excerpt: "How employers can use CredMatrix to verify candidate credentials and find the right talent faster.",
     category: "Business",
     date: "March 5, 2026",
     readTime: "5 min read",
@@ -52,7 +52,7 @@ const posts = [
   },
   {
     title: "Success Stories: Learners Who Made It",
-    excerpt: "Inspiring stories from learners who used MicroCred to land their dream jobs and advance their careers.",
+    excerpt: "Inspiring stories from learners who used CredMatrix to land their dream jobs and advance their careers.",
     category: "Inspiration",
     date: "March 1, 2026",
     readTime: "10 min read",
@@ -77,6 +77,25 @@ export default function BlogPage() {
 
       <main className="flex-1">
         <section className="container py-16 md:py-24">
+          {/* Coming Soon Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
+            <Card className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold mb-2">📝 Blog Coming Soon</h3>
+                  <p className="text-muted-foreground">
+                    We're preparing insightful articles about credentials, skills, and career growth. 
+                    The posts shown below are preview content.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

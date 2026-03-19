@@ -31,7 +31,7 @@ export function LandingFooter() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <Award className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">MicroCred</span>
+              <span className="text-xl font-bold">CredMatrix</span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4 max-w-xs">
               Building the future of credential management and skill verification.
@@ -116,7 +116,7 @@ export function LandingFooter() {
 
         <div className="border-t mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} MicroCred. All rights reserved.
+            &copy; {new Date().getFullYear()} CredMatrix. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
             Made with ❤️ for learners worldwide

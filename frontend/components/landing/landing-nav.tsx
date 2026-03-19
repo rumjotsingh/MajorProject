@@ -23,7 +23,7 @@ export function LandingNav() {
           >
             <Award className="h-6 w-6 text-primary" />
           </motion.div>
-          <span className="text-xl font-bold">MicroCred</span>
+          <span className="text-xl font-bold">CredMatrix</span>
         </Link>
 
         <nav className="hidden md:flex gap-6">

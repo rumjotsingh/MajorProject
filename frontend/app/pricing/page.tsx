@@ -62,6 +62,25 @@ export default function PricingPage() {
 
       <main className="flex-1">
         <section className="container py-16 md:py-24">
+          {/* Coming Soon Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12 max-w-4xl mx-auto px-4"
+          >
+            <Card className="bg-gradient-to-r from-green-500/10 to-blue-500/10 border-green-500/20">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold mb-2">💳 Pricing Plans Coming Soon</h3>
+                  <p className="text-muted-foreground">
+                    Currently, all features are free during our beta phase. Paid plans will be introduced later. 
+                    The pricing shown below is for reference only.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

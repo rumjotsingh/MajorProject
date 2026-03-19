@@ -6,12 +6,13 @@ const issuerSchema = new mongoose.Schema(
     name: {
       type: String,
       required: true,
+      trim: true,
     },
     apiKey: {
       type: String,
-      required: true,
       unique: true,
       index: true,
+      default: () => crypto.randomBytes(32).toString('hex'),
     },
     allowedDomains: {
       type: [String],
@@ -26,18 +27,14 @@ const issuerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    mobile: {
+      type: String,
+      trim: true,
+    },
   },
   {
     timestamps: true,
   }
 );
-
-// Generate API key before saving
-issuerSchema.pre('save', function (next) {
-  if (!this.apiKey) {
-    this.apiKey = crypto.randomBytes(32).toString('hex');
-  }
-  next();
-});
 
 export default mongoose.model('Issuer', issuerSchema);

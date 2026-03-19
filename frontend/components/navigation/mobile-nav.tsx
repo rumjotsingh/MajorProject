@@ -1,14 +1,15 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Award, Plus, Map, User, Menu, X, Settings, Bell, LogOut } from "lucide-react";
+import { Home, Award, Plus, Map, User, Menu, X, Settings, Bell, LogOut, Users, Upload, CheckSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import api from "@/lib/api";
 
-const navItems = [
+const learnerNavItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: Award, label: "Credentials", href: "/credentials" },
   { icon: Plus, label: "Add", href: "/credentials/upload", isMain: true },
@@ -16,15 +17,75 @@ const navItems = [
   { icon: User, label: "Profile", href: "/profile" },
 ];
 
-const menuItems = [
-  { icon: Settings, label: "Settings", href: "/settings" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: LogOut, label: "Logout", href: "/logout", isAction: true },
+const issuerNavItems = [
+  { icon: Home, label: "Home", href: "/issuer/dashboard" },
+  { icon: CheckSquare, label: "Verify", href: "/issuer/verifications" },
+  { icon: Plus, label: "Issue", href: "/issuer/issue", isMain: true },
+  { icon: Users, label: "Learners", href: "/issuer/learners" },
+  { icon: User, label: "Profile", href: "/issuer/profile" },
 ];
 
-export function MobileNav() {
+const employerNavItems = [
+  { icon: Home, label: "Home", href: "/employer/dashboard", isMain: true },
+];
+
+const adminNavItems = [
+  { icon: Home, label: "Home", href: "/admin/dashboard", isMain: true },
+];
+
+const learnerMenuItems = [
+  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: LogOut, label: "Logout", href: "/", isAction: true },
+];
+
+const issuerMenuItems = [
+  { icon: Settings, label: "Settings", href: "/issuer/settings" },
+  { icon: Bell, label: "Notifications", href: "/issuer/notifications" },
+  { icon: LogOut, label: "Logout", href: "/", isAction: true },
+];
+
+const employerMenuItems = [
+  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: LogOut, label: "Logout", href: "/", isAction: true },
+];
+
+const adminMenuItems = [
+  { icon: Settings, label: "Settings", href: "/settings" },
+  { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: LogOut, label: "Logout", href: "/", isAction: true },
+];
+
+interface MobileNavProps {
+  role?: "learner" | "employer" | "issuer" | "admin";
+}
+
+export function MobileNav({ role = "learner" }: MobileNavProps) {
   const pathname = usePathname();
   const [showMenu, setShowMenu] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const navItems = role === "issuer" ? issuerNavItems : role === "employer" ? employerNavItems : role === "admin" ? adminNavItems : learnerNavItems;
+  const menuItems = role === "issuer" ? issuerMenuItems : role === "employer" ? employerMenuItems : role === "admin" ? adminMenuItems : learnerMenuItems;
+
+  useEffect(() => {
+    const loadUnreadCount = async () => {
+      try {
+        const response = await api.get("/notifications");
+        const notifications = response.data || [];
+        const unread = notifications.filter((n: any) => !n.read).length;
+        setUnreadCount(unread);
+      } catch (error) {
+        console.error("Failed to load notifications:", error);
+      }
+    };
+    loadUnreadCount();
+    
+    // Refresh count every 30 seconds
+    const interval = setInterval(loadUnreadCount, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <>
@@ -139,6 +200,28 @@ export function MobileNav() {
                 <div className="space-y-2">
                   {menuItems.map((item) => {
                     const Icon = item.icon;
+                    const isNotifications = item.label === "Notifications";
+                    
+                    if (item.isAction) {
+                      return (
+                        <motion.button
+                          key={item.label}
+                          whileTap={{ scale: 0.95 }}
+                          className={cn(
+                            "w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
+                            "hover:bg-destructive/10 text-destructive"
+                          )}
+                          onClick={() => {
+                            localStorage.clear();
+                            window.location.href = "/";
+                          }}
+                        >
+                          <Icon className="h-5 w-5" />
+                          <span className="font-medium">{item.label}</span>
+                        </motion.button>
+                      );
+                    }
+                    
                     return (
                       <Link
                         key={item.href}
@@ -147,15 +230,22 @@ export function MobileNav() {
                       >
                         <motion.div
                           whileTap={{ scale: 0.95 }}
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg transition-colors",
-                            item.isAction
-                              ? "hover:bg-destructive/10 text-destructive"
-                              : "hover:bg-accent"
-                          )}
+                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-accent relative"
                         >
-                          <Icon className="h-5 w-5" />
+                          <div className="relative">
+                            <Icon className="h-5 w-5" />
+                            {isNotifications && unreadCount > 0 && (
+                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                                {unreadCount > 9 ? "9+" : unreadCount}
+                              </span>
+                            )}
+                          </div>
                           <span className="font-medium">{item.label}</span>
+                          {isNotifications && unreadCount > 0 && (
+                            <span className="ml-auto h-5 px-2 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                              {unreadCount > 99 ? "99+" : unreadCount}
+                            </span>
+                          )}
                         </motion.div>
                       </Link>
                     );

@@ -27,7 +27,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Introduction</h2>
                 <p className="text-muted-foreground">
-                  At MicroCred, we take your privacy seriously. This Privacy Policy explains how we collect,
+                  At CredMatrix, we take your privacy seriously. This Privacy Policy explains how we collect,
                   use, disclose, and safeguard your information when you use our platform.
                 </p>
               </section>
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
               <section>
                 <h2 className="text-2xl font-bold mb-4">Contact Us</h2>
                 <p className="text-muted-foreground">
-                  If you have questions about this Privacy Policy, please contact us at privacy@microcred.com
+                  If you have questions about this Privacy Policy, please contact us at privacy@CredMatrix.com
                 </p>
               </section>
             </div>

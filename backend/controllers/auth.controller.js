@@ -1,13 +1,30 @@
 import User from '../models/User.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import Employer from '../models/Employer.model.js';
+import Issuer from '../models/Issuer.model.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.util.js';
 import logger from '../utils/logger.js';
 
 // POST /auth/register
 export const register = async (req, res, next) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, mobile, companyName, institutionName } = req.body;
+
+    // Validate mobile if provided
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+    }
+
+    // Validate role-specific required fields before creating user
+    if (role === 'Employer' && !companyName) {
+      return res.status(400).json({ error: 'Company name is required for employers' });
+    }
+    if (role === 'Issuer' && !institutionName) {
+      return res.status(400).json({ error: 'Institution name is required for issuers' });
+    }
+    if ((role === 'Employer' || role === 'Issuer') && !mobile) {
+      return res.status(400).json({ error: 'Mobile number is required for employers and issuers' });
+    }
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -19,22 +36,42 @@ export const register = async (req, res, next) => {
     const user = new User({
       name,
       email,
+      mobile,
       passwordHash: password, // Will be hashed by pre-save hook
       role: role || 'Learner',
     });
 
     await user.save();
 
-    // Create profile for learner
-    if (user.role === 'Learner') {
-      await LearnerProfile.create({ userId: user._id });
+    // Create role-specific profile
+    try {
+      if (user.role === 'Learner') {
+        await LearnerProfile.create({ userId: user._id });
+      } else if (user.role === 'Employer') {
+        await Employer.create({
+          userId: user._id,
+          companyName,
+          contactEmail: email,
+          mobile,
+        });
+      } else if (user.role === 'Issuer') {
+        await Issuer.create({
+          name: institutionName,
+          contactEmail: email,
+          mobile,
+        });
+      }
+    } catch (profileError) {
+      // If profile creation fails, delete the user to maintain consistency
+      await User.findByIdAndDelete(user._id);
+      throw profileError;
     }
 
     // Generate tokens
     const token = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id, user.role);
 
-    logger.info(`User registered: ${email}`);
+    logger.info(`User registered: ${email} as ${role}`);
 
     res.status(201).json({
       userId: user._id,

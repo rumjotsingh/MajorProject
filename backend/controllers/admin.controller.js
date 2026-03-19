@@ -2,6 +2,7 @@ import User from '../models/User.model.js';
 import Credential from '../models/Credential.model.js';
 import Issuer from '../models/Issuer.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
+import { validateObjectId } from '../utils/validation.util.js';
 
 // GET /admin/stats
 export const getStats = async (req, res, next) => {
@@ -26,6 +27,8 @@ export const getStats = async (req, res, next) => {
 export const approveIssuer = async (req, res, next) => {
   try {
     const { issuerId } = req.body;
+
+    validateObjectId(issuerId, 'Issuer ID');
 
     const issuer = await Issuer.findByIdAndUpdate(
       issuerId,

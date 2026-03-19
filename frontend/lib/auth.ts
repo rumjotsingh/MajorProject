@@ -18,6 +18,9 @@ export interface RegisterData {
   email: string;
   password: string;
   role: "Learner" | "Employer" | "Issuer";
+  mobile?: string;
+  companyName?: string;
+  institutionName?: string;
 }
 
 export const authService = {

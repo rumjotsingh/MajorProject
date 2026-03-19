@@ -1,6 +1,7 @@
 import Credential from '../models/Credential.model.js';
 import Verification from '../models/Verification.model.js';
 import { generateFileHash } from '../utils/hash.util.js';
+import { validateObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 
 // POST /verify/upload
@@ -54,6 +55,8 @@ export const verifyByHash = async (req, res, next) => {
 // GET /verify/status/:id
 export const getVerificationStatus = async (req, res, next) => {
   try {
+    validateObjectId(req.params.id, 'Credential ID');
+    
     const credential = await Credential.findById(req.params.id);
 
     if (!credential) {

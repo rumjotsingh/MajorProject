@@ -1,4 +1,5 @@
 import User from '../models/User.model.js';
+import { validateObjectId } from '../utils/validation.util.js';
 
 // GET /users (Admin only)
 export const getAllUsers = async (req, res, next) => {
@@ -13,6 +14,8 @@ export const getAllUsers = async (req, res, next) => {
 // GET /users/:id
 export const getUserById = async (req, res, next) => {
   try {
+    validateObjectId(req.params.id, 'User ID');
+    
     const user = await User.findById(req.params.id).select('-passwordHash');
 
     if (!user) {
@@ -33,6 +36,8 @@ export const getUserById = async (req, res, next) => {
 // PUT /users/:id
 export const updateUser = async (req, res, next) => {
   try {
+    validateObjectId(req.params.id, 'User ID');
+    
     const { name, password, role } = req.body;
     const user = await User.findById(req.params.id);
 
@@ -63,6 +68,8 @@ export const updateUser = async (req, res, next) => {
 // DELETE /users/:id (Admin only)
 export const deleteUser = async (req, res, next) => {
   try {
+    validateObjectId(req.params.id, 'User ID');
+    
     const user = await User.findByIdAndUpdate(req.params.id, { isActive: false });
 
     if (!user) {

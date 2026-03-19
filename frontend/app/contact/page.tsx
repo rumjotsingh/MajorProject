@@ -30,6 +30,25 @@ export default function ContactPage() {
             </p>
           </motion.div>
 
+          {/* Coming Soon Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-12 max-w-6xl mx-auto px-4"
+          >
+            <Card className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/20">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold mb-2">📧 Contact Form Coming Soon</h3>
+                  <p className="text-muted-foreground">
+                    The contact form is not yet functional. For now, please reach out to us directly via email.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+
           <div className="grid gap-6 md:gap-8 lg:grid-cols-3 max-w-6xl mx-auto px-4">
             <div className="lg:col-span-2">
               <Card>
@@ -79,7 +98,7 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <div className="font-medium mb-1">Email</div>
-                        <div className="text-sm text-muted-foreground">support@microcred.com</div>
+                        <div className="text-sm text-muted-foreground">support@CredMatrix.com</div>
                       </div>
                     </div>
                     <div className="flex gap-4">

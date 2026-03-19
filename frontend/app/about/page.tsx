@@ -44,7 +44,7 @@ export default function AboutPage() {
             className="mx-auto max-w-3xl text-center space-y-4 md:space-y-6 mb-12 md:mb-16 px-4"
           >
             <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter">
-              About <span className="text-primary">MicroCred</span>
+              About <span className="text-primary">CredMatrix</span>
             </h1>
             <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
               We're building the future of credential management and skill verification,
@@ -60,7 +60,7 @@ export default function AboutPage() {
               <h2 className="text-3xl font-bold">Our Story</h2>
               <div className="space-y-4 text-lg text-muted-foreground">
                 <p>
-                  MicroCred was founded with a simple yet powerful vision: to create a world where
+                  CredMatrix was founded with a simple yet powerful vision: to create a world where
                   every skill, every achievement, and every learning milestone can be easily verified
                   and shared.
                 </p>

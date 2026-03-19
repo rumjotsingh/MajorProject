@@ -20,6 +20,11 @@ export const schemas = {
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
     role: Joi.string().valid('Learner', 'Issuer', 'Employer', 'Admin').default('Learner'),
+    mobile: Joi.string().pattern(/^\d{10}$/).optional().messages({
+      'string.pattern.base': 'Mobile number must be exactly 10 digits'
+    }),
+    companyName: Joi.string().min(2).max(200).optional(),
+    institutionName: Joi.string().min(2).max(200).optional(),
   }),
 
   login: Joi.object({
@@ -43,16 +48,30 @@ export const schemas = {
     issuer: Joi.string().required(),
     issueDate: Joi.date().required(),
     skills: Joi.array().items(Joi.string()).default([]),
-    nsqfLevel: Joi.number().min(1).max(10),
+    credits: Joi.number().integer().min(1).max(40).required().messages({
+      'number.base': 'Credits must be a number',
+      'number.integer': 'Credits must be an integer',
+      'number.min': 'Credits must be at least 1',
+      'number.max': 'Credits cannot exceed 40',
+      'any.required': 'Credits field is required',
+    }),
+    // nsqfLevel is NOT accepted from user input - it's calculated automatically
   }),
 
   issuerCredential: Joi.object({
     userEmail: Joi.string().email().required(),
     title: Joi.string().required(),
     skills: Joi.array().items(Joi.string()).default([]),
-    nsqfLevel: Joi.number().min(1).max(10).required(),
+    credits: Joi.number().integer().min(1).max(40).required().messages({
+      'number.base': 'Credits must be a number',
+      'number.integer': 'Credits must be an integer',
+      'number.min': 'Credits must be at least 1',
+      'number.max': 'Credits cannot exceed 40',
+      'any.required': 'Credits field is required',
+    }),
     issueDate: Joi.date().required(),
     certificateUrl: Joi.string().uri().optional(),
+    // nsqfLevel is NOT accepted - it's calculated automatically based on total credits
   }),
 
   employerRegister: Joi.object({

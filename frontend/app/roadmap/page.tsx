@@ -93,8 +93,28 @@ export default function RoadmapPage() {
               Product <span className="text-primary">Roadmap</span>
             </h1>
             <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
-              See what we're building and what's coming next for MicroCred
+              See what we're building and what's coming next for CredMatrix
             </p>
+          </motion.div>
+
+          {/* Coming Soon Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="mb-12 max-w-4xl mx-auto px-4"
+          >
+            <Card className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-2xl font-semibold mb-2">🗺️ Roadmap Preview</h3>
+                  <p className="text-muted-foreground">
+                    This roadmap represents our vision and planned features. 
+                    Timelines and features may change based on user feedback and priorities.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
           <div className="max-w-4xl mx-auto space-y-6 md:space-y-8 px-4">
@@ -158,12 +178,12 @@ export default function RoadmapPage() {
               <CardHeader>
                 <CardTitle>Have a Feature Request?</CardTitle>
                 <CardDescription>
-                  We'd love to hear your ideas! Help us shape the future of MicroCred.
+                  We'd love to hear your ideas! Help us shape the future of CredMatrix.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  Email us at <a href="mailto:feedback@microcred.com" className="text-primary hover:underline">feedback@microcred.com</a>
+                  Email us at <a href="mailto:feedback@CredMatrix.com" className="text-primary hover:underline">feedback@CredMatrix.com</a>
                 </p>
               </CardContent>
             </Card>

@@ -11,10 +11,15 @@ const employerSchema = new mongoose.Schema(
     companyName: {
       type: String,
       required: true,
+      trim: true,
     },
     contactEmail: {
       type: String,
       required: true,
+    },
+    mobile: {
+      type: String,
+      trim: true,
     },
     verified: {
       type: Boolean,

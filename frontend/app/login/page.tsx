@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Mail, Lock, Loader2, ArrowLeft } from "lucide-react";
+import { Award, Mail, Lock, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ export default function LoginPage() {
     password: "",
   });
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,10 +49,9 @@ export default function LoginPage() {
       
       console.log("Redirecting to:", redirectPath);
 
-      // Small delay for toast to show
+      // Use window.location for more reliable redirect
       setTimeout(() => {
-        router.push(redirectPath);
-        router.refresh();
+        window.location.href = redirectPath;
       }, 500);
     } catch (error: any) {
       console.error("Login error:", error);
@@ -100,7 +100,7 @@ export default function LoginPage() {
               <Award className="h-10 w-10 text-primary" />
             </motion.div>
             <span className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              MicroCred
+              CredMatrix
             </span>
           </Link>
         </div>
@@ -143,15 +143,28 @@ export default function LoginPage() {
                     Forgot?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  className="h-11"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button 
@@ -176,7 +189,7 @@ export default function LoginPage() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  New to MicroCred?
+                  New to CredMatrix?
                 </span>
               </div>
             </div>
