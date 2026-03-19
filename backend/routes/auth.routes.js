@@ -1,46 +1,14 @@
-import express from "express";
-import rateLimit from "express-rate-limit";
-import * as authController from "../controllers/auth.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
-import {
-  registerValidation,
-  loginValidation,
-} from "../middleware/validation.middleware.js";
-
+import express from 'express';
 const router = express.Router();
+import * as authController from '../controllers/auth.controller.js';
+import { validate, schemas } from '../middleware/validation.middleware.js';
+import { authenticate } from '../middleware/auth.middleware.js';
+import { authLimiter } from '../middleware/rateLimit.middleware.js';
 
-// Rate limiters for security
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 attempts per window (increased for development)
-  message: {
-    success: false,
-    message: "Too many attempts. Please try again after 15 minutes.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const forgotPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 attempts per hour
-  message: {
-    success: false,
-    message: "Too many password reset attempts. Please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Public routes
-router.post("/register", registerValidation, authController.register);
-router.post("/login", authLimiter, loginValidation, authController.login);
-router.post("/forgot-password", forgotPasswordLimiter, authController.forgotPassword);
-router.post("/reset-password/:token", authController.resetPassword);
-router.post("/refresh-token", authController.refreshAccessToken);
-
-// Protected routes
-router.post("/logout", authenticate, authController.logout);
-router.get("/me", authenticate, authController.getMe);
+router.post('/register', authLimiter, validate(schemas.register), authController.register);
+router.post('/login', authLimiter, validate(schemas.login), authController.login);
+router.post('/refresh', authController.refresh);
+router.post('/logout', authController.logout);
+router.get('/me', authenticate, authController.getMe);
 
 export default router;

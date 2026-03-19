@@ -1,71 +1,82 @@
-import { body, validationResult } from "express-validator";
+import Joi from 'joi';
 
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: "Validation failed",
-      errors: errors.array(),
-    });
-  }
-  next();
+export const validate = (schema) => {
+  return (req, res, next) => {
+    const { error } = schema.validate(req.body, { abortEarly: false });
+    
+    if (error) {
+      const errors = error.details.map((detail) => detail.message);
+      return res.status(400).json({ error: 'Validation failed', details: errors });
+    }
+    
+    next();
+  };
 };
 
-const registerValidation = [
-  body("email")
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Valid email is required"),
-  body("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
-    .matches(
-      /^(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#^()_+=-])[a-z\d@$!%*?&#^()_+=-]{8,}$/,
-    )
-    .withMessage(
-      "Password must contain lowercase, number and special character",
-    ),
-  body("role")
-    .isIn(["learner", "institute", "employer"])
-    .withMessage("Invalid role"),
-  validate,
-];
+// Common validation schemas
+export const schemas = {
+  register: Joi.object({
+    name: Joi.string().min(2).max(100).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+    role: Joi.string().valid('Learner', 'Issuer', 'Employer', 'Admin').default('Learner'),
+    mobile: Joi.string().pattern(/^\d{10}$/).optional().messages({
+      'string.pattern.base': 'Mobile number must be exactly 10 digits'
+    }),
+    companyName: Joi.string().min(2).max(200).optional(),
+    institutionName: Joi.string().min(2).max(200).optional(),
+  }),
 
-const loginValidation = [
-  body("email")
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Valid email is required"),
-  body("password").notEmpty().withMessage("Password is required"),
-  validate,
-];
+  login: Joi.object({
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  }),
 
-const forgotPasswordValidation = [
-  body("email")
-    .isEmail()
-    .normalizeEmail()
-    .withMessage("Valid email is required"),
-  validate,
-];
+  updateProfile: Joi.object({
+    bio: Joi.string().max(500).allow(''),
+    skills: Joi.array().items(Joi.string()),
+    education: Joi.string().allow(''),
+    experience: Joi.string().allow(''),
+    preferences: Joi.object({
+      language: Joi.string(),
+      notificationsEnabled: Joi.boolean(),
+    }),
+  }),
 
-const resetPasswordValidation = [
-  body("password")
-    .isLength({ min: 8 })
-    .withMessage("Password must be at least 8 characters")
-    .matches(
-      /^(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&#^()_+=-])[a-z\d@$!%*?&#^()_+=-]{8,}$/,
-    )
-    .withMessage(
-      "Password must contain lowercase, number and special character",
-    ),
-  validate,
-];
+  credentialMetadata: Joi.object({
+    title: Joi.string().required(),
+    issuer: Joi.string().required(),
+    issueDate: Joi.date().required(),
+    skills: Joi.array().items(Joi.string()).default([]),
+    credits: Joi.number().integer().min(1).max(40).required().messages({
+      'number.base': 'Credits must be a number',
+      'number.integer': 'Credits must be an integer',
+      'number.min': 'Credits must be at least 1',
+      'number.max': 'Credits cannot exceed 40',
+      'any.required': 'Credits field is required',
+    }),
+    // nsqfLevel is NOT accepted from user input - it's calculated automatically
+  }),
 
-export {
-  registerValidation,
-  loginValidation,
-  forgotPasswordValidation,
-  resetPasswordValidation,
-  validate,
+  issuerCredential: Joi.object({
+    userEmail: Joi.string().email().required(),
+    title: Joi.string().required(),
+    skills: Joi.array().items(Joi.string()).default([]),
+    credits: Joi.number().integer().min(1).max(40).required().messages({
+      'number.base': 'Credits must be a number',
+      'number.integer': 'Credits must be an integer',
+      'number.min': 'Credits must be at least 1',
+      'number.max': 'Credits cannot exceed 40',
+      'any.required': 'Credits field is required',
+    }),
+    issueDate: Joi.date().required(),
+    certificateUrl: Joi.string().uri().optional(),
+    // nsqfLevel is NOT accepted - it's calculated automatically based on total credits
+  }),
+
+  employerRegister: Joi.object({
+    companyName: Joi.string().required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().min(8).required(),
+  }),
 };

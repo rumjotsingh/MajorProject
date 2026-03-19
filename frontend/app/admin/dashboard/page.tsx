@@ -1,59 +1,175 @@
-'use client'
+"use client";
 
-import { Home, Users, FileText, Compass, Shield, Building2 } from 'lucide-react'
-import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Shield, Users, Award, Building2, TrendingUp, Activity, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
 
-const sidebarItems = [
-  { icon: Home, label: 'Dashboard', path: '/admin/dashboard' },
-  { icon: Users, label: 'Users', path: '/admin/users' },
-  { icon: Building2, label: 'Institutes', path: '/admin/institutes' },
-  { icon: FileText, label: 'Credentials', path: '/admin/credentials' },
-  { icon: Compass, label: 'Pathways', path: '/admin/pathways' },
-  { icon: Shield, label: 'Security', path: '/admin/security' },
-]
-
-export default function AdminDashboard() {
-  const stats = [
-    { label: 'Total Users', value: '50,234', icon: Users, color: 'from-blue-500 to-cyan-500' },
-    { label: 'Institutes', value: '523', icon: Building2, color: 'from-emerald-500 to-green-500' },
-    { label: 'Credentials', value: '102K', icon: FileText, color: 'from-violet-500 to-purple-500' },
-    { label: 'Pathways', value: '45', icon: Compass, color: 'from-amber-500 to-orange-500' },
-  ]
-
+export default function AdminDashboardPage() {
   return (
-    <DashboardLayout sidebarItems={sidebarItems}>
-      <div className="space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            Platform overview and management
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat) => {
-            const Icon = stat.icon
-            return (
-              <Card key={stat.label} className="shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                <CardContent className="p-6">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center mb-4 shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-slate-600 dark:text-slate-400">
-                    {stat.label}
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
+    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+        <p className="text-muted-foreground">System overview and management</p>
       </div>
-    </DashboardLayout>
-  )
+
+      {/* Coming Soon Banner */}
+      <Card className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border-purple-500/20">
+        <CardContent className="pt-6">
+          <div className="flex items-center gap-4">
+            <div className="h-12 w-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+              <Shield className="h-6 w-6 text-purple-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-1">🚀 Admin Features Coming Soon</h3>
+              <p className="text-sm text-muted-foreground">
+                Advanced admin features are under development. You'll be able to manage users, issuers, credentials, and system settings.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Preview Stats */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">---</div>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Credentials</CardTitle>
+              <Award className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">---</div>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Issuers</CardTitle>
+              <Building2 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">---</div>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">System Health</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">---</div>
+              <p className="text-xs text-muted-foreground">Coming soon</p>
+            </CardContent>
+          </Card>
+        </motion.div>
+      </div>
+
+      {/* Planned Features */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• View and manage all users</li>
+              <li>• Approve/reject issuer applications</li>
+              <li>• User role management</li>
+              <li>• Account suspension and deletion</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Credential Oversight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Monitor all credentials</li>
+              <li>• Revoke fraudulent credentials</li>
+              <li>• Verification audit logs</li>
+              <li>• Credential analytics</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Analytics & Reports
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Platform usage statistics</li>
+              <li>• Growth metrics and trends</li>
+              <li>• Export detailed reports</li>
+              <li>• Custom dashboards</li>
+            </ul>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              System Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li>• Platform settings</li>
+              <li>• Email templates</li>
+              <li>• API rate limits</li>
+              <li>• Security policies</li>
+            </ul>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }

@@ -1,166 +1,218 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Eye, EyeOff } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { useAppDispatch, useAppSelector } from '@/lib/hooks'
-import { login, clearError } from '@/lib/slices/authSlice'
-import { toast } from 'sonner'
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Award, Mail, Lock, Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { motion } from "framer-motion";
+import { authService } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
-  const dispatch = useAppDispatch()
-  const { loading, error } = useAppSelector((state) => state.auth)
-
+  const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  })
-  const [showPassword, setShowPassword] = useState(false)
+    email: "",
+    password: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    return () => {
-      dispatch(clearError())
-    }
-  }, [dispatch])
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-    dispatch(clearError())
-  }
-
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    
-    const result = await dispatch(login(formData))
-    
-    if (login.fulfilled.match(result)) {
-      const userData = result.payload.user
-      const role = userData?.role
+    try {
+      console.log("Attempting login with:", { email: formData.email });
       
-      toast.success('Login successful!', {
-        description: `Welcome back, ${userData?.email?.split('@')[0] || 'user'}!`
-      })
+      const { user, token } = await authService.login(formData);
       
-      // Force full page redirect
+      console.log("Login successful, user:", user);
+      
+      toast({
+        title: "Welcome back!",
+        description: `Logged in as ${user.name}`,
+      });
+
+      // Redirect based on role with proper capitalization
+      const roleRedirectMap: Record<string, string> = {
+        "Learner": "/dashboard",
+        "Employer": "/employer/dashboard",
+        "Issuer": "/issuer/dashboard",
+        "Admin": "/admin/dashboard",
+      };
+
+      const redirectPath = roleRedirectMap[user.role] || "/dashboard";
+      
+      console.log("Redirecting to:", redirectPath);
+
+      // Use window.location for more reliable redirect
       setTimeout(() => {
-        if (role === 'admin') {
-          window.location.href = '/admin/dashboard'
-        } else if (role === 'institute') {
-          window.location.href = '/institute/dashboard'
-        } else if (role === 'employer') {
-          window.location.href = '/employer/dashboard'
-        } else {
-          window.location.href = '/learner/dashboard'
-        }
-      }, 500)
-    } else {
-      toast.error('Login failed', {
-        description: error || 'Invalid credentials'
-      })
+        window.location.href = redirectPath;
+      }, 500);
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      const errorMessage = error.response?.data?.message 
+        || error.response?.data?.error
+        || error.message 
+        || "Invalid email or password";
+      
+      toast({
+        title: "Login failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black px-4 pb-32 md:pb-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-12">
-          <Link href="/" className="inline-flex items-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-black dark:bg-white rounded-lg flex items-center justify-center">
-              <span className="text-white dark:text-black font-semibold">CM</span>
-            </div>
-            <span className="text-xl font-semibold text-black dark:text-white">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+      {/* Back to Home Button */}
+      <Link href="/" className="fixed top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="glass glass-border backdrop-blur-xl gap-2 hover:bg-primary/10"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          <span className="hidden sm:inline">Back to Home</span>
+        </Button>
+      </Link>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md"
+      >
+        <div className="flex justify-center mb-8">
+          <Link href="/" className="flex items-center gap-2 group">
+            <motion.div
+              whileHover={{ rotate: 360 }}
+              transition={{ duration: 0.6 }}
+            >
+              <Award className="h-10 w-10 text-primary" />
+            </motion.div>
+            <span className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
               CredMatrix
             </span>
           </Link>
         </div>
 
-        <div className="space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-semibold text-black dark:text-white mb-2">
-              Sign in
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400">
-              Welcome back to CredMatrix
-            </p>
-          </div>
-
-          {error && (
-            <div className="p-4 bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-400 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-black dark:text-white">
-                Email
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@example.com"
-                className="h-11 rounded-lg border-slate-300 dark:border-slate-700 focus:border-black dark:focus:border-white bg-white dark:bg-black"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-black dark:text-white">
-                Password
-              </Label>
-              <div className="relative">
+        <Card className="border-2 shadow-2xl">
+          <CardHeader className="space-y-2 text-center pb-6">
+            <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
+            <CardDescription className="text-base">
+              Sign in to access your credential portfolio
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Email Address
+                </label>
                 <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  value={formData.password}
-                  onChange={handleChange}
-                  placeholder="Enter your password"
-                  className="h-11 rounded-lg border-slate-300 dark:border-slate-700 focus:border-black dark:focus:border-white bg-white dark:bg-black pr-10"
+                  className="h-11"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-black dark:hover:text-white transition-colors"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
+                    <Lock className="h-4 w-4 text-primary" />
+                    Password
+                  </label>
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-primary hover:underline font-medium"
+                  >
+                    Forgot?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    required
+                    className="h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <Button 
+                type="submit" 
+                className="w-full h-11 text-base font-semibold" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
+              </Button>
+            </form>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  New to CredMatrix?
+                </span>
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="w-full h-11 rounded-lg bg-black dark:bg-white text-white dark:text-black hover:bg-slate-800 dark:hover:bg-slate-100 font-medium"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </Button>
-          </form>
-
-          <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-            Don't have an account?{' '}
-            <Link href="/register" className="text-black dark:text-white font-medium hover:underline">
-              Create account
+            <Link href="/signup">
+              <Button variant="outline" className="w-full h-11 font-semibold">
+                Create an Account
+              </Button>
             </Link>
-          </p>
+          </CardContent>
+        </Card>
 
-          <div className="text-center">
-            <Link href="/" className="text-sm text-slate-500 hover:text-black dark:hover:text-white transition-colors">
-              ← Back to home
-            </Link>
-          </div>
-        </div>
-      </div>
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          By continuing, you agree to our{" "}
+          <Link href="/terms" className="text-primary hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
+      </motion.div>
     </div>
-  )
+  );
 }

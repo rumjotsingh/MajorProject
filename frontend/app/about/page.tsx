@@ -1,141 +1,133 @@
-import Link from 'next/link'
-import { Award, Shield, Users, TrendingUp, Target, Heart, Zap } from 'lucide-react'
-import { Navbar } from '@/components/navbar'
-import { Footer } from '@/components/footer'
-import { Container } from '@/components/container'
+"use client";
+
+import { LandingNav } from "@/components/landing/landing-nav";
+import { LandingFooter } from "@/components/landing/landing-footer";
+import { BackToHome } from "@/components/back-to-home";
+import { motion } from "framer-motion";
+import { Award, Target, Users, Zap } from "lucide-react";
+
+const values = [
+  {
+    icon: Target,
+    title: "Mission Driven",
+    description: "Democratizing access to skill verification and credential management for everyone.",
+  },
+  {
+    icon: Users,
+    title: "Learner First",
+    description: "Every decision we make puts learners and their success at the center.",
+  },
+  {
+    icon: Zap,
+    title: "Innovation",
+    description: "Constantly pushing boundaries to create better learning experiences.",
+  },
+  {
+    icon: Award,
+    title: "Excellence",
+    description: "Committed to delivering the highest quality platform and support.",
+  },
+];
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-black">
-      <Navbar />
+    <div className="flex min-h-screen flex-col">
+      <LandingNav />
+      <BackToHome />
 
-      <main className="pt-32 pb-24">
-        <Container>
-          {/* Hero */}
-          <div className="max-w-4xl mx-auto text-center mb-24">
-            <h1 className="text-6xl sm:text-7xl font-semibold text-black dark:text-white mb-8 leading-tight tracking-tight">
-              Building the future of credentials.
+      <main className="flex-1">
+        {/* Hero */}
+        <section className="container py-16 md:py-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mx-auto max-w-3xl text-center space-y-4 md:space-y-6 mb-12 md:mb-16 px-4"
+          >
+            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter">
+              About <span className="text-primary">CredMatrix</span>
             </h1>
-            <p className="text-xl text-slate-600 dark:text-slate-400 leading-relaxed">
-              CredMatrix is a unified platform for managing, verifying, and showcasing 
-              micro-credentials from institutions worldwide.
+            <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
+              We're building the future of credential management and skill verification,
+              empowering learners to showcase their true potential.
+            </p>
+          </motion.div>
+        </section>
+
+        {/* Story */}
+        <section className="bg-muted/30 py-24">
+          <div className="container">
+            <div className="mx-auto max-w-3xl space-y-8">
+              <h2 className="text-3xl font-bold">Our Story</h2>
+              <div className="space-y-4 text-lg text-muted-foreground">
+                <p>
+                  CredMatrix was founded with a simple yet powerful vision: to create a world where
+                  every skill, every achievement, and every learning milestone can be easily verified
+                  and shared.
+                </p>
+                <p>
+                  In today's rapidly evolving job market, traditional credentials alone don't tell
+                  the full story of a person's capabilities. We believe that micro-credentials,
+                  certifications, and continuous learning achievements deserve equal recognition.
+                </p>
+                <p>
+                  Our platform brings together learners, educational institutions, and employers in
+                  a unified ecosystem that values lifelong learning and skill development.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Values */}
+        <section className="container py-24">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Our Values</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              The principles that guide everything we do
             </p>
           </div>
-
-          {/* Mission */}
-          <div className="max-w-5xl mx-auto mb-32">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center">
-                  <Target className="w-6 h-6 text-white dark:text-black" />
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+            {values.map((value, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
+                className="text-center space-y-4"
+              >
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <value.icon className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Our Mission
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Empower learners with a unified, verified digital credential portfolio.
-                </p>
+                <h3 className="text-xl font-semibold">{value.title}</h3>
+                <p className="text-muted-foreground">{value.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* Stats */}
+        <section className="bg-muted/30 py-24">
+          <div className="container">
+            <div className="grid gap-8 md:grid-cols-3 text-center">
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">2024</div>
+                <div className="text-muted-foreground">Founded</div>
               </div>
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center">
-                  <Heart className="w-6 h-6 text-white dark:text-black" />
-                </div>
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Our Values
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Trust, transparency, and security in every credential verification.
-                </p>
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">50K+</div>
+                <div className="text-muted-foreground">Active Users</div>
               </div>
-
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-black dark:bg-white flex items-center justify-center">
-                  <Zap className="w-6 h-6 text-white dark:text-black" />
-                </div>
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Our Vision
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  A world where credentials are instantly verifiable and universally recognized.
-                </p>
+              <div>
+                <div className="text-4xl font-bold text-primary mb-2">500+</div>
+                <div className="text-muted-foreground">Partner Institutions</div>
               </div>
             </div>
           </div>
-
-          {/* Stats */}
-          <div className="max-w-5xl mx-auto mb-32 py-20 border-y border-slate-200 dark:border-slate-900">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
-              <div>
-                <div className="text-5xl font-semibold text-black dark:text-white mb-2">50K+</div>
-                <div className="text-slate-600 dark:text-slate-400">Active learners</div>
-              </div>
-              <div>
-                <div className="text-5xl font-semibold text-black dark:text-white mb-2">100K+</div>
-                <div className="text-slate-600 dark:text-slate-400">Verified credentials</div>
-              </div>
-              <div>
-                <div className="text-5xl font-semibold text-black dark:text-white mb-2">500+</div>
-                <div className="text-slate-600 dark:text-slate-400">Partner institutes</div>
-              </div>
-              <div>
-                <div className="text-5xl font-semibold text-black dark:text-white mb-2">99.9%</div>
-                <div className="text-slate-600 dark:text-slate-400">Verification rate</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Features */}
-          <div className="max-w-5xl mx-auto">
-            <h2 className="text-4xl font-semibold text-black dark:text-white mb-16 text-center">
-              What makes us different
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div className="space-y-4">
-                <Award className="w-10 h-10 text-black dark:text-white" />
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Unified Portfolio
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  All your credentials from multiple institutions in one place. No more scattered certificates.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <Shield className="w-10 h-10 text-black dark:text-white" />
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Blockchain Verified
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Tamper-proof records backed by blockchain technology that employers can trust instantly.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <TrendingUp className="w-10 h-10 text-black dark:text-white" />
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  NSQ Aligned
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Track your progress with National Skills Qualifications framework alignment.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <Users className="w-10 h-10 text-black dark:text-white" />
-                <h3 className="text-2xl font-semibold text-black dark:text-white">
-                  Global Network
-                </h3>
-                <p className="text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                  Connect with employers and institutions worldwide through standardized credentials.
-                </p>
-              </div>
-            </div>
-          </div>
-        </Container>
+        </section>
       </main>
 
-      <Footer />
+      <LandingFooter />
     </div>
-  )
+  );
 }

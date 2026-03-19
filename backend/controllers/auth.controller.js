@@ -1,593 +1,162 @@
-import crypto from "crypto";
-import Learner from "../models/Learner.model.js";
-import Institute from "../models/Institute.model.js";
-import Employer from "../models/Employer.model.js";
-import {
-  emailExistsAcrossRoles,
-  findUserByEmailAcrossRoles,
-  findUserByIdAcrossRoles,
-  findUserByRefreshToken,
-  getModelForRole,
-} from "../utils/userModel.util.js";
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyRefreshToken,
-} from "../utils/jwt.util.js";
-import { sendEmail } from "../utils/email.util.js";
+import User from '../models/User.model.js';
+import LearnerProfile from '../models/LearnerProfile.model.js';
+import Employer from '../models/Employer.model.js';
+import Issuer from '../models/Issuer.model.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.util.js';
+import logger from '../utils/logger.js';
 
-/**
- * Register a new user
- * Creates user immediately without email verification
- */
-const register = async (req, res) => {
+// POST /auth/register
+export const register = async (req, res, next) => {
   try {
-    const { email, password, role, ...additionalData } = req.body;
+    const { name, email, password, role, mobile, companyName, institutionName } = req.body;
 
-    // Prevent admin registration via API
-    if (role === "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Admin registration is not allowed",
-      });
+    // Validate mobile if provided
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
     }
 
-    const existingUser = await emailExistsAcrossRoles(email);
+    // Validate role-specific required fields before creating user
+    if (role === 'Employer' && !companyName) {
+      return res.status(400).json({ error: 'Company name is required for employers' });
+    }
+    if (role === 'Issuer' && !institutionName) {
+      return res.status(400).json({ error: 'Institution name is required for issuers' });
+    }
+    if ((role === 'Employer' || role === 'Issuer') && !mobile) {
+      return res.status(400).json({ error: 'Mobile number is required for employers and issuers' });
+    }
+
+    // Check if user exists
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "Email already registered",
-      });
+      return res.status(409).json({ error: 'Email already exists' });
     }
 
-    let user;
-    const baseData = { email, password, role, isActive: true };
+    // Create user
+    const user = new User({
+      name,
+      email,
+      mobile,
+      passwordHash: password, // Will be hashed by pre-save hook
+      role: role || 'Learner',
+    });
 
-    switch (role) {
-      case "learner":
-        let instituteId = null;
-        let instituteStatus = "not_joined";
-
-        const requestedInstituteCode = additionalData.instituteCode?.trim();
-        const requestedInstituteName = additionalData.instituteName?.trim();
-
-        if (requestedInstituteCode || requestedInstituteName) {
-          let existingInstitute = null;
-
-          if (requestedInstituteCode) {
-            existingInstitute = await Institute.findOne({
-              instituteCode: requestedInstituteCode.toUpperCase(),
-              isDeleted: { $ne: true },
-            });
-          }
-
-          if (!existingInstitute && requestedInstituteName) {
-            existingInstitute = await Institute.findOne({
-              instituteName: {
-                $regex: new RegExp(`^${requestedInstituteName}$`, "i"),
-              },
-              isDeleted: { $ne: true },
-            });
-          }
-
-          if (existingInstitute) {
-            instituteId = existingInstitute._id;
-            instituteStatus =
-              existingInstitute.approvalStatus === "approved" &&
-              existingInstitute.isActive
-                ? "joined"
-                : "pending";
-          } else if (requestedInstituteName) {
-            const generatedEmail = `${requestedInstituteName
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, ".")
-              .replace(/^\.|\.$/g, "")}.${Date.now()}@temp.edu`;
-
-            const createdInstitute = await Institute.create({
-              email: generatedEmail,
-              password: Math.random().toString(36).slice(-12),
-              instituteName: requestedInstituteName,
-              source: "learner_created",
-              approvalStatus: "pending",
-              isApproved: false,
-              contactPerson: {
-                name:
-                  `${additionalData.firstName || ""} ${additionalData.lastName || ""}`.trim() ||
-                  undefined,
-                phone: additionalData.phone,
-              },
-            });
-
-            instituteId = createdInstitute._id;
-            instituteStatus = "pending";
-          }
-        }
-
-        user = await Learner.create({
-          ...baseData,
-          firstName: additionalData.firstName,
-          lastName: additionalData.lastName,
-          phone: additionalData.phone,
-          instituteId,
-          instituteStatus,
-        });
-        break;
-      case "institute":
-        user = await Institute.create({
-          ...baseData,
-          instituteName: additionalData.instituteName,
-          registrationNumber: additionalData.registrationNumber,
-          contactPerson: additionalData.contactPerson,
-          address: additionalData.address,
-          website: additionalData.website,
-          isApproved: false, // Institutes require approval
-        });
-        break;
-      case "employer":
-        user = await Employer.create({
-          ...baseData,
-          companyName: additionalData.companyName,
-          industry: additionalData.industry,
-          contactPerson: additionalData.contactPerson,
-          address: additionalData.address,
-          website: additionalData.website,
-        });
-        break;
-      default:
-        return res.status(400).json({
-          success: false,
-          message: "Invalid role",
-        });
-    }
-
-    // Generate tokens immediately
-    const accessToken = generateAccessToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(user._id);
-
-    user.refreshToken = refreshToken;
     await user.save();
 
+    // Create role-specific profile
+    try {
+      if (user.role === 'Learner') {
+        await LearnerProfile.create({ userId: user._id });
+      } else if (user.role === 'Employer') {
+        await Employer.create({
+          userId: user._id,
+          companyName,
+          contactEmail: email,
+          mobile,
+        });
+      } else if (user.role === 'Issuer') {
+        await Issuer.create({
+          name: institutionName,
+          contactEmail: email,
+          mobile,
+        });
+      }
+    } catch (profileError) {
+      // If profile creation fails, delete the user to maintain consistency
+      await User.findByIdAndDelete(user._id);
+      throw profileError;
+    }
+
+    // Generate tokens
+    const token = generateAccessToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id, user.role);
+
+    logger.info(`User registered: ${email} as ${role}`);
+
     res.status(201).json({
-      success: true,
-      message: "Registration successful",
-      data: {
-        accessToken,
-        refreshToken,
-        user: {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          isApproved: user.isApproved,
-          instituteId: user.instituteId || null,
-          instituteStatus: user.instituteStatus || "not_joined",
-        },
-      },
+      userId: user._id,
+      token,
+      refreshToken,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-/**
- * Login user
- */
-const login = async (req, res) => {
+// POST /auth/login
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await findUserByEmailAcrossRoles(
-      email,
-      "+password +refreshToken",
-    );
-
-    if (!user || user.isDeleted) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+    const user = await User.findOne({ email });
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    if (user.isLocked()) {
-      const lockTimeRemaining = Math.ceil(
-        (user.lockUntil - Date.now()) / 1000 / 60,
-      );
-      return res.status(403).json({
-        success: false,
-        message: `Account is temporarily locked. Try again in ${lockTimeRemaining} minutes.`,
-      });
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    const isPasswordValid = await user.comparePassword(password);
+    const token = generateAccessToken(user._id, user.role);
+    const refreshToken = generateRefreshToken(user._id, user.role);
 
-    if (!isPasswordValid) {
-      await user.incLoginAttempts();
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
-    }
+    logger.info(`User logged in: ${email}`);
 
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "Account is deactivated. Please contact support.",
-      });
-    }
-
-    if (user.isSuspended) {
-      return res.status(403).json({
-        success: false,
-        message: `Account is suspended. Reason: ${user.suspensionReason || "Contact support"}`,
-      });
-    }
-
-    await user.resetLoginAttempts();
-
-    const accessToken = generateAccessToken(user._id, user.role);
-    const refreshToken = generateRefreshToken(user._id);
-
-    // Rotate refresh token
-    user.refreshToken = refreshToken;
-    user.lastLogin = new Date();
-    user.lastIpAddress = req.ip;
-    user.lastUserAgent = req.get("user-agent");
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Login successful",
-      data: {
-        accessToken,
-        refreshToken,
-        user: {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          isApproved: user.isApproved,
-          instituteId: user.instituteId || null,
-          instituteStatus: user.instituteStatus || "not_joined",
-        },
-      },
-    });
+    res.json({ token, refreshToken });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-/**
- * Forgot Password
- * Generates secure reset token and sends email
- */
-const forgotPassword = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-      });
-    }
-
-    // Always return success to prevent email enumeration
-    const successResponse = () => {
-      return res.status(200).json({
-        success: true,
-        message:
-          "If an account with that email exists, a password reset link has been sent.",
-      });
-    };
-
-    const user = await findUserByEmailAcrossRoles(email);
-
-    if (!user || user.isDeleted || !user.isActive) {
-      return successResponse();
-    }
-
-    // Generate secure random token
-    const resetToken = crypto.randomBytes(32).toString("hex");
-
-    // Hash token before storing
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(resetToken)
-      .digest("hex");
-
-    // Store hashed token with 15 minute expiry
-    user.resetPasswordToken = hashedToken;
-    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 minutes
-    await user.save({ validateBeforeSave: false });
-
-    // Create reset URL
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
-
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: "Password Reset Request",
-        html: `
-          <h2>Password Reset</h2>
-          <p>You requested a password reset. Click the link below to reset your password:</p>
-          <a href="${resetUrl}" style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 6px;">Reset Password</a>
-          <p>This link will expire in 15 minutes.</p>
-          <p>If you didn't request this, please ignore this email.</p>
-          <hr>
-          <p style="color: #666; font-size: 12px;">For security, this link can only be used once.</p>
-        `,
-      });
-    } catch (emailError) {
-      // Clear token if email fails
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save({ validateBeforeSave: false });
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to send reset email. Please try again.",
-      });
-    }
-
-    return successResponse();
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/**
- * Reset Password
- * Validates token and updates password
- */
-const resetPassword = async (req, res) => {
-  try {
-    const { token } = req.params;
-    const { password } = req.body;
-
-    if (!token) {
-      return res.status(400).json({
-        success: false,
-        message: "Reset token is required",
-      });
-    }
-
-    if (!password || password.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 8 characters",
-      });
-    }
-
-    // Hash the incoming token to compare with stored hash
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
-
-    let user = null;
-    const roleModels = ["admin", "learner", "institute", "employer"];
-    for (const role of roleModels) {
-      const model = getModelForRole(role);
-      user = await model
-        .findOne({
-          resetPasswordToken: hashedToken,
-          resetPasswordExpires: { $gt: Date.now() },
-          isDeleted: { $ne: true },
-        })
-        .select("+resetPasswordToken +resetPasswordExpires");
-      if (user) break;
-    }
-
-    if (!user) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid or expired reset token",
-      });
-    }
-
-    // Update password (will be hashed by pre-save hook)
-    user.password = password;
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-
-    // Reset login attempts on password change
-    user.loginAttempts = 0;
-    user.lockUntil = undefined;
-
-    // Invalidate all sessions by clearing refresh token
-    user.refreshToken = undefined;
-
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      message:
-        "Password reset successfully. Please login with your new password.",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/**
- * Refresh Access Token
- * Implements token rotation for security
- */
-const refreshAccessToken = async (req, res) => {
+// POST /auth/refresh
+export const refresh = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
     if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token is required",
-      });
+      return res.status(400).json({ error: 'Refresh token required' });
     }
 
-    let decoded;
-    try {
-      decoded = verifyRefreshToken(refreshToken);
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid or expired refresh token",
-      });
+    const decoded = verifyRefreshToken(refreshToken);
+    const user = await User.findById(decoded.userId);
+
+    if (!user || !user.isActive) {
+      return res.status(401).json({ error: 'Invalid refresh token' });
     }
 
-    const user = await findUserByIdAcrossRoles(decoded.userId, "+refreshToken");
+    const newToken = generateAccessToken(user._id, user.role);
 
-    if (!user) {
-      const fallbackByToken = await findUserByRefreshToken(
-        refreshToken,
-        "+refreshToken",
-      );
-      if (!fallbackByToken) {
-        return res.status(401).json({
-          success: false,
-          message: "User not found",
-        });
-      }
-
-      if (!fallbackByToken.isActive || fallbackByToken.isSuspended) {
-        return res.status(403).json({
-          success: false,
-          message: "Account is not active",
-        });
-      }
-
-      const newAccessToken = generateAccessToken(
-        fallbackByToken._id,
-        fallbackByToken.role,
-      );
-      const newRefreshToken = generateRefreshToken(fallbackByToken._id);
-
-      fallbackByToken.refreshToken = newRefreshToken;
-      await fallbackByToken.save();
-
-      return res.status(200).json({
-        success: true,
-        data: {
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-        },
-      });
-    }
-
-    // Check if token matches stored token (prevents reuse)
-    if (user.refreshToken !== refreshToken) {
-      // Possible token theft - clear all tokens
-      user.refreshToken = undefined;
-      await user.save();
-
-      return res.status(401).json({
-        success: false,
-        message: "Invalid refresh token. Please login again.",
-      });
-    }
-
-    if (!user.isActive || user.isSuspended) {
-      return res.status(403).json({
-        success: false,
-        message: "Account is not active",
-      });
-    }
-
-    // Generate new tokens (rotation)
-    const newAccessToken = generateAccessToken(user._id, user.role);
-    const newRefreshToken = generateRefreshToken(user._id);
-
-    // Update stored refresh token
-    user.refreshToken = newRefreshToken;
-    await user.save();
-
-    res.status(200).json({
-      success: true,
-      data: {
-        accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
-      },
-    });
+    res.json({ token: newToken });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(401).json({ error: 'Invalid or expired refresh token' });
   }
 };
 
-/**
- * Logout
- * Clears refresh token
- */
-const logout = async (req, res) => {
+// POST /auth/logout
+export const logout = async (req, res) => {
+  // With JWT, logout is handled client-side by discarding tokens
+  // Optionally implement token blacklist here
+  res.status(204).send();
+};
+
+// GET /auth/me
+export const getMe = async (req, res, next) => {
   try {
-    const user = await findUserByIdAcrossRoles(
-      req.user.userId,
-      "+refreshToken",
-    );
-
-    if (user) {
-      user.refreshToken = undefined;
-      await user.save();
-    }
-
-    res.status(200).json({
-      success: true,
-      message: "Logout successful",
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-/**
- * Get current user profile
- */
-const getMe = async (req, res) => {
-  try {
-    const user = await findUserByIdAcrossRoles(req.user.userId);
-
+    const user = await User.findById(req.user.userId).select('-passwordHash');
+    
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      data: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        isApproved: user.isApproved,
-        createdAt: user.createdAt,
-      },
+    res.json({
+      userId: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    next(error);
   }
 };
 
-export {
-  register,
-  login,
-  forgotPassword,
-  resetPassword,
-  refreshAccessToken,
-  logout,
-  getMe,
-};

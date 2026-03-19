@@ -1,25 +1,34 @@
-'use client'
+"use client";
 
-import { Provider } from 'react-redux'
-import { store } from '@/lib/store'
-import { ThemeProvider } from '@/components/theme-provider'
-import { SocketProvider } from '@/contexts/socket-context'
-import { ToastProvider } from '@/components/toast-provider'
+import { ThemeProvider } from "next-themes";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import { Toaster } from "@/components/ui/toaster";
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const [queryClient] = useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: 60 * 1000,
+            refetchOnWindowFocus: false,
+          },
+        },
+      })
+  );
+
   return (
-    <Provider store={store}>
+    <QueryClientProvider client={queryClient}>
       <ThemeProvider
         attribute="class"
         defaultTheme="system"
-        enableSystem={true}
-        storageKey="credmatrix-theme"
+        enableSystem
+        disableTransitionOnChange
       >
-        <SocketProvider>
-          {children}
-          <ToastProvider />
-        </SocketProvider>
+        {children}
+        <Toaster />
       </ThemeProvider>
-    </Provider>
-  )
+    </QueryClientProvider>
+  );
 }

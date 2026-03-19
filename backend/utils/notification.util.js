@@ -1,112 +1,45 @@
-import Notification from "../models/Notification.model.js";
+import Notification from '../models/Notification.model.js';
+import logger from './logger.js';
 
 /**
- * Create and emit a notification
- * @param {Object} io - Socket.io instance
- * @param {Object} notificationData - Notification data
+ * Send notification to user via database and WebSocket
+ * @param {Object} app - Express app instance
+ * @param {String} userId - User ID to send notification to
+ * @param {String} type - Notification type
+ * @param {String} message - Notification message
+ * @param {Object} metadata - Additional metadata
  */
-export const createAndEmitNotification = async (io, notificationData) => {
+export const sendNotification = async (app, userId, type, message, metadata = {}) => {
   try {
-    const notification = await Notification.create(notificationData);
+    // Create notification in database
+    const notification = await Notification.create({
+      userId,
+      type,
+      message,
+      metadata,
+    });
 
-    // Emit to specific user room
-    const roomId = `user_${notificationData.recipientId}_${notificationData.recipientRole}`;
-    io.to(roomId).emit("new_notification", notification);
+    // Send via WebSocket if user is connected
+    if (app.locals.io && app.locals.connectedUsers) {
+      const socketId = app.locals.connectedUsers.get(userId.toString());
+      if (socketId) {
+        app.locals.io.to(socketId).emit('notification', {
+          _id: notification._id,
+          type: notification.type,
+          message: notification.message,
+          read: notification.read,
+          metadata: notification.metadata,
+          createdAt: notification.createdAt,
+        });
+        logger.info(`Real-time notification sent to user ${userId}`);
+      }
+    }
 
     return notification;
   } catch (error) {
-    console.error("Error creating notification:", error);
+    logger.error('Failed to send notification:', error);
     throw error;
   }
 };
 
-/**
- * Notify institute about new credential upload
- */
-export const notifyCredentialUploaded = async (io, credentialData) => {
-  const { institutionId, learnerId, title, credentialId } = credentialData;
-
-  return createAndEmitNotification(io, {
-    recipientId: institutionId,
-    recipientRole: "institute",
-    senderId: learnerId,
-    senderRole: "learner",
-    type: "credential_uploaded",
-    title: "New Credential Uploaded",
-    message: `A learner has uploaded a new credential: "${title}" for verification`,
-    relatedId: credentialId,
-    relatedModel: "Credential",
-    data: {
-      credentialId,
-      credentialTitle: title,
-    },
-  });
-};
-
-/**
- * Notify learner about credential verification
- */
-export const notifyCredentialVerified = async (io, credentialData) => {
-  const { learnerId, institutionId, title, credentialId } = credentialData;
-
-  return createAndEmitNotification(io, {
-    recipientId: learnerId,
-    recipientRole: "learner",
-    senderId: institutionId,
-    senderRole: "institute",
-    type: "credential_verified",
-    title: "Credential Verified",
-    message: `Your credential "${title}" has been verified successfully!`,
-    relatedId: credentialId,
-    relatedModel: "Credential",
-    data: {
-      credentialId,
-      credentialTitle: title,
-    },
-  });
-};
-
-/**
- * Notify learner about credential rejection
- */
-export const notifyCredentialRejected = async (io, credentialData) => {
-  const { learnerId, institutionId, title, credentialId, reason } =
-    credentialData;
-
-  return createAndEmitNotification(io, {
-    recipientId: learnerId,
-    recipientRole: "learner",
-    senderId: institutionId,
-    senderRole: "institute",
-    type: "credential_rejected",
-    title: "Credential Rejected",
-    message: `Your credential "${title}" was rejected. Reason: ${reason}`,
-    relatedId: credentialId,
-    relatedModel: "Credential",
-    data: {
-      credentialId,
-      credentialTitle: title,
-      rejectionReason: reason,
-    },
-  });
-};
-
-/**
- * Notify learner about level upgrade
- */
-export const notifyLevelUpgrade = async (io, levelData) => {
-  const { learnerId, newLevel, oldLevel } = levelData;
-
-  return createAndEmitNotification(io, {
-    recipientId: learnerId,
-    recipientRole: "learner",
-    type: "level_upgraded",
-    title: "Level Up!",
-    message: `Congratulations! You've advanced from Level ${oldLevel} to Level ${newLevel}!`,
-    relatedModel: "Learner",
-    data: {
-      newLevel,
-      oldLevel,
-    },
-  });
-};
+export default { sendNotification };

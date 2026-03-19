@@ -1,70 +1,67 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
 const learnerProfileSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Learner",
+      ref: 'User',
       required: true,
       unique: true,
+      index: true,
     },
-    currentLevel: {
-      type: Number,
-      default: 1,
-      min: 1,
-      max: 10,
+    bio: {
+      type: String,
+      default: '',
+    },
+    skills: {
+      type: [String],
+      default: [],
     },
     totalCredits: {
       type: Number,
       default: 0,
       min: 0,
     },
-    verifiedCredits: {
+    nsqfLevel: {
       type: Number,
-      default: 0,
-      min: 0,
+      min: 1,
+      max: 10,
+      default: 1,
     },
-    enrolledPathway: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Pathway",
-      default: null,
-    },
-    bio: {
+    levelName: {
       type: String,
-      maxlength: 500,
-      default: "",
+      default: 'Basic/Foundation',
     },
-    skills: [
-      {
+    education: [{
+      degree: String,
+      institution: String,
+      year: String,
+      fieldOfStudy: String,
+    }],
+    experience: [{
+      role: String,
+      company: String,
+      duration: String,
+      description: String,
+    }],
+    preferences: {
+      language: {
         type: String,
-        trim: true,
+        default: 'en',
       },
-    ],
-    profilePicture: {
-      type: String,
-      default: "",
-    },
-    location: {
-      city: String,
-      state: String,
-      country: String,
-    },
-    socialLinks: {
-      linkedin: String,
-      github: String,
-      portfolio: String,
+      notificationsEnabled: {
+        type: Boolean,
+        default: true,
+      },
     },
   },
   {
     timestamps: true,
-  },
+  }
 );
 
-// Index for faster queries
-learnerProfileSchema.index({ userId: 1 });
-learnerProfileSchema.index({ currentLevel: 1 });
-learnerProfileSchema.index({ enrolledPathway: 1 });
+// Index for searching by skills
+learnerProfileSchema.index({ skills: 1 });
+learnerProfileSchema.index({ nsqfLevel: 1 });
 
-const LearnerProfile = mongoose.model("LearnerProfile", learnerProfileSchema);
-
-export default LearnerProfile;
+export default mongoose.model('LearnerProfile', learnerProfileSchema);
