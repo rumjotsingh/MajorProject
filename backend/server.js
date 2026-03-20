@@ -34,6 +34,10 @@ dotenv.config();
 configureCloudinary();
 
 const app = express();
+
+// Trust proxy - required for rate limiting behind reverse proxy (Render, Heroku, etc.)
+app.set('trust proxy', 1);
+
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
