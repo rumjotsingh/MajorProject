@@ -5,13 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Award, CheckCircle, Clock, Plus, ArrowRight, Target, BookOpen, AlertCircle } from "lucide-react";
+import { Award, CheckCircle, Clock, Plus, ArrowRight, Target, BookOpen, AlertCircle, Sparkles, Crown, TrendingUp, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { dashboardAPI, type Credential, type LearnerProfile, type DashboardStats } from "@/lib/dashboard-api";
 import { useToast } from "@/hooks/use-toast";
+import { PricingModal } from "@/components/pricing-modal";
 
 const nsqfLevelNames: Record<number, string> = {
   1: "Basic",
@@ -27,13 +28,22 @@ const nsqfLevelNames: Record<number, string> = {
 };
 
 const skillColors = [
+  "bg-violet-500",
   "bg-blue-500",
-  "bg-purple-500",
-  "bg-green-500",
-  "bg-orange-500",
+  "bg-emerald-500",
+  "bg-amber-500",
   "bg-pink-500",
-  "bg-indigo-500",
+  "bg-cyan-500",
 ];
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] },
+  }),
+};
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,6 +51,8 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -49,35 +61,19 @@ export default function DashboardPage() {
 
   const checkUserRoleAndRedirect = async () => {
     try {
-      // Check user role first
       const userResponse = await api.get("/auth/me");
       const userRole = userResponse.data.role;
 
-      // If user is an Issuer, redirect to issuer dashboard
       if (userRole === "Issuer") {
         router.push("/issuer/dashboard");
         return;
       }
-
-      // If user is an Employer, redirect to employer dashboard (when implemented)
       if (userRole === "Employer") {
-        toast({
-          title: "Coming Soon",
-          description: "Employer dashboard is under development",
-        });
-        // For now, continue to learner dashboard or create employer dashboard
+        toast({ title: "Coming Soon", description: "Employer dashboard is under development" });
       }
-
-      // If user is Admin, redirect to admin dashboard (when implemented)
       if (userRole === "Admin") {
-        toast({
-          title: "Coming Soon",
-          description: "Admin dashboard is under development",
-        });
-        // For now, continue to learner dashboard or create admin dashboard
+        toast({ title: "Coming Soon", description: "Admin dashboard is under development" });
       }
-
-      // For Learners, load dashboard data
       if (userRole === "Learner") {
         await loadDashboardData();
       }
@@ -95,17 +91,15 @@ export default function DashboardPage() {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Fetch profile and credentials in parallel
-      const [profileData, credentialsData] = await Promise.all([
+      const [profileData, credentialsData, subscriptionData] = await Promise.all([
         dashboardAPI.getProfile(),
         dashboardAPI.getCredentials(),
+        api.get("/payment/subscription").catch(() => ({ data: null })),
       ]);
 
       setProfile(profileData);
       setCredentials(credentialsData);
-      
-      // Calculate stats
+      setSubscription(subscriptionData.data);
       const calculatedStats = dashboardAPI.calculateStats(credentialsData, profileData);
       setStats(calculatedStats);
     } catch (error: any) {
@@ -143,12 +137,14 @@ export default function DashboardPage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <Card className="max-w-md">
           <CardContent className="pt-6 text-center space-y-4">
-            <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto" />
+            <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto">
+              <AlertCircle className="h-6 w-6 text-muted-foreground" />
+            </div>
             <h3 className="text-lg font-semibold">Profile Not Found</h3>
             <p className="text-sm text-muted-foreground">
               Unable to load your profile. Please try logging in again.
             </p>
-            <Button onClick={() => window.location.href = "/login"}>
+            <Button onClick={() => window.location.href = "/login"} className="rounded-full">
               Go to Login
             </Button>
           </CardContent>
@@ -158,284 +154,428 @@ export default function DashboardPage() {
   }
 
   const statsConfig = [
-    { 
-      icon: Award, 
-      label: "Total Credentials", 
-      value: stats?.totalCredentials.toString() || "0", 
-      change: credentials.length > 0 ? `${credentials.length} earned` : "No credentials yet", 
-      color: "text-blue-500" 
+    {
+      icon: Award,
+      label: "Total Credentials",
+      value: stats?.totalCredentials.toString() || "0",
+      change: credentials.length > 0 ? `${credentials.length} earned` : "No credentials yet",
+      gradient: "from-violet-500/10 to-purple-500/10",
+      iconBg: "bg-violet-500/10",
+      iconColor: "text-violet-600 dark:text-violet-400",
     },
-    { 
-      icon: Target, 
-      label: "NSQF Level", 
-      value: stats?.nsqfLevel.toString() || "1", 
-      change: nsqfLevelNames[stats?.nsqfLevel || 1], 
-      color: "text-purple-500" 
+    {
+      icon: TrendingUp,
+      label: "NSQF Level",
+      value: stats?.nsqfLevel.toString() || "1",
+      change: nsqfLevelNames[stats?.nsqfLevel || 1],
+      gradient: "from-blue-500/10 to-cyan-500/10",
+      iconBg: "bg-blue-500/10",
+      iconColor: "text-blue-600 dark:text-blue-400",
     },
-    { 
-      icon: CheckCircle, 
-      label: "Verified", 
-      value: stats?.verifiedCredentials.toString() || "0", 
-      change: `${getVerificationPercentage()} verified`, 
-      color: "text-green-500" 
+    {
+      icon: CheckCircle,
+      label: "Verified",
+      value: stats?.verifiedCredentials.toString() || "0",
+      change: `${getVerificationPercentage()} verified`,
+      gradient: "from-emerald-500/10 to-teal-500/10",
+      iconBg: "bg-emerald-500/10",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
     },
-    { 
-      icon: Clock, 
-      label: "Pending", 
-      value: stats?.pendingCredentials.toString() || "0", 
-      change: "Awaiting verification", 
-      color: "text-orange-500" 
+    {
+      icon: Clock,
+      label: "Pending",
+      value: stats?.pendingCredentials.toString() || "0",
+      change: "Awaiting verification",
+      gradient: "from-amber-500/10 to-orange-500/10",
+      iconBg: "bg-amber-500/10",
+      iconColor: "text-amber-600 dark:text-amber-400",
     },
   ];
 
   const recentCredentials = credentials.slice(0, 5);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Welcome Section */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-            Welcome back, {profile?.userId?.name?.split(" ")[0] || "User"}! 👋
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">Here's your learning overview</p>
-        </div>
-        <Link href="/credentials/upload">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add Credential</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
-        </Link>
-      </div>
+    <motion.div
+      initial="hidden"
+      animate="visible"
+      className="space-y-6"
+    >
+      {/* ═══ Upgrade Banner ═══ */}
+      {subscription && subscription.subscription.plan === "free" && (
+        <motion.div custom={0} variants={fadeUp}>
+          <div className="relative overflow-hidden rounded-2xl border border-primary/10 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5 p-5">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <h3 className="font-semibold">Unlock Premium Features</h3>
+                </div>
+                <p className="text-sm text-muted-foreground max-w-lg">
+                  Upgrade to Pro or Enterprise for AI-powered recommendations, unlimited credentials, advanced analytics, and priority support.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {["✨ AI Recommendations", "∞ Unlimited", "📊 Analytics", "🎯 Priority Support"].map((badge) => (
+                    <span key={badge} className="inline-flex items-center px-2.5 py-1 rounded-full bg-background/60 border text-xs font-medium">
+                      {badge}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <Button
+                onClick={() => setPricingModalOpen(true)}
+                className="rounded-full shadow-md shadow-primary/20 flex-shrink-0"
+              >
+                Upgrade Now
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
-      {/* Stats Grid */}
+      {/* ═══ Current Plan ═══ */}
+      {subscription && (
+        <motion.div custom={0.5} variants={fadeUp}>
+          <Card className="border-primary/10">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Crown className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      Current Plan
+                      <Badge
+                        variant={subscription.subscription.plan === "free" ? "secondary" : "default"}
+                        className="rounded-full text-xs"
+                      >
+                        {subscription.subscription.plan.toUpperCase()}
+                      </Badge>
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {subscription.subscription.plan === "free" && "Free forever with basic features"}
+                      {subscription.subscription.plan === "pro" && "Professional plan with advanced features"}
+                      {subscription.subscription.plan === "enterprise" && "Enterprise plan with unlimited access"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => setPricingModalOpen(true)}
+                >
+                  {subscription.subscription.plan === "free" ? "Upgrade" : "Manage Plan"}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground">Credentials</p>
+                  <p className="text-lg font-bold">
+                    {subscription.usage.credentials}
+                    <span className="text-sm font-normal text-muted-foreground">
+                      /{subscription.usage.maxCredentials === -1 ? "∞" : subscription.usage.maxCredentials}
+                    </span>
+                  </p>
+                  {subscription.usage.maxCredentials !== -1 && (
+                    <div className="w-full bg-muted rounded-full h-1.5">
+                      <div
+                        className={`h-1.5 rounded-full transition-all ${
+                          subscription.usage.credentials / subscription.usage.maxCredentials >= 0.8
+                            ? "bg-amber-500"
+                            : "bg-primary"
+                        }`}
+                        style={{
+                          width: `${Math.min((subscription.usage.credentials / subscription.usage.maxCredentials) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                {[
+                  { label: "AI Features", value: subscription.subscription.features.aiRecommendations },
+                  { label: "Analytics", value: subscription.subscription.features.analytics },
+                  { label: "Support", value: subscription.subscription.features.prioritySupport, trueLabel: "Priority", falseLabel: "Standard" },
+                ].map((feature) => (
+                  <div key={feature.label} className="space-y-1.5">
+                    <p className="text-xs text-muted-foreground">{feature.label}</p>
+                    <p className="text-sm font-semibold">
+                      {feature.trueLabel
+                        ? feature.value
+                          ? feature.trueLabel
+                          : feature.falseLabel
+                        : feature.value
+                        ? "✓ Enabled"
+                        : "✗ Disabled"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
+      {/* ═══ Welcome ═══ */}
+      <motion.div custom={1} variants={fadeUp}>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              Welcome back, {profile?.userId?.name?.split(" ")[0] || "User"} <span className="inline-block animate-pulse">👋</span>
+            </h1>
+            <p className="text-sm text-muted-foreground mt-1">Here's your learning overview</p>
+          </div>
+          <Link href="/credentials/upload">
+            <Button className="gap-2 rounded-full shadow-md shadow-primary/20">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Credential</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </Link>
+        </div>
+      </motion.div>
+
+      {/* ═══ Stats Grid ═══ */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {statsConfig.map((stat, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card className="hover:shadow-lg transition-shadow">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs md:text-sm font-medium">{stat.label}</CardTitle>
-                <stat.icon className={`h-4 w-4 ${stat.color}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl md:text-3xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{stat.change}</p>
+          <motion.div key={i} custom={i + 1.5} variants={fadeUp}>
+            <Card className="hover-lift overflow-hidden">
+              <CardContent className="p-4 md:p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`h-10 w-10 rounded-xl ${stat.iconBg} flex items-center justify-center`}>
+                    <stat.icon className={`h-5 w-5 ${stat.iconColor}`} />
+                  </div>
+                </div>
+                <div className="text-2xl md:text-3xl font-bold tracking-tight">{stat.value}</div>
+                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">{stat.change}</p>
               </CardContent>
             </Card>
           </motion.div>
         ))}
       </div>
 
-      {/* Main Content Grid */}
+      {/* ═══ Main Content ═══ */}
       <div className="grid gap-6 lg:grid-cols-7">
         {/* Recent Credentials */}
-        <Card className="lg:col-span-4">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Recent Credentials</CardTitle>
-            <Link href="/credentials">
-              <Button variant="ghost" size="sm" className="gap-2">
-                View All
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-          </CardHeader>
-          <CardContent>
-            {recentCredentials.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Award className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">No credentials yet</p>
-                <Link href="/credentials/upload">
-                  <Button variant="outline" size="sm" className="mt-4">
-                    Upload Your First Credential
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentCredentials.map((cred, i) => (
-                  <motion.div
-                    key={cred._id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-accent transition-colors cursor-pointer"
-                  >
-                    <div className="space-y-1 flex-1">
-                      <p className="font-medium text-sm md:text-base">{cred.title}</p>
-                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground flex-wrap">
-                        <span>{cred.issuerId.name}</span>
-                        <span>•</span>
-                        <span>{formatDate(cred.issueDate)}</span>
-                        <span>•</span>
-                        <span>NSQF {cred.nsqfLevel}</span>
-                      </div>
-                    </div>
-                    <Badge 
-                      variant={cred.verificationStatus === "verified" ? "default" : cred.verificationStatus === "rejected" ? "destructive" : "secondary"} 
-                      className="ml-2"
+        <motion.div custom={6} variants={fadeUp} className="lg:col-span-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="text-base">Recent Credentials</CardTitle>
+              <Link href="/credentials">
+                <Button variant="ghost" size="sm" className="gap-2 rounded-full text-xs">
+                  View All
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              {recentCredentials.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                    <Award className="h-6 w-6 opacity-50" />
+                  </div>
+                  <p className="text-sm font-medium">No credentials yet</p>
+                  <p className="text-xs mt-1">Upload your first credential to get started</p>
+                  <Link href="/credentials/upload">
+                    <Button variant="outline" size="sm" className="mt-4 rounded-full">
+                      Upload Your First Credential
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {recentCredentials.map((cred, i) => (
+                    <motion.div
+                      key={cred._id}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      className="flex items-center justify-between p-3.5 rounded-xl border hover:bg-muted/30 transition-all duration-200 cursor-pointer group"
                     >
-                      {cred.verificationStatus === "verified" ? "Verified" : cred.verificationStatus === "rejected" ? "Rejected" : "Pending"}
-                    </Badge>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                      <div className="space-y-1 flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                          {cred.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                          <span>{cred.issuerId.name}</span>
+                          <span className="text-border/60">•</span>
+                          <span>{formatDate(cred.issueDate)}</span>
+                          <span className="text-border/60">•</span>
+                          <span>NSQF {cred.nsqfLevel}</span>
+                        </div>
+                      </div>
+                      <Badge
+                        variant={cred.verificationStatus === "verified" ? "default" : cred.verificationStatus === "rejected" ? "destructive" : "secondary"}
+                        className="ml-2 rounded-full text-[10px]"
+                      >
+                        {cred.verificationStatus === "verified" ? "Verified" : cred.verificationStatus === "rejected" ? "Rejected" : "Pending"}
+                      </Badge>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Skill Distribution */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>Skill Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {skillDistribution.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Target className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">No skills tracked yet</p>
-                <p className="text-xs mt-2">Upload credentials to track your skills</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {skillDistribution.map((skill, i) => (
-                  <motion.div
-                    key={skill.name}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="space-y-2"
-                  >
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{skill.name}</span>
-                      <span className="text-muted-foreground">{skill.count} credential{skill.count > 1 ? 's' : ''}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${skill.level}%` }}
-                        transition={{ delay: i * 0.1 + 0.3, duration: 0.5 }}
-                        className={`h-full ${skillColors[i % skillColors.length]}`}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <motion.div custom={7} variants={fadeUp} className="lg:col-span-3">
+          <Card>
+            <CardHeader className="pb-4">
+              <CardTitle className="text-base">Skill Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {skillDistribution.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-3">
+                    <Target className="h-6 w-6 opacity-50" />
+                  </div>
+                  <p className="text-sm font-medium">No skills tracked yet</p>
+                  <p className="text-xs mt-1">Upload credentials to track your skills</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {skillDistribution.map((skill, i) => (
+                    <motion.div
+                      key={skill.name}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.08 }}
+                      className="space-y-2"
+                    >
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate">{skill.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          {skill.count} credential{skill.count > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${skill.level}%` }}
+                          transition={{ delay: i * 0.08 + 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                          className={`h-full rounded-full ${skillColors[i % skillColors.length]}`}
+                        />
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
 
-      {/* Profile Summary */}
+      {/* ═══ About ═══ */}
       {profile?.bio && (
-        <Card>
-          <CardHeader>
-            <CardTitle>About</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">{profile.bio}</p>
-          </CardContent>
-        </Card>
+        <motion.div custom={8} variants={fadeUp}>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">About</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground leading-relaxed">{profile.bio}</p>
+            </CardContent>
+          </Card>
+        </motion.div>
       )}
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Quick Actions</CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">Manage your credentials and profile</p>
-          </div>
-          <BookOpen className="h-5 w-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <Link href="/credentials/upload">
-              <motion.div
-                whileHover={{ y: -4 }}
-                className="p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-blue-500/10">
-                    <Plus className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <h3 className="font-semibold group-hover:text-primary transition-colors">
-                    Upload Credential
-                  </h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Add a new certificate or credential
-                </p>
-              </motion.div>
-            </Link>
+      {/* ═══ Quick Actions ═══ */}
+      <motion.div custom={9} variants={fadeUp}>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-4">
+            <div>
+              <CardTitle className="text-base">Quick Actions</CardTitle>
+              <p className="text-xs text-muted-foreground mt-1">Manage your credentials and profile</p>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                {
+                  href: "/credentials/upload",
+                  icon: Plus,
+                  iconBg: "bg-violet-500/10",
+                  iconColor: "text-violet-600 dark:text-violet-400",
+                  title: "Upload Credential",
+                  description: "Add a new certificate or credential",
+                },
+                {
+                  href: "/credentials",
+                  icon: Award,
+                  iconBg: "bg-blue-500/10",
+                  iconColor: "text-blue-600 dark:text-blue-400",
+                  title: "View All Credentials",
+                  description: "Browse your complete portfolio",
+                },
+                {
+                  href: "/skill-map",
+                  icon: Target,
+                  iconBg: "bg-emerald-500/10",
+                  iconColor: "text-emerald-600 dark:text-emerald-400",
+                  title: "Skill Analysis",
+                  description: "View detailed skill breakdown",
+                },
+              ].map((action, i) => (
+                <Link key={action.href} href={action.href}>
+                  <motion.div
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="p-4 rounded-xl border hover:border-primary/20 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 cursor-pointer group h-full"
+                  >
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className={`p-2 rounded-xl ${action.iconBg}`}>
+                        <action.icon className={`h-5 w-5 ${action.iconColor}`} />
+                      </div>
+                      <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+                        {action.title}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{action.description}</p>
+                  </motion.div>
+                </Link>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-            <Link href="/credentials">
-              <motion.div
-                whileHover={{ y: -4 }}
-                className="p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer group"
-              >
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 rounded-lg bg-purple-500/10">
-                    <Award className="h-5 w-5 text-purple-500" />
-                  </div>
-                  <h3 className="font-semibold group-hover:text-primary transition-colors">
-                    View All Credentials
-                  </h3>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Browse your complete portfolio
-                </p>
-              </motion.div>
-            </Link>
-
-            <motion.div
-              whileHover={{ y: -4 }}
-              className="p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 rounded-lg bg-green-500/10">
-                  <Target className="h-5 w-5 text-green-500" />
-                </div>
-                <h3 className="font-semibold group-hover:text-primary transition-colors">
-                  Skill Analysis
-                </h3>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                View detailed skill breakdown
-              </p>
-            </motion.div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+      {/* Pricing Modal */}
+      <PricingModal
+        open={pricingModalOpen}
+        onOpenChange={setPricingModalOpen}
+        currentPlan={subscription?.subscription?.plan || "free"}
+        onSubscriptionComplete={loadDashboardData}
+      />
+    </motion.div>
   );
 }
 
-// Loading Skeleton Component
+// ═══ Loading Skeleton ═══
 function DashboardSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-8 w-64 rounded-xl" />
+          <Skeleton className="h-4 w-48 rounded-lg" />
         </div>
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-10 w-32 rounded-full" />
       </div>
 
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((i) => (
-          <Card key={i}>
-            <CardHeader className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-8 w-16" />
-              <Skeleton className="h-3 w-32" />
+          <Card key={i} className="overflow-hidden">
+            <CardContent className="p-5 space-y-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <Skeleton className="h-8 w-16 rounded-lg" />
+              <Skeleton className="h-3 w-24 rounded" />
             </CardContent>
           </Card>
         ))}
@@ -444,24 +584,24 @@ function DashboardSkeleton() {
       <div className="grid gap-6 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-5 w-40 rounded-lg" />
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-20 w-full" />
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
             ))}
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-3">
           <CardHeader>
-            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-5 w-40 rounded-lg" />
           </CardHeader>
           <CardContent className="space-y-4">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-2 w-full rounded-full" />
               </div>
             ))}
           </CardContent>

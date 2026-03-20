@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import api from "@/lib/api";
+import { PricingModal } from "@/components/pricing-modal";
 
 export default function SkillMapPage() {
   const [loading, setLoading] = useState(true);
@@ -28,12 +29,15 @@ export default function SkillMapPage() {
   const [selectedPath, setSelectedPath] = useState<string>("");
   const [skillGap, setSkillGap] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    loadData();
     loadCareerPaths();
+    loadSubscription();
   }, []);
 
   useEffect(() => {
@@ -41,6 +45,22 @@ export default function SkillMapPage() {
       drawSpiderWeb();
     }
   }, [profile, credentials]);
+
+  const loadSubscription = async () => {
+    try {
+      const response = await api.get("/payment/subscription");
+      setSubscription(response.data);
+      
+      // Only load data if user has AI features
+      if (response.data.subscription.features.aiRecommendations) {
+        await loadData();
+      }
+    } catch (error) {
+      console.error("Failed to load subscription:", error);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -228,12 +248,85 @@ export default function SkillMapPage() {
     "from-red-500 to-orange-500",
   ];
 
+  // If user doesn't have AI features, show upgrade page
+  if (!loadingSubscription && subscription && !subscription.subscription.features.aiRecommendations) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Card className="max-w-2xl">
+          <CardContent className="pt-12 pb-12 text-center space-y-6">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+              <Sparkles className="h-10 w-10 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold mb-3">🔒 Upgrade Required</h2>
+              <p className="text-lg text-muted-foreground mb-2">
+                AI-Powered Skill Map & Gap Analysis
+              </p>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                This feature is available in Pro and Enterprise plans. Upgrade now to unlock visual skill mapping, gap analysis, and personalized learning paths.
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 rounded-xl p-6 max-w-md mx-auto">
+              <h3 className="font-semibold mb-3">What you'll get:</h3>
+              <div className="space-y-2 text-sm text-left">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Interactive skill visualization</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Career path skill gap analysis</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Personalized learning recommendations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                  <span>Skill proficiency tracking</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <Button size="lg" className="gap-2 rounded-full shadow-md shadow-primary/20" onClick={() => setPricingModalOpen(true)}>
+                <Sparkles className="h-4 w-4" />
+                View Plans & Upgrade
+              </Button>
+              <Link href="/dashboard">
+                <Button variant="outline" size="lg" className="rounded-full">
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Current Plan: <Badge variant="secondary" className="rounded-full">{subscription.subscription.plan.toUpperCase()}</Badge>
+            </p>
+          </CardContent>
+        </Card>
+
+        <PricingModal
+          open={pricingModalOpen}
+          onOpenChange={setPricingModalOpen}
+          currentPlan={subscription?.subscription?.plan || 'free'}
+          onSubscriptionComplete={() => {
+            setPricingModalOpen(false);
+            loadSubscription();
+          }}
+        />
+      </div>
+    );
+  }
+
   if (loading) {
     return <SkillMapSkeleton />;
   }
 
   return (
     <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+      {/* Removed upgrade prompt dialog - now blocking entire page */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
@@ -536,6 +629,17 @@ export default function SkillMapPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Pricing Modal */}
+      <PricingModal
+        open={pricingModalOpen}
+        onOpenChange={setPricingModalOpen}
+        currentPlan={subscription?.subscription?.plan || 'free'}
+        onSubscriptionComplete={() => {
+          setPricingModalOpen(false);
+          loadSubscription();
+        }}
+      />
     </div>
   );
 }

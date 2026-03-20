@@ -140,11 +140,25 @@ export default function UploadCredentialPage() {
       }, 2000);
     } catch (error: any) {
       console.error("Upload failed:", error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to upload credential",
-        variant: "destructive",
-      });
+      
+      // Check if it's a subscription limit error
+      if (error.response?.status === 403 && error.response?.data?.error === "Credential limit reached") {
+        toast({
+          title: "Credential Limit Reached",
+          description: error.response.data.message || "Please upgrade your plan to add more credentials",
+          variant: "destructive",
+        });
+        // Redirect to pricing page after 2 seconds
+        setTimeout(() => {
+          router.push("/pricing");
+        }, 2000);
+      } else {
+        toast({
+          title: "Error",
+          description: error.response?.data?.error || "Failed to upload credential",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

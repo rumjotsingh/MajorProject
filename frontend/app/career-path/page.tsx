@@ -28,6 +28,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { PricingModal } from "@/components/pricing-modal";
 
 export default function CareerPathPage() {
   const { toast } = useToast();
@@ -38,11 +39,31 @@ export default function CareerPathPage() {
   const [skillAnalysis, setSkillAnalysis] = useState<any>(null);
   const [recommendations, setRecommendations] = useState<any>(null);
   const [skillGap, setSkillGap] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
+  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
 
   useEffect(() => {
     loadCareerPaths();
-    analyzeSkills();
+    loadSubscription();
   }, []);
+
+  useEffect(() => {
+    if (!loadingSubscription && subscription?.subscription.features.aiRecommendations) {
+      analyzeSkills();
+    }
+  }, [loadingSubscription, subscription]);
+
+  const loadSubscription = async () => {
+    try {
+      const response = await api.get("/payment/subscription");
+      setSubscription(response.data);
+    } catch (error) {
+      console.error("Failed to load subscription:", error);
+    } finally {
+      setLoadingSubscription(false);
+    }
+  };
 
   const loadCareerPaths = async () => {
     try {
@@ -70,16 +91,12 @@ export default function CareerPathPage() {
     setLoading(true);
 
     try {
-      // Get skill gap
-      const gapResponse = await api.post("/recommendations/skill-gap", {
-        careerPath: pathName,
-      });
-      setSkillGap(gapResponse.data);
+      const [gapResponse, recResponse] = await Promise.all([
+        api.post("/recommendations/skill-gap", { careerPath: pathName }),
+        api.post("/recommendations/generate", { careerPath: pathName }),
+      ]);
 
-      // Get recommendations
-      const recResponse = await api.post("/recommendations/generate", {
-        careerPath: pathName,
-      });
+      setSkillGap(gapResponse.data);
       setRecommendations(recResponse.data);
 
       toast({
@@ -97,6 +114,77 @@ export default function CareerPathPage() {
     }
   };
 
+  // If user doesn't have AI features, show upgrade page
+  if (!loadingSubscription && subscription && !subscription.subscription.features.aiRecommendations) {
+    return (
+      <div className="flex items-center justify-center min-h-[600px]">
+        <Card className="max-w-2xl">
+          <CardContent className="pt-12 pb-12 text-center space-y-6">
+            <div className="mx-auto w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center">
+              <Sparkles className="h-10 w-10 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold mb-3">🔒 Upgrade Required</h2>
+              <p className="text-lg text-muted-foreground mb-2">
+                AI-Powered Career Path Analysis
+              </p>
+              <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                This feature is available in Pro and Enterprise plans. Upgrade now to unlock AI-powered skill gap analysis, personalized recommendations, and career path guidance.
+              </p>
+            </div>
+            
+            <div className="bg-muted/50 rounded-xl p-6 max-w-md mx-auto">
+              <h3 className="font-semibold mb-3">What you'll get:</h3>
+              <div className="space-y-2 text-sm text-left">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>AI-powered skill gap analysis</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Personalized course recommendations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Project suggestions based on your skills</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                  <span>Career path guidance and roadmaps</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-center">
+              <Button size="lg" className="gap-2 rounded-full shadow-md shadow-primary/20" onClick={() => setPricingModalOpen(true)}>
+                <Sparkles className="h-4 w-4" />
+                View Plans & Upgrade
+              </Button>
+              <Link href="/dashboard">
+                <Button variant="outline" size="lg" className="rounded-full">
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Current Plan: <Badge variant="secondary" className="rounded-full">{subscription.subscription.plan.toUpperCase()}</Badge>
+            </p>
+          </CardContent>
+        </Card>
+
+        <PricingModal
+          open={pricingModalOpen}
+          onOpenChange={setPricingModalOpen}
+          currentPlan={subscription?.subscription?.plan || 'free'}
+          onSubscriptionComplete={() => {
+            setPricingModalOpen(false);
+            loadSubscription();
+          }}
+        />
+      </div>
+    );
+  }
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -376,6 +464,16 @@ export default function CareerPathPage() {
           </div>
         </CardContent>
       </Card>
+      {/* Pricing Modal */}
+      <PricingModal
+        open={pricingModalOpen}
+        onOpenChange={setPricingModalOpen}
+        currentPlan={subscription?.subscription?.plan || 'free'}
+        onSubscriptionComplete={() => {
+          setPricingModalOpen(false);
+          loadSubscription();
+        }}
+      />
     </div>
   );
 }

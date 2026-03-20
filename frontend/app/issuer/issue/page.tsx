@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Award, Plus, X, ArrowLeft, Info } from "lucide-react";
+import { Award, Plus, X, ArrowLeft, Info, Upload, Link as LinkIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
@@ -17,6 +17,10 @@ export default function IssueCredentialPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [nsqfLevels, setNsqfLevels] = useState<any[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadMethod, setUploadMethod] = useState<"url" | "file">("file");
+  const [uploading, setUploading] = useState(false);
+  const [uploadedCertificateUrl, setUploadedCertificateUrl] = useState<string>("");
   const [formData, setFormData] = useState({
     userEmail: "",
     title: "",
@@ -74,15 +78,38 @@ export default function IssueCredentialPage() {
       return;
     }
 
+    // Validate certificate (either URL or file)
+    if (uploadMethod === "url" && !formData.certificateUrl) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide a certificate URL or upload a file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (uploadMethod === "file" && !uploadedCertificateUrl) {
+      toast({
+        title: "Validation Error",
+        description: "Please upload a certificate file",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setLoading(true);
-      const response = await api.post("/issuer/credentials", {
+
+      // Use uploaded URL if file method, otherwise use URL from input
+      const certificateUrl = uploadMethod === "file" ? uploadedCertificateUrl : formData.certificateUrl;
+
+      const response = await api.post("/issuer/issue-credential", {
         userEmail: formData.userEmail,
         title: formData.title,
         skills,
         credits: credits,
         issueDate: formData.issueDate,
-        certificateUrl: formData.certificateUrl || undefined,
+        certificateUrl: certificateUrl || undefined,
       });
 
       toast({
@@ -99,6 +126,41 @@ export default function IssueCredentialPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFileSelect = async (file: File) => {
+    setSelectedFile(file);
+
+    // Automatically upload file to Cloudinary
+    try {
+      setUploading(true);
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const uploadResponse = await api.post("/credentials/upload-file", uploadFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const cloudinaryUrl = uploadResponse.data.certificateUrl;
+      setUploadedCertificateUrl(cloudinaryUrl);
+      
+      toast({
+        title: "File Uploaded",
+        description: "Certificate uploaded successfully to cloud storage",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.response?.data?.error || "Failed to upload file",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+      setUploadedCertificateUrl("");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -238,19 +300,110 @@ export default function IssueCredentialPage() {
                 </div>
               </div>
 
-              {/* Certificate URL */}
-              <div className="space-y-2">
-                <Label htmlFor="certificateUrl">Certificate URL (Optional)</Label>
-                <Input
-                  id="certificateUrl"
-                  type="url"
-                  placeholder="https://example.com/certificate.pdf"
-                  value={formData.certificateUrl}
-                  onChange={(e) => setFormData({ ...formData, certificateUrl: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  URL to the certificate document or image
-                </p>
+              {/* Certificate Upload/URL */}
+              <div className="space-y-4">
+                <Label>Certificate <span className="text-destructive">*</span></Label>
+                
+                {/* Toggle between URL and File Upload */}
+                <div className="flex gap-2 mb-4">
+                  <Button
+                    type="button"
+                    variant={uploadMethod === "url" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUploadMethod("url")}
+                    className="flex-1"
+                  >
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    URL
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={uploadMethod === "file" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setUploadMethod("file")}
+                    className="flex-1"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload File
+                  </Button>
+                </div>
+
+                {uploadMethod === "url" ? (
+                  <div className="space-y-2">
+                    <Input
+                      id="certificateUrl"
+                      type="url"
+                      placeholder="https://example.com/certificate.pdf"
+                      value={formData.certificateUrl}
+                      onChange={(e) => setFormData({ ...formData, certificateUrl: e.target.value })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      URL to the certificate document or image
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
+                      <input
+                        type="file"
+                        id="certificateFile"
+                        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileSelect(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="certificateFile"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <Upload className="h-10 w-10 text-muted-foreground" />
+                        {uploading ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Uploading...</p>
+                            <p className="text-xs text-muted-foreground">Please wait</p>
+                          </div>
+                        ) : uploadedCertificateUrl ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-green-600">✓ Uploaded Successfully</p>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedFile?.name}
+                            </p>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                setSelectedFile(null);
+                                setUploadedCertificateUrl("");
+                              }}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ) : selectedFile ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">{selectedFile.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">Click to upload certificate</p>
+                            <p className="text-xs text-muted-foreground">
+                              PDF, JPG, PNG, DOC (Max 10MB)
+                            </p>
+                          </div>
+                        )}
+                      </label>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Info Box */}

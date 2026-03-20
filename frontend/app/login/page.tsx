@@ -72,16 +72,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 gradient-mesh -z-10" />
+      <div className="absolute inset-0 dot-pattern opacity-30 -z-10" />
+      <div className="absolute top-20 left-[10%] w-72 h-72 bg-primary/8 rounded-full blur-3xl -z-10" />
+      <div className="absolute bottom-20 right-[10%] w-96 h-96 bg-purple-500/6 rounded-full blur-3xl -z-10" />
+      
       {/* Back to Home Button */}
       <Link href="/" className="fixed top-4 left-4 z-50">
         <Button
           variant="ghost"
           size="sm"
-          className="glass glass-border backdrop-blur-xl gap-2 hover:bg-primary/10"
+          className="gap-2 rounded-full bg-background/60 backdrop-blur-xl border hover:bg-primary/10"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to Home</span>
+          <span className="hidden sm:inline">Home</span>
         </Button>
       </Link>
 
@@ -89,25 +95,25 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
+        className="w-full max-w-md relative z-10"
       >
         <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2 group">
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Award className="h-10 w-10 text-primary" />
-            </motion.div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              CredMatrix
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-lg blur-md group-hover:bg-primary/30 transition-all" />
+              <div className="relative p-2 rounded-lg bg-gradient-to-br from-primary to-purple-600">
+                <Award className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <span className="text-2xl font-bold tracking-tight">
+              Cred<span className="text-primary">Matrix</span>
             </span>
           </Link>
         </div>
 
-        <Card className="border-2 shadow-2xl">
+        <Card className="border shadow-2xl shadow-black/[0.04] dark:shadow-black/[0.2] rounded-2xl">
           <CardHeader className="space-y-2 text-center pb-6">
-            <CardTitle className="text-3xl font-bold">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription className="text-base">
               Sign in to access your credential portfolio
             </CardDescription>
@@ -169,7 +175,7 @@ export default function LoginPage() {
 
               <Button 
                 type="submit" 
-                className="w-full h-11 text-base font-semibold" 
+                className="w-full h-11 text-base font-semibold rounded-xl shadow-md shadow-primary/20" 
                 disabled={loading}
               >
                 {loading ? (
@@ -195,7 +201,7 @@ export default function LoginPage() {
             </div>
 
             <Link href="/signup">
-              <Button variant="outline" className="w-full h-11 font-semibold">
+              <Button variant="outline" className="w-full h-11 font-semibold rounded-xl">
                 Create an Account
               </Button>
             </Link>

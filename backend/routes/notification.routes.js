@@ -8,5 +8,6 @@ router.get('/', authenticate, notificationController.getNotifications);
 router.get('/unread-count', authenticate, notificationController.getUnreadCount);
 router.put('/:id/read', authenticate, notificationController.markAsRead);
 router.put('/mark-all-read', authenticate, notificationController.markAllAsRead);
+router.post('/sync-issuer-history', authenticate, notificationController.syncIssuerHistory);
 
 export default router;

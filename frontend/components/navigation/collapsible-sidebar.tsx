@@ -16,13 +16,13 @@ import {
   ChevronRight,
   LogOut,
   User,
-  CheckSquare,
   Sparkles,
   FileCheck,
+  CheckSquare,
+  Crown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
 import api from "@/lib/api";
 
@@ -32,9 +32,8 @@ const learnerNav = [
   { icon: Upload, label: "Upload", href: "/credentials/upload" },
   { icon: Map, label: "Skill Map", href: "/skill-map" },
   { icon: Briefcase, label: "Career Path", href: "/career-path" },
-  { icon: Sparkles, label: "Recommended Jobs", href: "/jobs/recommended" },
-  { icon: FileCheck, label: "Applied Jobs", href: "/jobs/applied" },
-  { icon: User, label: "Profile", href: "/profile" },
+  { icon: Sparkles, label: "Jobs", href: "/jobs/recommended" },
+  { icon: FileCheck, label: "Applied", href: "/jobs/applied" },
 ];
 
 const issuerNav = [
@@ -42,7 +41,7 @@ const issuerNav = [
   { icon: CheckSquare, label: "Verifications", href: "/issuer/verifications" },
   { icon: User, label: "Profile", href: "/issuer/profile" },
   { icon: Award, label: "Learners", href: "/issuer/learners" },
-  { icon: Upload, label: "Issue Credential", href: "/issuer/issue" },
+  { icon: Upload, label: "Issue", href: "/issuer/issue" },
 ];
 
 const employerNav = [
@@ -53,25 +52,25 @@ const adminNav = [
   { icon: Home, label: "Dashboard", href: "/admin/dashboard" },
 ];
 
-const learnerBottomNav = [
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-];
-
-const issuerBottomNav = [
-  { icon: Bell, label: "Notifications", href: "/issuer/notifications" },
-  { icon: Settings, label: "Settings", href: "/issuer/settings" },
-];
-
-const employerBottomNav = [
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-];
-
-const adminBottomNav = [
-  { icon: Bell, label: "Notifications", href: "/notifications" },
-  { icon: Settings, label: "Settings", href: "/settings" },
-];
+const bottomNavConfig = {
+  learner: [
+    { icon: User, label: "Profile", href: "/profile" },
+    { icon: Bell, label: "Notifications", href: "/notifications" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ],
+  issuer: [
+    { icon: Bell, label: "Notifications", href: "/issuer/notifications" },
+    { icon: Settings, label: "Settings", href: "/issuer/settings" },
+  ],
+  employer: [
+    { icon: Bell, label: "Notifications", href: "/notifications" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ],
+  admin: [
+    { icon: Bell, label: "Notifications", href: "/notifications" },
+    { icon: Settings, label: "Settings", href: "/settings" },
+  ],
+};
 
 interface CollapsibleSidebarProps {
   role?: "learner" | "employer" | "issuer" | "admin";
@@ -108,64 +107,60 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
       try {
         const response = await api.get("/notifications");
         const notifications = response.data || [];
-        const unread = notifications.filter((n: any) => !n.read).length;
-        setUnreadCount(unread);
+        setUnreadCount(notifications.filter((n: any) => !n.read).length);
       } catch (error) {
         console.error("Failed to load notifications:", error);
       }
     };
     loadUnreadCount();
-    
-    // Refresh count every 30 seconds
     const interval = setInterval(loadUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
   const navItems = role === "issuer" ? issuerNav : role === "employer" ? employerNav : role === "admin" ? adminNav : learnerNav;
-  const bottomNav = role === "issuer" ? issuerBottomNav : role === "employer" ? employerBottomNav : role === "admin" ? adminBottomNav : learnerBottomNav;
+  const bottomNav = bottomNavConfig[role] || bottomNavConfig.learner;
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
 
   return (
     <motion.aside
       initial={false}
-      animate={{ width: isCollapsed ? 80 : 256 }}
-      className="hidden md:flex flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative"
+      animate={{ width: isCollapsed ? 72 : 260 }}
+      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+      className="hidden md:flex flex-col border-r bg-card/50 backdrop-blur-sm relative"
     >
-      {/* Header */}
+      {/* Logo */}
       <div className="flex h-16 items-center border-b px-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold overflow-hidden">
-          <Award className="h-6 w-6 text-primary flex-shrink-0" />
+        <Link href="/" className="flex items-center gap-2.5 font-semibold overflow-hidden">
+          <div className="flex-shrink-0 p-1.5 rounded-lg bg-gradient-to-br from-primary to-purple-600">
+            <Award className="h-4 w-4 text-white" />
+          </div>
           <AnimatePresence>
             {!isCollapsed && (
               <motion.span
                 initial={{ opacity: 0, width: 0 }}
                 animate={{ opacity: 1, width: "auto" }}
                 exit={{ opacity: 0, width: 0 }}
-                className="text-lg whitespace-nowrap"
+                className="text-base whitespace-nowrap tracking-tight"
               >
-                CredMatrix
+                Cred<span className="text-primary">Matrix</span>
               </motion.span>
             )}
           </AnimatePresence>
         </Link>
       </div>
 
-      {/* User Profile */}
-      <div className="p-4">
-        <div className={cn(
-          "flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer",
-          isCollapsed && "justify-center"
-        )}>
-          <Avatar className="h-8 w-8 flex-shrink-0">
-            <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+      {/* User Profile Card */}
+      <div className="p-3">
+        <div
+          className={cn(
+            "flex items-center gap-3 p-2.5 rounded-xl bg-muted/50 hover:bg-muted/80 transition-colors cursor-pointer",
+            isCollapsed && "justify-center"
+          )}
+        >
+          <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-primary/10">
+            <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xs font-semibold">
               {getInitials(userData.name)}
             </AvatarFallback>
           </Avatar>
@@ -177,7 +172,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
                 exit={{ opacity: 0, width: 0 }}
                 className="flex-1 overflow-hidden"
               >
-                <p className="text-sm font-medium truncate">{userData.name}</p>
+                <p className="text-sm font-semibold truncate">{userData.name}</p>
                 <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
               </motion.div>
             )}
@@ -185,10 +180,13 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         </div>
       </div>
 
-      <Separator />
+      {/* Divider */}
+      <div className="px-4">
+        <div className="h-px bg-border/60" />
+      </div>
 
       {/* Main Navigation */}
-      <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
+      <nav className="flex-1 space-y-0.5 px-3 py-3 overflow-y-auto">
         {navItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -196,17 +194,16 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
           return (
             <Link key={item.href} href={item.href}>
               <motion.div
-                whileHover={{ x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   isCollapsed && "justify-center px-2"
                 )}
               >
-                <Icon className="h-5 w-5 flex-shrink-0" />
+                <Icon className="h-[18px] w-[18px] flex-shrink-0" />
                 <AnimatePresence>
                   {!isCollapsed && (
                     <motion.span
@@ -225,10 +222,13 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         })}
       </nav>
 
-      <Separator />
+      {/* Divider */}
+      <div className="px-4">
+        <div className="h-px bg-border/60" />
+      </div>
 
       {/* Bottom Navigation */}
-      <div className="space-y-1 p-4">
+      <div className="space-y-0.5 px-3 py-3">
         {bottomNav.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
@@ -237,20 +237,19 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
           return (
             <Link key={item.href} href={item.href}>
               <motion.div
-                whileHover={{ x: 2 }}
                 whileTap={{ scale: 0.98 }}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all relative",
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative",
                   isActive
-                    ? "bg-accent text-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-foreground",
+                    ? "bg-muted text-foreground"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                   isCollapsed && "justify-center px-2"
                 )}
               >
                 <div className="relative">
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <Icon className="h-[18px] w-[18px] flex-shrink-0" />
                   {isNotifications && unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
                       {unreadCount > 9 ? "9+" : unreadCount}
                     </span>
                   )}
@@ -279,11 +278,10 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
 
         {/* Logout */}
         <motion.button
-          whileHover={{ x: 2 }}
           whileTap={{ scale: 0.98 }}
           className={cn(
-            "w-full flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
-            "text-destructive hover:bg-destructive/10",
+            "w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
+            "text-muted-foreground hover:bg-destructive/5 hover:text-destructive",
             isCollapsed && "justify-center px-2"
           )}
           onClick={() => {
@@ -291,7 +289,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
             window.location.href = "/";
           }}
         >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
+          <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
           <AnimatePresence>
             {!isCollapsed && (
               <motion.span
@@ -307,17 +305,17 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         </motion.button>
       </div>
 
-      {/* Collapse Toggle Button */}
+      {/* Collapse Toggle */}
       <Button
-        variant="ghost"
+        variant="outline"
         size="icon"
-        className="absolute -right-4 top-20 h-8 w-8 rounded-full border bg-background shadow-md hover:shadow-lg transition-all z-10"
+        className="absolute -right-3.5 top-20 h-7 w-7 rounded-full border bg-background shadow-md hover:shadow-lg transition-all z-10"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         {isCollapsed ? (
-          <ChevronRight className="h-4 w-4" />
+          <ChevronRight className="h-3.5 w-3.5" />
         ) : (
-          <ChevronLeft className="h-4 w-4" />
+          <ChevronLeft className="h-3.5 w-3.5" />
         )}
       </Button>
     </motion.aside>

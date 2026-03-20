@@ -8,6 +8,8 @@ import { validate, schemas } from '../middleware/validation.middleware.js';
 router.post('/register', authenticate, authorize('Admin'), issuerController.registerIssuer);
 
 // Issuer user routes (for logged-in issuers)
+router.post('/create-learner', authenticate, authorize('Issuer'), issuerController.createLearner);
+router.post('/issue-credential', authenticate, authorize('Issuer'), validate(schemas.issuerCredential), issuerController.issueCredential);
 router.get('/dashboard/credentials', authenticate, authorize('Issuer'), issuerController.getIssuerCredentials);
 router.get('/profile', authenticate, authorize('Issuer'), issuerController.getIssuerProfile);
 router.put('/profile', authenticate, authorize('Issuer'), issuerController.updateIssuerProfile);

@@ -7,6 +7,7 @@ import { validateObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+import logger from '../utils/logger.js';
 
 // POST /issuer/register (Admin only)
 export const registerIssuer = async (req, res, next) => {
@@ -131,15 +132,26 @@ export const getIssuerCredentials = async (req, res, next) => {
   }
 };
 
-// POST /issuer/credential
+// POST /issuer/credential or /issuer/issue-credential
 export const issueCredential = async (req, res, next) => {
   try {
-    // Validate issuer is authenticated
-    if (!req.issuer || !req.issuer._id) {
+    let issuerId;
+    
+    // Handle both API key auth (req.issuer) and JWT auth (req.user)
+    if (req.issuer && req.issuer._id) {
+      // API key authentication
+      issuerId = req.issuer._id;
+      validateObjectId(issuerId, 'Issuer ID');
+    } else if (req.user && req.user.role === 'Issuer') {
+      // JWT authentication - find issuer by user email
+      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      if (!issuer) {
+        return res.status(404).json({ error: 'Issuer profile not found' });
+      }
+      issuerId = issuer._id;
+    } else {
       return res.status(401).json({ error: 'Issuer authentication required' });
     }
-
-    validateObjectId(req.issuer._id, 'Issuer ID');
 
     const { userEmail, title, skills, credits, issueDate, certificateUrl } = req.body;
 
@@ -184,20 +196,78 @@ export const issueCredential = async (req, res, next) => {
       learnerProfile = await LearnerProfile.create({ userId: user._id });
     }
 
-    // Calculate new total credits
+    // Check learner's subscription limits
+    const Subscription = (await import('../models/Subscription.model.js')).default;
+    let subscription = await Subscription.findOne({
+      userId: user._id,
+      status: 'active',
+    }).sort({ createdAt: -1 });
+
+    // If no subscription, create free plan
+    if (!subscription) {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + 365);
+      subscription = await Subscription.create({
+        userId: user._id,
+        plan: 'free',
+        status: 'active',
+        amount: 0,
+        endDate,
+        features: {
+          maxCredentials: 10,
+          maxSkills: 20,
+          aiRecommendations: false,
+          prioritySupport: false,
+          customBranding: false,
+          apiAccess: false,
+          analytics: false,
+        },
+      });
+    }
+
+    // Check credential limit
+    const credentialCount = await Credential.countDocuments({ userId: user._id });
+    const maxCredentials = subscription.features.maxCredentials;
+    
+    if (maxCredentials !== -1 && credentialCount >= maxCredentials) {
+      return res.status(403).json({ 
+        error: 'Credential limit reached',
+        message: `Learner has reached their credential limit (${maxCredentials}). They need to upgrade their subscription.`,
+        currentCount: credentialCount,
+        maxAllowed: maxCredentials,
+        plan: subscription.plan,
+      });
+    }
+
+    // Calculate new total credits (will be added after verification)
     const newTotalCredits = (learnerProfile.totalCredits || 0) + credits;
 
     // Calculate NSQF level based on total credits (backend-controlled)
     const nsqfInfo = calculateNSQFLevel(newTotalCredits);
 
-    // Generate hash from URL or random
+    // Generate hash from URL or random - add timestamp to make it unique
     const certificateHash = certificateUrl
-      ? generateFileHash(Buffer.from(certificateUrl))
+      ? generateFileHash(Buffer.from(`${certificateUrl}-${Date.now()}`))
       : generateFileHash(Buffer.from(`${userEmail}-${title}-${Date.now()}`));
+
+    // Check for duplicate credential (same user, issuer, title, and date)
+    const existingCredential = await Credential.findOne({
+      userId: user._id,
+      issuerId: issuerId,
+      title,
+      issueDate: new Date(issueDate),
+    });
+
+    if (existingCredential) {
+      return res.status(409).json({ 
+        error: 'Duplicate credential',
+        message: 'A credential with the same title and issue date already exists for this learner',
+      });
+    }
 
     const credential = await Credential.create({
       userId: user._id,
-      issuerId: req.issuer._id,
+      issuerId: issuerId,
       title,
       skills: skills || [],
       credits,
@@ -205,7 +275,7 @@ export const issueCredential = async (req, res, next) => {
       issueDate: new Date(issueDate),
       certificateUrl: certificateUrl || '',
       certificateHash,
-      verificationStatus: 'pending',
+      verificationStatus: 'verified', // Auto-verify credentials issued by issuers
     });
 
     // Update learner profile with new credits and NSQF level
@@ -219,17 +289,54 @@ export const issueCredential = async (req, res, next) => {
     learnerProfile.skills = updatedSkills;
     await learnerProfile.save();
 
-    // Trigger verification
-    VerificationService.verifyCredential(credential._id).catch(console.error);
+    // No need to trigger verification - credentials issued by issuers are auto-verified
+    // VerificationService.verifyCredential(credential._id).catch(console.error);
+
+    // Send notification to learner about new credential
+    try {
+      await sendNotification(
+        req.app,
+        user._id,
+        'CredentialVerified', // Use verified type since it's auto-verified
+        `You have been issued a verified credential: "${title}". You earned ${credits} credits!`,
+        { credentialId: credential._id }
+      );
+    } catch (notificationError) {
+      logger.error('Failed to send learner notification:', notificationError);
+    }
+
+    // Send notification to issuer about successful issuance
+    try {
+      // Find issuer user account
+      const issuer = await Issuer.findById(issuerId);
+      if (issuer) {
+        const issuerUser = await User.findOne({ 
+          email: issuer.contactEmail,
+          role: 'Issuer'
+        });
+        
+        if (issuerUser) {
+          await sendNotification(
+            req.app,
+            issuerUser._id,
+            'System',
+            `Successfully issued credential "${title}" to ${userEmail}`,
+            { credentialId: credential._id, learnerId: user._id }
+          );
+        }
+      }
+    } catch (issuerNotificationError) {
+      logger.error('Failed to send issuer notification:', issuerNotificationError);
+    }
 
     res.status(201).json({
       credentialId: credential._id,
-      status: credential.verificationStatus,
+      status: 'verified', // Auto-verified
       creditsEarned: credits,
       totalCredits: newTotalCredits,
       nsqfLevel: nsqfInfo.level,
       levelName: nsqfInfo.levelName,
-      message: `Credential issued successfully! Learner earned ${credits} credits and is now at NSQF Level ${nsqfInfo.level} (${nsqfInfo.levelName})`,
+      message: `Credential issued and verified successfully! Learner earned ${credits} credits and is now at NSQF Level ${nsqfInfo.level} (${nsqfInfo.levelName})`,
     });
   } catch (error) {
     next(error);
@@ -564,6 +671,75 @@ export const getPendingVerifications = async (req, res, next) => {
 };
 
 // PUT /issuer/verify/:credentialId
+// POST /issuer/create-learner
+export const createLearner = async (req, res, next) => {
+  try {
+    const { name, email, password, mobile } = req.body;
+
+    // Validate required fields
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    // Validate password length
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    // Validate mobile if provided
+    if (mobile && !/^\d{10}$/.test(mobile)) {
+      return res.status(400).json({ error: 'Mobile number must be exactly 10 digits' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ error: 'Email already exists' });
+    }
+
+    // Create learner user
+    const user = new User({
+      name,
+      email,
+      mobile: mobile || undefined,
+      passwordHash: password, // Will be hashed by pre-save hook
+      role: 'Learner',
+    });
+
+    await user.save();
+
+    // Create learner profile
+    try {
+      await LearnerProfile.create({ userId: user._id });
+    } catch (profileError) {
+      // If profile creation fails, delete the user to maintain consistency
+      await User.findByIdAndDelete(user._id);
+      throw profileError;
+    }
+
+    logger.info(`Learner created by issuer: ${email}`);
+
+    res.status(201).json({
+      message: 'Learner account created successfully',
+      learner: {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /issuer/verify/:credentialId
 export const verifyCredential = async (req, res, next) => {
   try {
     const { status, notes } = req.body; // status: 'verified' or 'failed'
@@ -595,6 +771,8 @@ export const verifyCredential = async (req, res, next) => {
       return res.status(404).json({ error: 'Credential not found' });
     }
 
+    const previousStatus = credential.verificationStatus;
+
     // Update credential
     credential.verificationStatus = status;
     if (notes) {
@@ -602,16 +780,76 @@ export const verifyCredential = async (req, res, next) => {
     }
     await credential.save();
 
+    // If credential is being verified for the first time, update learner profile
+    if (status === 'verified' && previousStatus !== 'verified') {
+      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
+      if (learnerProfile && credential.credits) {
+        // Add credits to total
+        const newTotalCredits = (learnerProfile.totalCredits || 0) + credential.credits;
+        
+        // Recalculate NSQF level
+        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
+        
+        // Update learner profile
+        learnerProfile.totalCredits = newTotalCredits;
+        learnerProfile.nsqfLevel = nsqfInfo.level;
+        learnerProfile.levelName = nsqfInfo.levelName;
+        await learnerProfile.save();
+        
+        logger.info(`Updated learner ${credential.userId._id} credits to ${newTotalCredits}, NSQF level to ${nsqfInfo.level}`);
+      }
+    }
+
+    // If credential is being rejected after being verified, remove credits
+    if (status === 'failed' && previousStatus === 'verified') {
+      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
+      if (learnerProfile && credential.credits) {
+        // Remove credits from total
+        const newTotalCredits = Math.max(0, (learnerProfile.totalCredits || 0) - credential.credits);
+        
+        // Recalculate NSQF level
+        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
+        
+        // Update learner profile
+        learnerProfile.totalCredits = newTotalCredits;
+        learnerProfile.nsqfLevel = nsqfInfo.level;
+        learnerProfile.levelName = nsqfInfo.levelName;
+        await learnerProfile.save();
+        
+        logger.info(`Removed credits from learner ${credential.userId._id}, new total: ${newTotalCredits}, NSQF level: ${nsqfInfo.level}`);
+      }
+    }
+
     // Send real-time notification to learner
     await sendNotification(
       req.app,
       credential.userId._id,
       status === 'verified' ? 'CredentialVerified' : 'System',
       status === 'verified' 
-        ? `Your credential "${credential.title}" has been verified!`
+        ? `Your credential "${credential.title}" has been verified! You earned ${credential.credits} credits.`
         : `Your credential "${credential.title}" verification failed. ${notes || ''}`,
       { credentialId: credential._id }
     );
+
+    // Send notification to issuer about verification action
+    try {
+      const issuerUser = await User.findOne({ 
+        email: req.issuer?.contactEmail || req.user?.email,
+        role: 'Issuer'
+      });
+      
+      if (issuerUser) {
+        await sendNotification(
+          req.app,
+          issuerUser._id,
+          'System',
+          `Credential "${credential.title}" has been ${status}`,
+          { credentialId: credential._id, learnerId: credential.userId._id }
+        );
+      }
+    } catch (issuerNotificationError) {
+      logger.error('Failed to send issuer notification:', issuerNotificationError);
+    }
 
     res.json({
       message: `Credential ${status}`,

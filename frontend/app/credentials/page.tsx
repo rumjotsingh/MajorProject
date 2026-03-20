@@ -76,7 +76,22 @@ export default function CredentialsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [credentialToDelete, setCredentialToDelete] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [subscription, setSubscription] = useState<any>(null);
   const { toast } = useToast();
+
+  // Load subscription info
+  useEffect(() => {
+    loadSubscription();
+  }, []);
+
+  const loadSubscription = async () => {
+    try {
+      const response = await api.get("/payment/subscription");
+      setSubscription(response.data);
+    } catch (error) {
+      console.error("Failed to load subscription:", error);
+    }
+  };
 
   // Debounce search query
   useEffect(() => {
@@ -232,6 +247,38 @@ export default function CredentialsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Subscription Warning */}
+      {subscription && subscription.usage && subscription.usage.maxCredentials !== -1 && (
+        subscription.usage.credentials >= subscription.usage.maxCredentials * 0.8 && (
+          <Card className="bg-orange-500/10 border-orange-500/20">
+            <CardContent className="pt-6">
+              <div className="flex items-start gap-3">
+                <div className="text-orange-500 mt-0.5">⚠️</div>
+                <div className="flex-1">
+                  <p className="font-medium text-orange-500">
+                    {subscription.usage.credentials >= subscription.usage.maxCredentials 
+                      ? "Credential Limit Reached" 
+                      : "Approaching Credential Limit"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    You're using {subscription.usage.credentials} of {subscription.usage.maxCredentials} credentials 
+                    in your {subscription.subscription.plan} plan.
+                    {subscription.usage.credentials >= subscription.usage.maxCredentials 
+                      ? " Please upgrade to add more credentials." 
+                      : " Consider upgrading to avoid hitting your limit."}
+                  </p>
+                  <Link href="/pricing">
+                    <Button variant="outline" size="sm" className="mt-3">
+                      View Plans
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )
+      )}
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

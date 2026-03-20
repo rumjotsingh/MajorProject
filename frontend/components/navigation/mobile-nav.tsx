@@ -74,154 +74,166 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
       try {
         const response = await api.get("/notifications");
         const notifications = response.data || [];
-        const unread = notifications.filter((n: any) => !n.read).length;
-        setUnreadCount(unread);
+        setUnreadCount(notifications.filter((n: any) => !n.read).length);
       } catch (error) {
         console.error("Failed to load notifications:", error);
       }
     };
     loadUnreadCount();
-    
-    // Refresh count every 30 seconds
     const interval = setInterval(loadUnreadCount, 30000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <>
-      {/* Main Bottom Navigation */}
+      {/* ═══ Floating Bottom Dock ═══ */}
       <motion.nav
         initial={{ y: 100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="fixed bottom-6 left-0 right-0 z-50 md:hidden flex justify-center"
+        transition={{ type: "spring", damping: 25, stiffness: 300, delay: 0.2 }}
+        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       >
-        <div className="glass glass-border rounded-full px-4 py-2.5 shadow-2xl backdrop-blur-xl border-2 max-w-fit">
-          <div className="flex items-center justify-center gap-1">
-            {navItems.map((item, index) => {
-              const isActive = pathname === item.href;
-              const Icon = item.icon;
+        {/* Gradient fade at bottom edge */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+        
+        <div className="relative flex justify-center pb-4 px-4">
+          <div className="bg-background/90 backdrop-blur-2xl rounded-2xl px-2 py-2 shadow-xl shadow-black/[0.08] dark:shadow-black/[0.3] border border-border/60 max-w-fit">
+            <div className="flex items-center justify-center gap-0.5">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                const Icon = item.icon;
 
-              return (
-                <Link key={item.href} href={item.href}>
-                  <motion.div
-                    whileTap={{ scale: 0.85 }}
-                    whileHover={{ scale: 1.05 }}
-                    className={cn(
-                      "relative flex flex-col items-center justify-center rounded-full transition-all duration-200",
-                      item.isMain
-                        ? "bg-primary text-primary-foreground w-14 h-14 shadow-lg shadow-primary/50 -mt-6"
-                        : "w-12 h-12",
-                      isActive && !item.isMain && "bg-primary/10"
-                    )}
-                  >
-                    <Icon 
-                      className={cn(
-                        "transition-all",
-                        item.isMain ? "h-6 w-6" : "h-5 w-5",
-                        isActive && !item.isMain ? "text-primary" : item.isMain ? "" : "text-muted-foreground"
-                      )} 
-                    />
-                    
-                    {/* Active indicator */}
-                    {isActive && !item.isMain && (
+                if (item.isMain) {
+                  return (
+                    <Link key={item.href} href={item.href}>
                       <motion.div
-                        layoutId="mobileActiveTab"
-                        className="absolute -bottom-1 h-1 w-1 rounded-full bg-primary"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
+                        whileTap={{ scale: 0.9 }}
+                        className="mx-1"
+                      >
+                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white flex items-center justify-center shadow-lg shadow-primary/30 -mt-3">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                      </motion.div>
+                    </Link>
+                  );
+                }
 
-                    {/* Label tooltip */}
-                    <AnimatePresence>
-                      {isActive && !item.isMain && (
-                        <motion.span
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 5 }}
-                          className="absolute -top-8 text-xs font-medium whitespace-nowrap px-2 py-1 rounded-md bg-background/95 backdrop-blur-sm border shadow-lg"
-                        >
-                          {item.label}
-                        </motion.span>
+                return (
+                  <Link key={item.href} href={item.href}>
+                    <motion.div
+                      whileTap={{ scale: 0.9 }}
+                      className={cn(
+                        "relative flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200",
+                        isActive && "bg-primary/10"
                       )}
-                    </AnimatePresence>
-                  </motion.div>
-                </Link>
-              );
-            })}
-            
-            {/* Menu Button */}
-            <motion.button
-              whileTap={{ scale: 0.85 }}
-              onClick={() => setShowMenu(!showMenu)}
-              className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center transition-all",
-                showMenu ? "bg-primary/10 text-primary" : "text-muted-foreground"
-              )}
-            >
-              <Menu className="h-5 w-5" />
-            </motion.button>
+                    >
+                      <Icon
+                        className={cn(
+                          "h-5 w-5 transition-colors",
+                          isActive ? "text-primary" : "text-muted-foreground"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "text-[10px] mt-0.5 font-medium transition-colors",
+                          isActive ? "text-primary" : "text-muted-foreground"
+                        )}
+                      >
+                        {item.label}
+                      </span>
+
+                      {/* Active dot */}
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobileDock"
+                          className="absolute -bottom-0.5 h-1 w-1 rounded-full bg-primary"
+                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                        />
+                      )}
+                    </motion.div>
+                  </Link>
+                );
+              })}
+
+              {/* Menu toggle */}
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setShowMenu(!showMenu)}
+                className={cn(
+                  "relative flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200",
+                  showMenu ? "bg-primary/10 text-primary" : "text-muted-foreground"
+                )}
+              >
+                <Menu className="h-5 w-5" />
+                <span className="text-[10px] mt-0.5 font-medium">More</span>
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500" />
+                )}
+              </motion.button>
+            </div>
           </div>
         </div>
       </motion.nav>
 
-      {/* Extended Menu */}
+      {/* ═══ Extended Menu Sheet ═══ */}
       <AnimatePresence>
         {showMenu && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowMenu(false)}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
             />
-            
-            {/* Menu Panel */}
+
             <motion.div
-              initial={{ y: 100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 100, opacity: 0 }}
-              className="fixed bottom-28 left-4 right-4 z-50 md:hidden"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
             >
-              <div className="glass glass-border rounded-2xl p-4 shadow-2xl backdrop-blur-xl border-2">
+              <div className="bg-background rounded-t-3xl border-t shadow-2xl p-5 pb-8">
+                {/* Handle bar */}
+                <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
+
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">Menu</h3>
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Menu</h3>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowMenu(false)}
-                    className="h-8 w-8 p-0"
+                    className="h-8 w-8 p-0 rounded-full"
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
-                
-                <div className="space-y-2">
+
+                <div className="space-y-1">
                   {menuItems.map((item) => {
                     const Icon = item.icon;
                     const isNotifications = item.label === "Notifications";
-                    
+
                     if (item.isAction) {
                       return (
                         <motion.button
                           key={item.label}
-                          whileTap={{ scale: 0.95 }}
-                          className={cn(
-                            "w-full flex items-center gap-3 p-3 rounded-lg transition-colors",
-                            "hover:bg-destructive/10 text-destructive"
-                          )}
+                          whileTap={{ scale: 0.98 }}
+                          className="w-full flex items-center gap-3 p-3.5 rounded-xl text-destructive hover:bg-destructive/5 transition-colors"
                           onClick={() => {
                             localStorage.clear();
                             window.location.href = "/";
                           }}
                         >
-                          <Icon className="h-5 w-5" />
+                          <div className="h-9 w-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                            <Icon className="h-4 w-4" />
+                          </div>
                           <span className="font-medium">{item.label}</span>
                         </motion.button>
                       );
                     }
-                    
+
                     return (
                       <Link
                         key={item.href}
@@ -229,20 +241,20 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                         onClick={() => setShowMenu(false)}
                       >
                         <motion.div
-                          whileTap={{ scale: 0.95 }}
-                          className="flex items-center gap-3 p-3 rounded-lg transition-colors hover:bg-accent relative"
+                          whileTap={{ scale: 0.98 }}
+                          className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-muted/60 transition-colors"
                         >
-                          <div className="relative">
-                            <Icon className="h-5 w-5" />
+                          <div className="relative h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
+                            <Icon className="h-4 w-4" />
                             {isNotifications && unreadCount > 0 && (
                               <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
                                 {unreadCount > 9 ? "9+" : unreadCount}
                               </span>
                             )}
                           </div>
-                          <span className="font-medium">{item.label}</span>
+                          <span className="font-medium flex-1">{item.label}</span>
                           {isNotifications && unreadCount > 0 && (
-                            <span className="ml-auto h-5 px-2 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                            <span className="h-6 px-2.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
                               {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                           )}
