@@ -7,11 +7,19 @@ import { cn } from "@/lib/utils";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "CredMatrix - Micro-Credential Aggregator Platform",
-  description: "Unified digital skill portfolio for learners, employers, and training providers",
+  title: "CredMatrix — Unified Digital Skill Portfolio",
+  description: "Aggregate, verify, and showcase your credentials from multiple sources in one premium digital portfolio. Trusted by 50,000+ learners worldwide.",
+  keywords: ["credentials", "portfolio", "skills", "verification", "NSQF", "career"],
+  authors: [{ name: "CredMatrix" }],
+  openGraph: {
+    title: "CredMatrix — Unified Digital Skill Portfolio",
+    description: "Aggregate, verify, and showcase your credentials in one premium digital portfolio.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

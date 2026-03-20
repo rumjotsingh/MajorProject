@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bell, CheckCircle, Award, Briefcase, AlertCircle, Check } from "lucide-react";
+import { Bell, CheckCircle, Award, Briefcase, AlertCircle, Check, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 import api from "@/lib/api";
@@ -111,6 +111,29 @@ export default function IssuerNotificationsPage() {
     }
   };
 
+  const syncHistory = async () => {
+    try {
+      setLoading(true);
+      const response = await api.post("/notifications/sync-issuer-history");
+      
+      toast({
+        title: "Success",
+        description: `Synced ${response.data.created} historical notifications`,
+      });
+
+      // Reload notifications
+      await loadNotifications();
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to sync history",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getIcon = (type: string) => {
     switch (type) {
       case "CredentialVerified":
@@ -161,12 +184,20 @@ export default function IssuerNotificationsPage() {
             Stay updated with credential verification activities
           </p>
         </div>
-        {unreadCount > 0 && (
-          <Button onClick={markAllAsRead} variant="outline" className="gap-2">
-            <Check className="h-4 w-4" />
-            Mark all as read
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {Array.isArray(notifications) && notifications.length === 0 && (
+            <Button onClick={syncHistory} variant="outline" className="gap-2" disabled={loading}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Sync History
+            </Button>
+          )}
+          {unreadCount > 0 && (
+            <Button onClick={markAllAsRead} variant="outline" className="gap-2">
+              <Check className="h-4 w-4" />
+              Mark all as read
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Stats */}
@@ -202,9 +233,13 @@ export default function IssuerNotificationsPage() {
             <div className="text-center py-12">
               <Bell className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
               <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground mb-4">
                 You'll see notifications here when learners upload credentials
               </p>
+              <Button onClick={syncHistory} variant="outline" className="gap-2" disabled={loading}>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Sync Historical Notifications
+              </Button>
             </div>
           ) : (
             <div className="space-y-2">

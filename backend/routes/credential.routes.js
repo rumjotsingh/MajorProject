@@ -4,8 +4,10 @@ import * as credentialController from '../controllers/credential.controller.js';
 import { authenticate, authorize } from '../middleware/auth.middleware.js';
 import upload from '../middleware/upload.middleware.js';
 import { uploadLimiter } from '../middleware/rateLimit.middleware.js';
+import { checkLimit } from '../middleware/subscription.middleware.js';
 
-router.post('/upload', authenticate, authorize('Learner'), uploadLimiter, upload.single('file'), credentialController.uploadCredential);
+router.post('/upload', authenticate, authorize('Learner'), checkLimit('maxCredentials'), uploadLimiter, upload.single('file'), credentialController.uploadCredential);
+router.post('/upload-file', authenticate, uploadLimiter, upload.single('file'), credentialController.uploadFile);
 router.get('/', authenticate, authorize('Learner', 'Admin'), credentialController.getMyCredentials);
 router.get('/:id', authenticate, credentialController.getCredentialById);
 router.put('/:id', authenticate, credentialController.updateCredential);

@@ -83,6 +83,7 @@ export const authService = {
   },
 
   getCurrentUser(): User | null {
+    if (typeof window === "undefined") return null;
     try {
       const userStr = localStorage.getItem("user");
       return userStr ? JSON.parse(userStr) : null;
@@ -92,6 +93,7 @@ export const authService = {
   },
 
   isAuthenticated(): boolean {
+    if (typeof window === "undefined") return false;
     return !!localStorage.getItem("token");
   },
 };

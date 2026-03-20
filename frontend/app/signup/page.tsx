@@ -152,7 +152,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5 relative">
       {/* Back to Home Button */}
       <Link href="/" className="fixed top-4 left-4 z-50">
         <Button
@@ -169,7 +169,7 @@ export default function SignupPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl"
+        className="w-full max-w-2xl relative z-10"
       >
         <div className="flex justify-center mb-8">
           <Link href="/" className="flex items-center gap-2 group">

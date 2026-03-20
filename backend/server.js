@@ -25,6 +25,8 @@ import notificationRoutes from './routes/notification.routes.js';
 import analyticsRoutes from './routes/analytics.routes.js';
 import careerPathRoutes from './routes/careerPath.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
+import paymentRoutes from './routes/payment.routes.js';
+import blogRoutes from './routes/blog.routes.js';
 
 dotenv.config();
 
@@ -116,6 +118,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/career-paths', careerPathRoutes);
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/blog', blogRoutes);
 
 // 404 handler
 app.use((req, res) => {

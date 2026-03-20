@@ -32,18 +32,24 @@ const learnerProfileSchema = new mongoose.Schema(
       type: String,
       default: 'Basic/Foundation',
     },
-    education: [{
-      degree: String,
-      institution: String,
-      year: String,
-      fieldOfStudy: String,
-    }],
-    experience: [{
-      role: String,
-      company: String,
-      duration: String,
-      description: String,
-    }],
+    education: {
+      type: [{
+        degree: String,
+        institution: String,
+        year: String,
+        fieldOfStudy: String,
+      }],
+      default: [],
+    },
+    experience: {
+      type: [{
+        role: String,
+        company: String,
+        duration: String,
+        description: String,
+      }],
+      default: [],
+    },
     preferences: {
       language: {
         type: String,

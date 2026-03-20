@@ -14,7 +14,26 @@ export const getMyProfile = async (req, res, next) => {
       return res.status(404).json({ error: 'Profile not found' });
     }
 
-    res.json(profile);
+    // Clean up education and experience arrays - remove strings and invalid objects
+    const cleanProfile = profile.toObject();
+    
+    if (Array.isArray(cleanProfile.education)) {
+      cleanProfile.education = cleanProfile.education.filter(
+        item => item && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length > 1
+      );
+    } else {
+      cleanProfile.education = [];
+    }
+    
+    if (Array.isArray(cleanProfile.experience)) {
+      cleanProfile.experience = cleanProfile.experience.filter(
+        item => item && typeof item === 'object' && !Array.isArray(item) && Object.keys(item).length > 1
+      );
+    } else {
+      cleanProfile.experience = [];
+    }
+
+    res.json(cleanProfile);
   } catch (error) {
     next(error);
   }
@@ -25,9 +44,40 @@ export const updateMyProfile = async (req, res, next) => {
   try {
     const { bio, skills, education, experience, preferences } = req.body;
 
+    // Ensure arrays are properly formatted and filter out invalid entries
+    const updateData = {};
+    
+    if (bio !== undefined) updateData.bio = bio;
+    
+    if (skills !== undefined) {
+      updateData.skills = Array.isArray(skills) ? skills : [];
+    }
+    
+    if (education !== undefined) {
+      // Ensure it's an array and contains only valid objects
+      let eduArray = Array.isArray(education) ? education : [];
+      eduArray = eduArray.filter(item => 
+        item && typeof item === 'object' && !Array.isArray(item)
+      );
+      updateData.education = eduArray;
+    }
+    
+    if (experience !== undefined) {
+      // Ensure it's an array and contains only valid objects
+      let expArray = Array.isArray(experience) ? experience : [];
+      expArray = expArray.filter(item => 
+        item && typeof item === 'object' && !Array.isArray(item)
+      );
+      updateData.experience = expArray;
+    }
+
+    if (preferences !== undefined) {
+      updateData.preferences = preferences;
+    }
+
     const profile = await LearnerProfile.findOneAndUpdate(
       { userId: req.user.userId },
-      { bio, skills, education, experience, preferences },
+      updateData,
       { new: true, runValidators: true }
     );
 

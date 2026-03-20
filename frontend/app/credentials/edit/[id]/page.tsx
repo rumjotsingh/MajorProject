@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, X, Plus } from "lucide-react";
+import { ArrowLeft, Save, X, Plus, Upload, Eye, FileText } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -39,7 +39,11 @@ export default function EditCredentialPage() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [credential, setCredential] = useState<Credential | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>("");
+  const [uploadedCertificateUrl, setUploadedCertificateUrl] = useState<string>("");
   const [formData, setFormData] = useState({
     title: "",
     credits: 0,
@@ -78,6 +82,11 @@ export default function EditCredentialPage() {
         certificateUrl: cred.certificateUrl || "",
       });
       setSkills(cred.skills || []);
+      
+      // Set preview to existing certificate URL
+      if (cred.certificateUrl) {
+        setPreviewUrl(cred.certificateUrl);
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -126,12 +135,17 @@ export default function EditCredentialPage() {
 
     try {
       setSaving(true);
+      
+      // Use uploaded certificate URL if available, otherwise use existing
+      const certificateUrl = uploadedCertificateUrl || formData.certificateUrl;
+
+      // Update credential with new data
       await api.put(`/credentials/${params.id}`, {
         title: formData.title,
         skills,
         credits: credits,
         issueDate: formData.issueDate,
-        certificateUrl: formData.certificateUrl || undefined,
+        certificateUrl: certificateUrl || undefined,
       });
 
       toast({
@@ -149,6 +163,59 @@ export default function EditCredentialPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleFileSelect = async (file: File) => {
+    setSelectedFile(file);
+    
+    // Create temporary preview URL for images
+    if (file.type.startsWith('image/')) {
+      const tempUrl = URL.createObjectURL(file);
+      setPreviewUrl(tempUrl);
+    }
+
+    // Automatically upload file to Cloudinary
+    try {
+      setUploading(true);
+      const uploadFormData = new FormData();
+      uploadFormData.append("file", file);
+
+      const uploadResponse = await api.post("/credentials/upload-file", uploadFormData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const cloudinaryUrl = uploadResponse.data.certificateUrl;
+      setUploadedCertificateUrl(cloudinaryUrl);
+      
+      // Update preview to show the Cloudinary URL
+      setPreviewUrl(cloudinaryUrl);
+      
+      toast({
+        title: "File Uploaded",
+        description: "Certificate uploaded successfully to cloud storage",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Upload Failed",
+        description: error.response?.data?.error || "Failed to upload file",
+        variant: "destructive",
+      });
+      setSelectedFile(null);
+      setUploadedCertificateUrl("");
+      setPreviewUrl(credential?.certificateUrl || "");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const isImageUrl = (url: string) => {
+    return url && (url.match(/\.(jpeg|jpg|gif|png|webp)$/i) || url.includes('cloudinary'));
+  };
+
+  const isPdfUrl = (url: string) => {
+    return url && url.match(/\.pdf$/i);
   };
 
   if (loading) {
@@ -313,32 +380,152 @@ export default function EditCredentialPage() {
               />
             </div>
 
-            {/* Certificate URL */}
-            <div className="space-y-2">
-              <Label htmlFor="certificateUrl">Certificate URL (Optional)</Label>
-              <Input
-                id="certificateUrl"
-                type="url"
-                value={formData.certificateUrl}
-                onChange={(e) => setFormData({ ...formData, certificateUrl: e.target.value })}
-                placeholder="https://example.com/certificate.pdf"
-              />
-              <p className="text-xs text-muted-foreground">
-                URL to the certificate document or image
-              </p>
+            {/* Certificate Upload with Preview */}
+            <div className="space-y-4">
+              <Label>Certificate</Label>
+              
+              {/* File Upload */}
+              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
+                <input
+                  type="file"
+                  id="certificateFile"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleFileSelect(file);
+                    }
+                  }}
+                  className="hidden"
+                  disabled={uploading}
+                />
+                <label
+                  htmlFor="certificateFile"
+                  className={`cursor-pointer flex flex-col items-center gap-2 ${uploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <Upload className={`h-10 w-10 text-muted-foreground ${uploading ? 'animate-pulse' : ''}`} />
+                  {uploading ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">Uploading to cloud storage...</p>
+                      <p className="text-xs text-muted-foreground">Please wait</p>
+                    </div>
+                  ) : selectedFile ? (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-green-600">✓ {selectedFile.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {(selectedFile.size / 1024 / 1024).toFixed(2)} MB - Uploaded successfully
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedFile(null);
+                          setUploadedCertificateUrl("");
+                          setPreviewUrl(credential?.certificateUrl || "");
+                        }}
+                      >
+                        Remove & Use Original
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {previewUrl ? "Click to upload new certificate" : "Click to upload certificate"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        PDF, JPG, PNG, DOC (Max 10MB)
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        File will be uploaded automatically
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Certificate Preview */}
+              {previewUrl && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Eye className="h-4 w-4" />
+                      {uploadedCertificateUrl ? "New Certificate (Uploaded)" : "Current Certificate"}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {isImageUrl(previewUrl) ? (
+                      <div className="relative w-full aspect-video bg-muted rounded-lg overflow-hidden">
+                        <img
+                          src={previewUrl}
+                          alt="Certificate preview"
+                          className="w-full h-full object-contain"
+                          key={previewUrl} // Force re-render when URL changes
+                        />
+                      </div>
+                    ) : isPdfUrl(previewUrl) ? (
+                      <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">PDF Document</p>
+                          <p className="text-xs text-muted-foreground">
+                            {uploadedCertificateUrl ? "Newly uploaded" : "Click to view"}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(previewUrl, '_blank')}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 p-4 bg-muted rounded-lg">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">Document</p>
+                          <p className="text-xs text-muted-foreground truncate">{previewUrl}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(previewUrl, '_blank')}
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Upload Success Message */}
+              {uploadedCertificateUrl && (
+                <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mt-2">
+                  <p className="text-sm text-green-800 dark:text-green-200">
+                    ✓ New certificate uploaded successfully. Click "Save Changes" to update your credential.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
             <div className="flex gap-3 pt-4 border-t">
-              <Button type="submit" disabled={saving} className="flex-1">
+              <Button type="submit" disabled={saving || uploading} className="flex-1">
                 <Save className="h-4 w-4 mr-2" />
-                {saving ? "Saving..." : "Save Changes"}
+                {saving ? "Saving..." : uploading ? "Uploading..." : "Save Changes"}
               </Button>
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => router.back()}
-                disabled={saving}
+                disabled={saving || uploading}
                 className="flex-1"
               >
                 <X className="h-4 w-4 mr-2" />

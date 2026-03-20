@@ -2,12 +2,40 @@ import logger from '../utils/logger.js';
 import Credential from '../models/Credential.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import Issuer from '../models/Issuer.model.js';
+import User from '../models/User.model.js';
 import { uploadToCloudinary } from '../utils/cloudinary.util.js';
 import { generateFileHash } from '../utils/hash.util.js';
 import { validateObjectId, isValidObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+
+// POST /credentials/upload-file (Upload file to Cloudinary only)
+export const uploadFile = async (req, res, next) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'File is required' });
+    }
+
+    // Upload to Cloudinary
+    const certificateUrl = await uploadToCloudinary(
+      req.file.buffer,
+      req.user.userId,
+      req.file.originalname
+    );
+
+    res.json({
+      certificateUrl,
+      message: 'File uploaded successfully'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 // POST /credentials/upload
 export const uploadCredential = async (req, res, next) => {
@@ -99,41 +127,35 @@ export const uploadCredential = async (req, res, next) => {
       learnerProfile = await LearnerProfile.create({ userId: req.user.userId });
     }
 
-    // Calculate new total credits
-    const newTotalCredits = (learnerProfile.totalCredits || 0) + credits;
+    // DO NOT update credits/NSQF level yet - wait for verification
+    // Just calculate what the NSQF level would be for display purposes
+    const potentialTotalCredits = (learnerProfile.totalCredits || 0) + credits;
+    const potentialNsqfInfo = calculateNSQFLevel(potentialTotalCredits);
 
-    // Calculate NSQF level based on total credits (backend-controlled)
-    const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-
-    // Create credential with calculated NSQF level
+    // Create credential with calculated NSQF level (for reference, but not counted yet)
     const credential = await Credential.create({
       userId: req.user.userId,
       issuerId: issuerDoc._id,
       title,
       skills: skills || [],
       credits,
-      nsqfLevel: nsqfInfo.level, // Automatically calculated, not from user input
+      nsqfLevel: potentialNsqfInfo.level, // Stored for reference
       issueDate: new Date(issueDate),
       certificateUrl,
       certificateHash,
       verificationStatus: 'pending',
     });
 
-    // Update learner profile with new credits and NSQF level
-    const updatedSkills = skills && skills.length > 0 
-      ? [...new Set([...learnerProfile.skills, ...skills])]
-      : learnerProfile.skills;
-
-    learnerProfile.totalCredits = newTotalCredits;
-    learnerProfile.nsqfLevel = nsqfInfo.level;
-    learnerProfile.levelName = nsqfInfo.levelName;
-    learnerProfile.skills = updatedSkills;
-    try {
-      await learnerProfile.save();
-    } catch (profileError) {
-      // If profile save fails, log it but don't fail the whole upload
-      // since credential was already created
-      logger.error('Failed to update learner profile:', profileError);
+    // DO NOT update learner profile credits/level until verification
+    // Only update skills if provided
+    if (skills && skills.length > 0) {
+      const updatedSkills = [...new Set([...learnerProfile.skills, ...skills])];
+      learnerProfile.skills = updatedSkills;
+      try {
+        await learnerProfile.save();
+      } catch (profileError) {
+        logger.error('Failed to update learner profile skills:', profileError);
+      }
     }
 
     // Send notification to learner
@@ -142,25 +164,50 @@ export const uploadCredential = async (req, res, next) => {
         req.app,
         req.user.userId,
         'CredentialAdded',
-        `Your credential "${title}" has been uploaded and is pending verification. You earned ${credits} credits!`,
+        `Your credential "${title}" has been uploaded and is pending verification.`,
         { credentialId: credential._id }
       );
     } catch (notificationError) {
       // If notification fails, log it but don't fail the whole upload
       logger.error('Failed to send notification:', notificationError);
     }
+
+    // Send notification to issuer about new credential upload
+    try {
+      // Find issuer users (users with Issuer role and matching email domain or all issuers)
+      const issuerUsers = await Issuer.findById(issuerDoc._id);
+      if (issuerUsers && issuerUsers.contactEmail) {
+        // Find user account for this issuer
+        const issuerUser = await User.findOne({ 
+          email: issuerUsers.contactEmail,
+          role: 'Issuer'
+        });
+        
+        if (issuerUser) {
+          await sendNotification(
+            req.app,
+            issuerUser._id,
+            'System',
+            `New credential "${title}" uploaded by learner and requires verification`,
+            { credentialId: credential._id, learnerId: req.user.userId }
+          );
+        }
+      }
+    } catch (issuerNotificationError) {
+      // If issuer notification fails, log it but don't fail the upload
+      logger.error('Failed to send issuer notification:', issuerNotificationError);
+    }
     
 
-    // Return updated credits and level info
+    // Return info - credits will be added after verification
     res.status(201).json({
       credentialId: credential._id,
       verificationStatus: credential.verificationStatus,
-      creditsEarned: credits,
-      totalCredits: newTotalCredits,
-      nsqfLevel: nsqfInfo.level,
-      levelName: nsqfInfo.levelName,
-      levelDescription: nsqfInfo.description,
-      message: `Credential uploaded successfully! You earned ${credits} credits and are now at NSQF Level ${nsqfInfo.level} (${nsqfInfo.levelName})`,
+      creditsToBeEarned: credits,
+      currentTotalCredits: learnerProfile.totalCredits,
+      currentNsqfLevel: learnerProfile.nsqfLevel,
+      potentialNsqfLevel: potentialNsqfInfo.level,
+      message: `Credential uploaded successfully! After verification, you will earn ${credits} credits and reach NSQF Level ${potentialNsqfInfo.level} (${potentialNsqfInfo.levelName})`,
     });
   } catch (error) {
     next(error);
@@ -241,7 +288,7 @@ export const updateCredential = async (req, res, next) => {
   try {
     validateObjectId(req.params.id, 'Credential ID');
     
-    const { skills, title, credits } = req.body;
+    const { skills, title, credits, certificateUrl, issueDate } = req.body;
     const credential = await Credential.findById(req.params.id);
 
     if (!credential) {
@@ -267,6 +314,8 @@ export const updateCredential = async (req, res, next) => {
     // Update allowed fields
     if (skills) credential.skills = skills;
     if (title) credential.title = title;
+    if (certificateUrl) credential.certificateUrl = certificateUrl;
+    if (issueDate) credential.issueDate = new Date(issueDate);
     
     // Validate and update credits if changed
     if (credits !== undefined && credits !== oldCredits) {

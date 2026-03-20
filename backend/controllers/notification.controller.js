@@ -71,3 +71,90 @@ export const markAllAsRead = async (req, res, next) => {
   }
 };
 
+// POST /notifications/sync-issuer-history (Issuer only)
+export const syncIssuerHistory = async (req, res, next) => {
+  try {
+    // Only allow issuers to sync
+    if (req.user.role !== 'Issuer') {
+      return res.status(403).json({ error: 'Only issuers can sync notification history' });
+    }
+
+    const Credential = (await import('../models/Credential.model.js')).default;
+    const Issuer = (await import('../models/Issuer.model.js')).default;
+    const User = (await import('../models/User.model.js')).default;
+
+    // Find issuer by user email
+    const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+    if (!issuer) {
+      return res.status(404).json({ error: 'Issuer profile not found' });
+    }
+
+    // Get all credentials for this issuer
+    const credentials = await Credential.find({ issuerId: issuer._id })
+      .populate('userId', 'name email')
+      .sort({ createdAt: 1 });
+
+    let created = 0;
+    let skipped = 0;
+
+    for (const credential of credentials) {
+      // Check if notification already exists
+      const existing = await Notification.findOne({
+        userId: req.user.userId,
+        'metadata.credentialId': credential._id
+      });
+
+      if (existing) {
+        skipped++;
+        continue;
+      }
+
+      // Create notification
+      let message = '';
+      let type = 'System';
+
+      if (credential.verificationStatus === 'verified') {
+        message = `Credential "${credential.title}" verified for ${credential.userId?.name || 'learner'}`;
+        type = 'CredentialVerified';
+      } else if (credential.verificationStatus === 'pending') {
+        message = `Credential "${credential.title}" uploaded by ${credential.userId?.name || 'learner'} - pending verification`;
+      } else {
+        message = `Credential "${credential.title}" issued to ${credential.userId?.name || 'learner'}`;
+      }
+
+      await Notification.create({
+        userId: req.user.userId,
+        type,
+        message,
+        read: true, // Mark as read since they're historical
+        metadata: {
+          credentialId: credential._id,
+          learnerId: credential.userId?._id
+        },
+        createdAt: credential.createdAt,
+        updatedAt: credential.updatedAt
+      });
+
+      created++;
+    }
+
+    res.json({
+      message: 'Notification history synced successfully',
+      created,
+      skipped,
+      total: credentials.length
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export default {
+  subscribe,
+  getNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  syncIssuerHistory,
+};
+

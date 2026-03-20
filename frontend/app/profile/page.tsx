@@ -33,11 +33,23 @@ export default function ProfilePage() {
       setLoading(true);
       const data = await dashboardAPI.getProfile();
       setProfile(data);
+      
+      // Ensure education and experience are arrays of objects, not strings
+      let education = Array.isArray(data.education) ? data.education : [];
+      education = education.filter(item => 
+        item && typeof item === 'object' && !Array.isArray(item) && typeof item !== 'string'
+      );
+      
+      let experience = Array.isArray(data.experience) ? data.experience : [];
+      experience = experience.filter(item => 
+        item && typeof item === 'object' && !Array.isArray(item) && typeof item !== 'string'
+      );
+      
       setFormData({
         bio: data.bio || "",
         skills: data.skills || [],
-        education: data.education || [],
-        experience: data.experience || [],
+        education,
+        experience,
       });
     } catch (error: any) {
       toast({
@@ -53,7 +65,21 @@ export default function ProfilePage() {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await api.put("/profile/me", formData);
+      
+      // Filter out empty education/experience entries
+      const cleanedData = {
+        ...formData,
+        education: formData.education.filter(
+          (edu) => edu.degree || edu.institution || edu.year || edu.fieldOfStudy
+        ),
+        experience: formData.experience.filter(
+          (exp) => exp.role || exp.company || exp.duration || exp.description
+        ),
+      };
+      
+      console.log('Sending data:', cleanedData); // Debug log
+      
+      await api.put("/profile/me", cleanedData);
       toast({
         title: "Success",
         description: "Profile updated successfully",
@@ -61,6 +87,7 @@ export default function ProfilePage() {
       setEditing(false);
       loadProfile();
     } catch (error: any) {
+      console.error('Save error:', error.response?.data); // Debug log
       toast({
         title: "Error",
         description: error.response?.data?.error || "Failed to update profile",

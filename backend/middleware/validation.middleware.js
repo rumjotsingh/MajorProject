@@ -33,14 +33,28 @@ export const schemas = {
   }),
 
   updateProfile: Joi.object({
-    bio: Joi.string().max(500).allow(''),
-    skills: Joi.array().items(Joi.string()),
-    education: Joi.string().allow(''),
-    experience: Joi.string().allow(''),
+    bio: Joi.string().max(500).allow('').optional(),
+    skills: Joi.array().items(Joi.string()).optional(),
+    education: Joi.array().items(
+      Joi.object({
+        degree: Joi.string().allow('').optional(),
+        institution: Joi.string().allow('').optional(),
+        year: Joi.string().allow('').optional(),
+        fieldOfStudy: Joi.string().allow('').optional(),
+      })
+    ).optional(),
+    experience: Joi.array().items(
+      Joi.object({
+        role: Joi.string().allow('').optional(),
+        company: Joi.string().allow('').optional(),
+        duration: Joi.string().allow('').optional(),
+        description: Joi.string().allow('').optional(),
+      })
+    ).optional(),
     preferences: Joi.object({
-      language: Joi.string(),
-      notificationsEnabled: Joi.boolean(),
-    }),
+      language: Joi.string().optional(),
+      notificationsEnabled: Joi.boolean().optional(),
+    }).optional(),
   }),
 
   credentialMetadata: Joi.object({
