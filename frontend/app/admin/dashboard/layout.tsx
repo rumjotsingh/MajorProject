@@ -8,13 +8,13 @@ export default function AdminDashboardLayout({
 }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <CollapsibleSidebar role="admin" />
+     
       <main className="flex-1 overflow-y-auto">
         <div className="container py-6 md:py-8">
           {children}
         </div>
       </main>
-      <MobileNav role="admin" />
+     
     </div>
   );
 }

@@ -20,6 +20,10 @@ import {
   FileCheck,
   CheckSquare,
   Crown,
+  Mail,
+  Layers,
+  Search,
+  Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -46,10 +50,22 @@ const issuerNav = [
 
 const employerNav = [
   { icon: Home, label: "Dashboard", href: "/employer/dashboard" },
+  { icon: Search, label: "Search Talent", href: "/employer/search" },
+  { icon: Briefcase, label: "Jobs", href: "/employer/jobs" },
+  { icon: Bookmark, label: "Bookmarks", href: "/employer/bookmarks" },
+  { icon: User, label: "Profile", href: "/employer/profile" },
 ];
 
 const adminNav = [
   { icon: Home, label: "Dashboard", href: "/admin/dashboard" },
+  { icon: User, label: "Users", href: "/admin/users" },
+  { icon: CheckSquare, label: "Issuers", href: "/admin/issuers" },
+  { icon: Briefcase, label: "Employers", href: "/admin/employers" },
+  { icon: Award, label: "Credentials", href: "/admin/credentials" },
+  { icon: Crown, label: "Subscriptions", href: "/admin/subscriptions" },
+  { icon: FileCheck, label: "Blog", href: "/admin/blog" },
+  { icon: Mail, label: "Contacts", href: "/admin/contacts" },
+  { icon: Layers, label: "NSQF", href: "/admin/nsqf" },
 ];
 
 const bottomNavConfig = {

@@ -1,5 +1,6 @@
 import Notification from '../models/Notification.model.js';
 import logger from './logger.js';
+import nodemailer from 'nodemailer';
 
 /**
  * Send notification to user via database and WebSocket
@@ -42,4 +43,43 @@ export const sendNotification = async (app, userId, type, message, metadata = {}
   }
 };
 
-export default { sendNotification };
+/**
+ * Send email notification
+ * @param {Object} options - Email options
+ * @param {String} options.to - Recipient email
+ * @param {String} options.subject - Email subject
+ * @param {String} options.html - Email HTML content
+ * @param {String} options.text - Email text content (optional)
+ */
+export const sendEmail = async ({ to, subject, html, text }) => {
+  try {
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+
+    // Send email
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || '"CredMatrix" <noreply@credmatrix.com>',
+      to,
+      subject,
+      text: text || html.replace(/<[^>]*>/g, ''), // Strip HTML if no text provided
+      html,
+    });
+
+    logger.info(`Email sent to ${to}: ${info.messageId}`);
+    return info;
+  } catch (error) {
+    logger.error('Failed to send email:', error);
+    // Don't throw error - email is not critical
+    return null;
+  }
+};
+
+export default { sendNotification, sendEmail };

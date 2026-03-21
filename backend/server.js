@@ -27,6 +27,7 @@ import careerPathRoutes from './routes/careerPath.routes.js';
 import recommendationRoutes from './routes/recommendation.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import blogRoutes from './routes/blog.routes.js';
+import contactRoutes from './routes/contact.routes.js';
 
 dotenv.config();
 
@@ -124,6 +125,7 @@ app.use('/api/career-paths', careerPathRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/blog', blogRoutes);
+app.use('/api/contact', contactRoutes);
 
 // 404 handler
 app.use((req, res) => {
