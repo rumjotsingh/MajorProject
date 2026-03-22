@@ -88,11 +88,11 @@ export default function EmployerBookmarksPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {bookmarks.map((bookmark) => {
               const learner = bookmark.learnerId;
-              const learnerId = learner?.userId?._id || learner?._id;
-              const learnerName = learner?.userId?.name || learner?.name || 'Unknown';
-              const learnerEmail = learner?.userId?.email || learner?.email || '';
+              const learnerId = learner?.userId?._id;
+              const learnerName = learner?.userId?.name || 'Unknown';
+              const learnerEmail = learner?.userId?.email || '';
               
-              if (!learner) return null;
+              if (!learner || !learnerId) return null;
               
               return (
                 <div key={bookmark._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
