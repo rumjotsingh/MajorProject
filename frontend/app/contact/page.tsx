@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { BackToHome } from "@/components/back-to-home";
@@ -7,9 +8,75 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone, CheckCircle, AlertCircle } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    subject: '',
+    message: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setStatus(null);
+
+    try {
+      const response = await fetch(`${API_URL}/contact/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${formData.firstName} ${formData.lastName}`,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      if (response.ok) {
+        setStatus({
+          type: 'success',
+          message: 'Thank you for your message! We\'ll get back to you soon.',
+        });
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          subject: '',
+          message: '',
+        });
+      } else {
+        const error = await response.json();
+        setStatus({
+          type: 'error',
+          message: error.error || 'Failed to send message. Please try again.',
+        });
+      }
+    } catch (error) {
+      setStatus({
+        type: 'error',
+        message: 'Failed to send message. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
   return (
     <div className="flex min-h-screen flex-col">
       <LandingNav />
@@ -30,24 +97,29 @@ export default function ContactPage() {
             </p>
           </motion.div>
 
-          {/* Coming Soon Banner */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-12 max-w-6xl mx-auto px-4"
-          >
-            <Card className="bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border-cyan-500/20">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <h3 className="text-2xl font-semibold mb-2">📧 Contact Form Coming Soon</h3>
-                  <p className="text-muted-foreground">
-                    The contact form is not yet functional. For now, please reach out to us directly via email.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+          {/* Status Message */}
+          {status && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 max-w-6xl mx-auto px-4"
+            >
+              <Card className={status.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3">
+                    {status.type === 'success' ? (
+                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="h-5 w-5 text-red-600" />
+                    )}
+                    <p className={status.type === 'success' ? 'text-emerald-900 dark:text-emerald-100' : 'text-red-900 dark:text-red-100'}>
+                      {status.message}
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
 
           <div className="grid gap-6 md:gap-8 lg:grid-cols-3 max-w-6xl mx-auto px-4">
             <div className="lg:col-span-2">
@@ -56,33 +128,64 @@ export default function ContactPage() {
                   <CardTitle>Send us a message</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <form className="space-y-6">
+                  <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div className="space-y-2">
                         <label className="text-sm font-medium">First Name</label>
-                        <Input placeholder="John" />
+                        <Input 
+                          name="firstName"
+                          placeholder="John" 
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          required
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Last Name</label>
-                        <Input placeholder="Doe" />
+                        <Input 
+                          name="lastName"
+                          placeholder="Doe" 
+                          value={formData.lastName}
+                          onChange={handleChange}
+                          required
+                        />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Email</label>
-                      <Input type="email" placeholder="john@example.com" />
+                      <Input 
+                        name="email"
+                        type="email" 
+                        placeholder="john@example.com" 
+                        value={formData.email}
+                        onChange={handleChange}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Subject</label>
-                      <Input placeholder="How can we help?" />
+                      <Input 
+                        name="subject"
+                        placeholder="How can we help?" 
+                        value={formData.subject}
+                        onChange={handleChange}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Message</label>
                       <textarea
+                        name="message"
                         className="w-full min-h-[150px] rounded-lg border border-input bg-background px-3 py-2 text-sm"
                         placeholder="Tell us more..."
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
                       />
                     </div>
-                    <Button className="w-full">Send Message</Button>
+                    <Button type="submit" className="w-full" disabled={loading}>
+                      {loading ? 'Sending...' : 'Send Message'}
+                    </Button>
                   </form>
                 </CardContent>
               </Card>

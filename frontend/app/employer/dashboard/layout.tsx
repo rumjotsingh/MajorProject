@@ -8,7 +8,7 @@ export default function EmployerDashboardLayout({
 }) {
   return (
     <div className="flex h-screen overflow-hidden">
-      <CollapsibleSidebar role="employer" />
+      {/* <CollapsibleSidebar role="employer" /> */}
       <main className="flex-1 overflow-y-auto">
         <div className="container py-6 md:py-8">
           {children}
