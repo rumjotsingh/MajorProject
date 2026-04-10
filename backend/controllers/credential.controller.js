@@ -9,6 +9,7 @@ import { validateObjectId, isValidObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 
 // POST /credentials/upload-file (Upload file to Cloudinary only)
 export const uploadFile = async (req, res, next) => {
@@ -146,17 +147,8 @@ export const uploadCredential = async (req, res, next) => {
       verificationStatus: 'pending',
     });
 
-    // DO NOT update learner profile credits/level until verification
-    // Only update skills if provided
-    if (skills && skills.length > 0) {
-      const updatedSkills = [...new Set([...learnerProfile.skills, ...skills])];
-      learnerProfile.skills = updatedSkills;
-      try {
-        await learnerProfile.save();
-      } catch (profileError) {
-        logger.error('Failed to update learner profile skills:', profileError);
-      }
-    }
+    // Skills are derived only from verified credentials.
+    // Do not mutate learner profile skills for pending uploads.
 
     // Send notification to learner
     try {
@@ -308,9 +300,6 @@ export const updateCredential = async (req, res, next) => {
       return res.status(400).json({ error: 'Cannot edit verified credentials' });
     }
 
-    // Store old credits for recalculation
-    const oldCredits = credential.credits;
-
     // Update allowed fields
     if (skills) credential.skills = skills;
     if (title) credential.title = title;
@@ -318,32 +307,13 @@ export const updateCredential = async (req, res, next) => {
     if (issueDate) credential.issueDate = new Date(issueDate);
     
     // Validate and update credits if changed
-    if (credits !== undefined && credits !== oldCredits) {
+    if (credits !== undefined) {
       if (!validateCredits(credits)) {
         return res.status(400).json({ 
           error: 'Invalid credits value. Must be an integer between 1 and 40' 
         });
       }
-      
-      // Recalculate total credits and NSQF level
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId });
-      if (learnerProfile) {
-        const creditDifference = credits - oldCredits;
-        const newTotalCredits = learnerProfile.totalCredits + creditDifference;
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        // Update credential NSQF level (backend-controlled)
-        credential.nsqfLevel = nsqfInfo.level;
-      }
-      
+
       credential.credits = credits;
     }
 
@@ -351,6 +321,9 @@ export const updateCredential = async (req, res, next) => {
     // Remove any nsqfLevel from request body to prevent manipulation
 
     await credential.save();
+
+    // Always recompute learner profile from verified credentials only.
+    await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
 
     // Populate issuer before returning
     await credential.populate('issuerId', 'name');
@@ -380,22 +353,10 @@ export const deleteCredential = async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Recalculate total credits after deletion
-    const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId });
-    if (learnerProfile && credential.credits) {
-      const newTotalCredits = Math.max(0, learnerProfile.totalCredits - credential.credits);
-      
-      // Recalculate NSQF level
-      const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-      
-      // Update learner profile
-      learnerProfile.totalCredits = newTotalCredits;
-      learnerProfile.nsqfLevel = nsqfInfo.level;
-      learnerProfile.levelName = nsqfInfo.levelName;
-      await learnerProfile.save();
-    }
-
     await Credential.findByIdAndDelete(req.params.id);
+
+    // Remove associated skills/credits immediately by recomputing from remaining verified credentials.
+    await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
 
     res.status(204).send();
   } catch (error) {

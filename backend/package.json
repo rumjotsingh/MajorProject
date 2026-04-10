@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "seed:blog": "node scripts/seed-blog-posts.js",
+    "seed:jobs": "node scripts/seed-jobs-from-json.js",
     "fix:profiles": "node scripts/fix-profile-arrays.js"
   },
   "keywords": [
@@ -22,6 +23,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google/genai": "^0.14.1",
     "axios": "^1.13.6",
     "bcrypt": "^5.1.1",
     "cloudinary": "^1.41.0",

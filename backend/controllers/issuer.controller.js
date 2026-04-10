@@ -7,6 +7,7 @@ import { validateObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 import logger from '../utils/logger.js';
 
 // POST /issuer/register (Admin only)
@@ -278,16 +279,8 @@ export const issueCredential = async (req, res, next) => {
       verificationStatus: 'verified', // Auto-verify credentials issued by issuers
     });
 
-    // Update learner profile with new credits and NSQF level
-    const updatedSkills = skills && skills.length > 0 
-      ? [...new Set([...learnerProfile.skills, ...skills])]
-      : learnerProfile.skills;
-
-    learnerProfile.totalCredits = newTotalCredits;
-    learnerProfile.nsqfLevel = nsqfInfo.level;
-    learnerProfile.levelName = nsqfInfo.levelName;
-    learnerProfile.skills = updatedSkills;
-    await learnerProfile.save();
+    // Enforce verified-skill integrity by recomputing from verified credentials only.
+    const syncedProfile = await recomputeLearnerProfileFromVerifiedCredentials(user._id);
 
     // No need to trigger verification - credentials issued by issuers are auto-verified
     // VerificationService.verifyCredential(credential._id).catch(console.error);
@@ -333,10 +326,10 @@ export const issueCredential = async (req, res, next) => {
       credentialId: credential._id,
       status: 'verified', // Auto-verified
       creditsEarned: credits,
-      totalCredits: newTotalCredits,
-      nsqfLevel: nsqfInfo.level,
-      levelName: nsqfInfo.levelName,
-      message: `Credential issued and verified successfully! Learner earned ${credits} credits and is now at NSQF Level ${nsqfInfo.level} (${nsqfInfo.levelName})`,
+      totalCredits: syncedProfile.totalCredits,
+      nsqfLevel: syncedProfile.nsqfLevel,
+      levelName: syncedProfile.levelName,
+      message: `Credential issued and verified successfully! Learner earned ${credits} credits and is now at NSQF Level ${syncedProfile.nsqfLevel} (${syncedProfile.levelName})`,
     });
   } catch (error) {
     next(error);

@@ -69,10 +69,12 @@ export default function DashboardPage() {
         return;
       }
       if (userRole === "Employer") {
-        toast({ title: "Coming Soon", description: "Employer dashboard is under development" });
+        router.push("/employer/dashboard");
+        return;
       }
       if (userRole === "Admin") {
-        toast({ title: "Coming Soon", description: "Admin dashboard is under development" });
+        router.push("/admin/dashboard");
+        return;
       }
       if (userRole === "Learner") {
         await loadDashboardData();

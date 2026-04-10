@@ -34,6 +34,9 @@ export default function EmployerJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -43,17 +46,21 @@ export default function EmployerJobsPage() {
   });
 
   useEffect(() => {
-    fetchJobs();
-  }, [filter]);
+    fetchJobs(currentPage);
+  }, [filter, currentPage]);
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (page = 1) => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
       if (filter !== 'all') params.append('status', filter);
+      params.append('page', String(page));
+      params.append('limit', '10');
       
       const data = await employerApi.getJobs(params);
       setJobs(data.jobs || []);
+      setPages(data.pagination?.pages || 1);
+      setTotal(data.pagination?.total || 0);
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
@@ -101,7 +108,10 @@ export default function EmployerJobsPage() {
           {['all', 'open', 'closed'].map((status) => (
             <button
               key={status}
-              onClick={() => setFilter(status)}
+              onClick={() => {
+                setFilter(status);
+                setCurrentPage(1);
+              }}
               className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                 filter === status
                   ? 'bg-blue-600 text-white'
@@ -120,67 +130,114 @@ export default function EmployerJobsPage() {
             <p className="mt-4 text-gray-600">Loading jobs...</p>
           </div>
         ) : jobs.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6">
-            {jobs.map((job) => (
-              <div key={job._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        job.status === 'open' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {job.status}
-                      </span>
-                    </div>
-                    <p className="text-gray-700 mb-4 line-clamp-2">{job.description}</p>
-                    
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Briefcase className="w-4 h-4" />
-                        <span>NSQF Level {job.nsqfLevel}</span>
+          <>
+            <div className="grid grid-cols-1 gap-6">
+              {jobs.map((job) => (
+                <div key={job._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          job.status === 'open' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {job.status}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        <span>{job.applicationStats?.total || 0} applications</span>
+                      <p className="text-gray-700 mb-4 line-clamp-2">{job.description}</p>
+                      
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                        <div className="flex items-center gap-1">
+                          <Briefcase className="w-4 h-4" />
+                          <span>NSQF Level {job.nsqfLevel}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span>{job.applicationStats?.total || 0} applications</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>{new Date(job.createdAt).toLocaleDateString()}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>{new Date(job.createdAt).toLocaleDateString()}</span>
-                      </div>
-                    </div>
 
-                    {job.requiredSkills && job.requiredSkills.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {job.requiredSkills.map((skill, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                            {skill}
+                      {job.applicationStats && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-700">
+                            Total: {job.applicationStats.total || 0}
                           </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                          <span className="px-2 py-1 rounded text-xs bg-yellow-100 text-yellow-800">
+                            Applied: {job.applicationStats.applied || 0}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
+                            Shortlisted: {job.applicationStats.shortlisted || 0}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs bg-indigo-100 text-indigo-800">
+                            Interviewing: {job.applicationStats.interviewing || 0}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800">
+                            Rejected: {job.applicationStats.rejected || 0}
+                          </span>
+                          <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800">
+                            Hired: {job.applicationStats.hired || 0}
+                          </span>
+                        </div>
+                      )}
 
-                  <div className="flex gap-2 ml-4">
-                    <Link href={`/employer/jobs/${job._id}`}>
-                      <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Details">
-                        <Eye className="w-5 h-5" />
+                      {job.requiredSkills && job.requiredSkills.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {job.requiredSkills.map((skill, index) => (
+                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 ml-4">
+                      <Link href={`/employer/jobs/${job._id}`}>
+                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="View Details">
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </Link>
+                      <button
+                        onClick={() => handleDelete(job._id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
                       </button>
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(job._id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600">
+                Showing page {currentPage} of {Math.max(1, pages)} ({total} jobs)
+              </p>
+              <div className="flex gap-2">
+                <button
+                  className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                  disabled={loading || currentPage <= 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </button>
+                <button
+                  className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                  disabled={loading || currentPage >= pages}
+                  onClick={() => setCurrentPage((prev) => Math.min(pages, prev + 1))}
+                >
+                  Next
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+          </>
         ) : (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
             <Briefcase className="w-16 h-16 text-gray-300 mx-auto mb-4" />

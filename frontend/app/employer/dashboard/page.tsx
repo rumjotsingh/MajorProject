@@ -53,12 +53,27 @@ export default function EmployerDashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [statsData, jobsData] = await Promise.all([
+      const [statsData, jobsData, applicationsData] = await Promise.all([
         employerApi.getDashboardStats(),
-        employerApi.getJobs(new URLSearchParams({ limit: '5' }))
+        employerApi.getJobs(new URLSearchParams({ limit: '5' })),
+        employerApi.getApplications(new URLSearchParams({ limit: '5' })),
       ]);
+
+      const statusMap: Record<string, number> = {};
+      (statsData.applicationsByStatus || []).forEach((entry: { _id: string; count: number }) => {
+        statusMap[entry._id] = entry.count;
+      });
       
-      setStats(statsData);
+      setStats({
+        totalJobs: statsData?.stats?.totalJobs || 0,
+        activeJobs: statsData?.stats?.activeJobs || 0,
+        totalApplications: statsData?.stats?.totalApplications || 0,
+        pendingApplications: statusMap.applied || 0,
+        shortlistedApplications: statusMap.shortlisted || 0,
+        hiredApplications: statusMap.hired || 0,
+        totalBookmarks: statsData?.stats?.bookmarkCount || 0,
+        recentApplications: applicationsData?.applications || [],
+      });
       setRecentJobs(jobsData.jobs || []);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -306,16 +321,16 @@ export default function EmployerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {stats?.recentApplications && stats.recentApplications.length > 0 ? (
+                {stats?.recentApplications && stats.recentApplications.length > 0 ? (
               <div className="space-y-3">
                 {stats.recentApplications.map((app: any) => (
                   <div key={app._id} className="p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{app.learnerName}</h4>
-                        <p className="text-sm text-gray-600">{app.jobTitle}</p>
+                        <h4 className="font-semibold text-gray-900">{app.learnerId?.name || 'Unknown learner'}</h4>
+                        <p className="text-sm text-gray-600">{app.jobId?.title || 'Job'}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {new Date(app.createdAt).toLocaleDateString()}
+                          {new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${

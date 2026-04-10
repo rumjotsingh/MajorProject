@@ -15,20 +15,51 @@ import {
 import { Target, TrendingUp, Award, BookOpen, Plus, Sparkles, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { dashboardAPI, type LearnerProfile, type Credential } from "@/lib/dashboard-api";
 import { useToast } from "@/hooks/use-toast";
-import { motion } from "framer-motion";
 import Link from "next/link";
 import api from "@/lib/api";
 import { PricingModal } from "@/components/pricing-modal";
+
+type CareerPath = {
+  id: string;
+  name: string;
+  demand: string;
+};
+
+type SkillGapItem = {
+  name: string;
+  gap: number;
+  current: number;
+  required: number;
+};
+
+type SkillGapResponse = {
+  proficiency: number;
+  skillGaps: SkillGapItem[];
+};
+
+type RecommendationJob = {
+  title: string;
+  matchScore?: number | string;
+};
+
+type RecommendationCert = {
+  name: string;
+};
+
+type RecommendationsResponse = {
+  recommendedJobs?: RecommendationJob[];
+  recommendedCertifications?: RecommendationCert[];
+};
 
 export default function SkillMapPage() {
   const [loading, setLoading] = useState(true);
   const [analyzingGap, setAnalyzingGap] = useState(false);
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [credentials, setCredentials] = useState<Credential[]>([]);
-  const [careerPaths, setCareerPaths] = useState<any[]>([]);
+  const [careerPaths, setCareerPaths] = useState<CareerPath[]>([]);
   const [selectedPath, setSelectedPath] = useState<string>("");
-  const [skillGap, setSkillGap] = useState<any>(null);
-  const [recommendations, setRecommendations] = useState<any>(null);
+  const [skillGap, setSkillGap] = useState<SkillGapResponse | null>(null);
+  const [recommendations, setRecommendations] = useState<RecommendationsResponse | null>(null);
   const [subscription, setSubscription] = useState<any>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
@@ -150,7 +181,7 @@ export default function SkillMapPage() {
     const angleStep = (Math.PI * 2) / skills.length;
 
     // Draw web rings
-    ctx.strokeStyle = "rgba(100, 100, 255, 0.1)";
+    ctx.strokeStyle = "rgba(51, 65, 85, 0.18)";
     ctx.lineWidth = 1;
     for (let i = 1; i <= 5; i++) {
       ctx.beginPath();
@@ -170,7 +201,7 @@ export default function SkillMapPage() {
     }
 
     // Draw spokes
-    ctx.strokeStyle = "rgba(100, 100, 255, 0.15)";
+    ctx.strokeStyle = "rgba(51, 65, 85, 0.24)";
     ctx.lineWidth = 1;
     skills.forEach((_, i) => {
       const angle = angleStep * i - Math.PI / 2;
@@ -184,8 +215,8 @@ export default function SkillMapPage() {
     });
 
     // Draw skill levels
-    ctx.strokeStyle = "rgba(59, 130, 246, 0.6)";
-    ctx.fillStyle = "rgba(59, 130, 246, 0.2)";
+    ctx.strokeStyle = "rgba(14, 116, 144, 0.65)";
+    ctx.fillStyle = "rgba(14, 116, 144, 0.18)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     skills.forEach((skill, i) => {
@@ -211,15 +242,15 @@ export default function SkillMapPage() {
       const y = centerY + Math.sin(angle) * radius;
 
       // Draw point
-      ctx.fillStyle = "#3B82F6";
+      ctx.fillStyle = "#0E7490";
       ctx.beginPath();
       ctx.arc(x, y, 6, 0, Math.PI * 2);
       ctx.fill();
 
       // Draw glow
       const gradient = ctx.createRadialGradient(x, y, 0, x, y, 12);
-      gradient.addColorStop(0, "rgba(59, 130, 246, 0.6)");
-      gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
+      gradient.addColorStop(0, "rgba(14, 116, 144, 0.5)");
+      gradient.addColorStop(1, "rgba(14, 116, 144, 0)");
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.arc(x, y, 12, 0, Math.PI * 2);
@@ -227,7 +258,7 @@ export default function SkillMapPage() {
     });
 
     // Draw center point
-    ctx.fillStyle = "#3B82F6";
+    ctx.fillStyle = "#0E7490";
     ctx.beginPath();
     ctx.arc(centerX, centerY, 8, 0, Math.PI * 2);
     ctx.fill();
@@ -239,14 +270,19 @@ export default function SkillMapPage() {
 
   const skillColors = [
     "from-blue-500 to-cyan-500",
-    "from-purple-500 to-pink-500",
+    "from-indigo-500 to-blue-500",
     "from-green-500 to-emerald-500",
-    "from-orange-500 to-yellow-500",
-    "from-pink-500 to-rose-500",
-    "from-indigo-500 to-purple-500",
+    "from-amber-500 to-orange-500",
+    "from-rose-500 to-pink-500",
+    "from-violet-500 to-indigo-500",
     "from-teal-500 to-green-500",
     "from-red-500 to-orange-500",
   ];
+
+  const getStableSkillSize = (index: number) => {
+    const scale = ["text-xs", "text-sm", "text-base", "text-lg"];
+    return scale[index % scale.length];
+  };
 
   // If user doesn't have AI features, show upgrade page
   if (!loadingSubscription && subscription && !subscription.subscription.features.aiRecommendations) {
@@ -325,18 +361,18 @@ export default function SkillMapPage() {
   }
 
   return (
-    <div className="space-y-6 animate-fade-in max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-6xl mx-auto pb-4">
       {/* Removed upgrade prompt dialog - now blocking entire page */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Sparkles className="h-8 w-8 text-primary" />
+            <Sparkles className="h-7 w-7 text-primary" />
             Skill Map & Gap Analysis
           </h1>
-          <p className="text-muted-foreground">Visualize your skills and identify gaps for your career goals</p>
+          <p className="text-muted-foreground">Track your strongest skills and identify what to improve for your target career path.</p>
         </div>
         <Link href="/credentials/upload">
-          <Button className="gap-2">
+          <Button className="gap-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             Add Credential
           </Button>
@@ -344,69 +380,61 @@ export default function SkillMapPage() {
       </div>
 
       {/* Overview Stats */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Skills</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profile?.skills.length || 0}</div>
-              <p className="text-xs text-muted-foreground">Across all credentials</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <Card className="border-muted/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Skills</CardTitle>
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{profile?.skills.length || 0}</div>
+            <p className="text-xs text-muted-foreground">Across all credentials</p>
+          </CardContent>
+        </Card>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">NSQF Level</CardTitle>
-              <Award className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profile?.nsqfLevel || 1}</div>
-              <p className="text-xs text-muted-foreground">{profile?.levelName || 'Basic/Foundation'}</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card className="border-muted/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">NSQF Level</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{profile?.nsqfLevel || 1}</div>
+            <p className="text-xs text-muted-foreground">{profile?.levelName || "Basic/Foundation"}</p>
+          </CardContent>
+        </Card>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Credentials</CardTitle>
-              <BookOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{credentials.length}</div>
-              <p className="text-xs text-muted-foreground">Total earned</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card className="border-muted/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Credentials</CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{credentials.length}</div>
+            <p className="text-xs text-muted-foreground">Total earned</p>
+          </CardContent>
+        </Card>
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{profile?.totalCredits || 0}</div>
-              <p className="text-xs text-muted-foreground">Accumulated</p>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <Card className="border-muted/60 shadow-sm">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Credits</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{profile?.totalCredits || 0}</div>
+            <p className="text-xs text-muted-foreground">Accumulated</p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Career Path Selection for Gap Analysis */}
-      <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+      <Card className="border-muted/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
             AI-Powered Skill Gap Analysis
           </CardTitle>
           <CardDescription>
-            Select a career path to see which skills you need to develop
+            Choose a career path to compare your current skills with expected requirements.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -450,8 +478,8 @@ export default function SkillMapPage() {
                   <p className="text-sm text-muted-foreground">
                     You need to develop {skillGap.skillGaps.length} skill{skillGap.skillGaps.length > 1 ? 's' : ''}:
                   </p>
-                  {skillGap.skillGaps.map((gap: any, i: number) => (
-                    <div key={i} className="p-3 rounded-lg border bg-card">
+                  {skillGap.skillGaps.map((gap, i: number) => (
+                    <div key={`${gap.name}-${i}`} className="p-3 rounded-lg border bg-card">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="h-4 w-4 text-orange-500" />
@@ -468,7 +496,7 @@ export default function SkillMapPage() {
                           <div className="h-2 rounded-full bg-muted overflow-hidden">
                             <div
                               className="h-full bg-orange-500"
-                              style={{ width: `${(gap.current / gap.required) * 100}%` }}
+                              style={{ width: `${Math.min(100, (gap.current / gap.required) * 100)}%` }}
                             />
                           </div>
                         </div>
@@ -483,13 +511,44 @@ export default function SkillMapPage() {
                   View Full Recommendations
                 </Button>
               </Link>
+
+              {recommendations && (
+                <div className="grid gap-3 md:grid-cols-2 pt-2">
+                  {recommendations.recommendedJobs && recommendations.recommendedJobs.length > 0 && (
+                    <div className="p-3 rounded-lg border bg-card">
+                      <p className="font-medium mb-2">Top Job Matches</p>
+                      <div className="space-y-2">
+                        {recommendations.recommendedJobs.slice(0, 3).map((job, i: number) => (
+                          <div key={i} className="text-sm flex items-center justify-between gap-2">
+                            <span className="text-muted-foreground truncate">{job.title}</span>
+                            <Badge variant="outline">{Math.max(0, Math.min(100, Number(job.matchScore) || 0))}%</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {recommendations.recommendedCertifications && recommendations.recommendedCertifications.length > 0 && (
+                    <div className="p-3 rounded-lg border bg-card">
+                      <p className="font-medium mb-2">Suggested Certifications</p>
+                      <div className="space-y-2">
+                        {recommendations.recommendedCertifications.slice(0, 3).map((cert, i: number) => (
+                          <p key={i} className="text-sm text-muted-foreground truncate">
+                            {cert.name}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Spider Web Visualization */}
-      <Card>
+      <Card className="border-muted/60 shadow-sm">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
@@ -518,15 +577,9 @@ export default function SkillMapPage() {
               {/* Legend */}
               <div className="space-y-3">
                 {skillDistribution.slice(0, 8).map((skill, i) => (
-                  <motion.div
+                  <div
                     key={skill.name}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-gradient-to-r hover:shadow-md transition-all cursor-pointer"
-                    style={{
-                      backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))`,
-                    }}
+                    className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30 hover:bg-muted/50 transition-colors"
                   >
                     <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${skillColors[i % skillColors.length]} flex items-center justify-center text-white font-bold shadow-lg`}>
                       {skill.count}
@@ -540,7 +593,7 @@ export default function SkillMapPage() {
                     <Badge variant="secondary" className="text-sm">
                       {Math.round(skill.level)}%
                     </Badge>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -550,30 +603,23 @@ export default function SkillMapPage() {
 
       {/* All Skills Cloud */}
       {profile && profile.skills.length > 0 && (
-        <Card>
+        <Card className="border-muted/60 shadow-sm">
           <CardHeader>
             <CardTitle>Skill Cloud</CardTitle>
+            <CardDescription>Quick view of your declared competencies.</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-wrap gap-3 justify-center">
+            <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill, i) => {
-                const size = Math.random() * 0.5 + 0.8;
                 return (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ opacity: 1, scale: size }}
-                    transition={{ delay: i * 0.03, type: "spring" }}
-                    whileHover={{ scale: size * 1.1, rotate: Math.random() * 10 - 5 }}
-                  >
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-sm px-4 py-2 bg-gradient-to-br ${skillColors[i % skillColors.length]} text-white border-0 shadow-md`}
-                      style={{ fontSize: `${size}rem` }}
+                  <div key={i}>
+                    <Badge
+                      variant="secondary"
+                      className={`${getStableSkillSize(i)} px-3 py-1.5 bg-gradient-to-br ${skillColors[i % skillColors.length]} text-white border-0 shadow-sm transition-transform hover:scale-105`}
                     >
                       {skill}
                     </Badge>
-                  </motion.div>
+                  </div>
                 );
               })}
             </div>
@@ -582,9 +628,10 @@ export default function SkillMapPage() {
       )}
 
       {/* Skill Growth Timeline */}
-      <Card>
+      <Card className="border-muted/60 shadow-sm">
         <CardHeader>
           <CardTitle>Skill Growth Timeline</CardTitle>
+          <CardDescription>Your most recent credentials and mapped skills.</CardDescription>
         </CardHeader>
         <CardContent>
           {credentials.length === 0 ? (
@@ -594,12 +641,9 @@ export default function SkillMapPage() {
           ) : (
             <div className="space-y-4">
               {credentials.slice(0, 5).map((cred, i) => (
-                <motion.div
+                <div
                   key={cred._id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.1 }}
-                  className="flex items-start gap-4 border-l-2 border-primary pl-4 pb-4 hover:border-l-4 transition-all"
+                  className="flex items-start gap-4 border-l-2 border-primary/60 pl-4 pb-4"
                 >
                   <div className="flex-1">
                     <h4 className="font-semibold">{cred.title}</h4>
@@ -623,7 +667,7 @@ export default function SkillMapPage() {
                       year: "numeric",
                     })}
                   </span>
-                </motion.div>
+                </div>
               ))}
             </div>
           )}

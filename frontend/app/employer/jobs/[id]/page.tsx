@@ -20,6 +20,14 @@ interface Job {
   };
   status: string;
   createdAt: string;
+  applicationStats?: {
+    total: number;
+    applied: number;
+    shortlisted: number;
+    interviewing: number;
+    rejected: number;
+    hired: number;
+  };
 }
 
 interface Application {
@@ -46,6 +54,9 @@ export default function EmployerJobDetailPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationFilter, setApplicationFilter] = useState('all');
+  const [applicationPage, setApplicationPage] = useState(1);
+  const [applicationPages, setApplicationPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -57,7 +68,11 @@ export default function EmployerJobDetailPage() {
 
   useEffect(() => {
     fetchJobDetails();
-    fetchApplications();
+  }, [jobId]);
+
+  useEffect(() => {
+    setApplicationPage(1);
+    setApplicationFilter('all');
   }, [jobId]);
 
   const fetchJobDetails = async () => {
@@ -74,12 +89,24 @@ export default function EmployerJobDetailPage() {
 
   const fetchApplications = async () => {
     try {
-      const data = await employerApi.getJobApplications(jobId);
+      const params = new URLSearchParams();
+      params.append('page', String(applicationPage));
+      params.append('limit', '10');
+      if (applicationFilter !== 'all') {
+        params.append('status', applicationFilter);
+      }
+
+      const data = await employerApi.getJobApplications(jobId, params);
       setApplications(data.applications || []);
+      setApplicationPages(data.pagination?.pages || 1);
     } catch (error) {
       console.error('Error fetching applications:', error);
     }
   };
+
+  useEffect(() => {
+    fetchApplications();
+  }, [jobId, applicationFilter, applicationPage]);
 
   const handleUpdateApplicationStatus = async (applicationId: string, status: string) => {
     try {
@@ -247,6 +274,36 @@ export default function EmployerJobDetailPage() {
             </div>
           </div>
 
+          {job.applicationStats && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6">
+              <div className="px-3 py-2 rounded bg-gray-100 text-xs text-gray-700">Total: {job.applicationStats.total || 0}</div>
+              <div className="px-3 py-2 rounded bg-yellow-100 text-xs text-yellow-800">Applied: {job.applicationStats.applied || 0}</div>
+              <div className="px-3 py-2 rounded bg-blue-100 text-xs text-blue-800">Shortlisted: {job.applicationStats.shortlisted || 0}</div>
+              <div className="px-3 py-2 rounded bg-indigo-100 text-xs text-indigo-800">Interviewing: {job.applicationStats.interviewing || 0}</div>
+              <div className="px-3 py-2 rounded bg-red-100 text-xs text-red-800">Rejected: {job.applicationStats.rejected || 0}</div>
+              <div className="px-3 py-2 rounded bg-green-100 text-xs text-green-800">Hired: {job.applicationStats.hired || 0}</div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-6">
+            {['all', 'applied', 'shortlisted', 'interviewing', 'hired', 'rejected', 'withdrawn'].map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setApplicationFilter(status);
+                  setApplicationPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  applicationFilter === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
+          </div>
+
           {applications.length > 0 ? (
             <div className="space-y-4">
               {applications.map((application) => {
@@ -334,6 +391,28 @@ export default function EmployerJobDetailPage() {
                   </div>
                 );
               })}
+
+              <div className="flex items-center justify-between pt-2 border-t">
+                <p className="text-sm text-gray-600">
+                  Page {applicationPage} of {Math.max(1, applicationPages)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                    disabled={applicationPage <= 1}
+                    onClick={() => setApplicationPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                    disabled={applicationPage >= applicationPages}
+                    onClick={() => setApplicationPage((prev) => Math.min(applicationPages, prev + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center py-12">

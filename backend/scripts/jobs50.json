@@ -1,0 +1,1168 @@
+[
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Frontend Developer",
+    "description": "Frontend Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "nsqfLevel": 8,
+    "location": "Pune",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 471011,
+      "max": 1094655,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 3,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Backend Developer",
+    "description": "Backend Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "TensorFlow",
+      "Python"
+    ],
+    "nsqfLevel": 8,
+    "location": "Noida",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 543673,
+      "max": 1597483,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 2,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Full Stack Developer",
+    "description": "Full Stack Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 4,
+    "location": "Hyderabad",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 437050,
+      "max": 1520761,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 3,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Data Analyst",
+    "description": "Data Analyst role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Flutter",
+      "Dart"
+    ],
+    "nsqfLevel": 7,
+    "location": "Hyderabad",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 710290,
+      "max": 898457,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 0,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "AI Engineer",
+    "description": "AI Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "C++",
+      "Java"
+    ],
+    "nsqfLevel": 5,
+    "location": "Remote",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 306050,
+      "max": 1610160,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 3,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "UI/UX Designer",
+    "description": "UI/UX Designer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 3,
+    "location": "Remote",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 306851,
+      "max": 1917412,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 2,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "DevOps Engineer",
+    "description": "DevOps Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Python",
+      "SQL"
+    ],
+    "nsqfLevel": 8,
+    "location": "Chennai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 742239,
+      "max": 834081,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 0,
+      "max": 5
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Software Intern",
+    "description": "Software Intern role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 4,
+    "location": "Bangalore",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 697191,
+      "max": 1956744,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 1,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Mobile Developer",
+    "description": "Mobile Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Testing",
+      "Selenium"
+    ],
+    "nsqfLevel": 5,
+    "location": "Pune",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 753187,
+      "max": 821083,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 0,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Cybersecurity Analyst",
+    "description": "Cybersecurity Analyst role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Node.js",
+      "Express",
+      "MongoDB"
+    ],
+    "nsqfLevel": 5,
+    "location": "Chennai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 724344,
+      "max": 1490573,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 0,
+      "max": 5
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Cloud Engineer",
+    "description": "Cloud Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 8,
+    "location": "Hyderabad",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 415466,
+      "max": 1360393,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 2,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "QA Engineer",
+    "description": "QA Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Security",
+      "Networking"
+    ],
+    "nsqfLevel": 8,
+    "location": "Pune",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 590823,
+      "max": 848438,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 0,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "System Administrator",
+    "description": "System Administrator role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 5,
+    "location": "Noida",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 586449,
+      "max": 1188944,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 2,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Machine Learning Engineer",
+    "description": "Machine Learning Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 5,
+    "location": "Gurgaon",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 521186,
+      "max": 1879063,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 1,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Product Manager",
+    "description": "Product Manager role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Security",
+      "Networking"
+    ],
+    "nsqfLevel": 6,
+    "location": "Delhi",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 215994,
+      "max": 880080,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 0,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Business Analyst",
+    "description": "Business Analyst role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Security",
+      "Networking"
+    ],
+    "nsqfLevel": 3,
+    "location": "Pune",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 425217,
+      "max": 1996283,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 1,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Technical Support Engineer",
+    "description": "Technical Support Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Python",
+      "SQL"
+    ],
+    "nsqfLevel": 5,
+    "location": "Bangalore",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 362402,
+      "max": 1607700,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 0,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Game Developer",
+    "description": "Game Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "TensorFlow",
+      "Python"
+    ],
+    "nsqfLevel": 4,
+    "location": "Hyderabad",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 657228,
+      "max": 1126772,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 0,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Embedded Systems Engineer",
+    "description": "Embedded Systems Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Testing",
+      "Selenium"
+    ],
+    "nsqfLevel": 8,
+    "location": "Gurgaon",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 495495,
+      "max": 1720335,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 2,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Blockchain Developer",
+    "description": "Blockchain Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 7,
+    "location": "Delhi",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 651257,
+      "max": 1968781,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 3,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "AR/VR Developer",
+    "description": "AR/VR Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Flutter",
+      "Dart"
+    ],
+    "nsqfLevel": 6,
+    "location": "Mumbai",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 493145,
+      "max": 1371393,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 2,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Data Scientist",
+    "description": "Data Scientist role with hands-on responsibilities.",
+    "requiredSkills": [
+      "TensorFlow",
+      "Python"
+    ],
+    "nsqfLevel": 4,
+    "location": "Noida",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 725015,
+      "max": 1889576,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 1,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Network Engineer",
+    "description": "Network Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "nsqfLevel": 3,
+    "location": "Mumbai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 500406,
+      "max": 938974,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 3,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Database Administrator",
+    "description": "Database Administrator role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "nsqfLevel": 6,
+    "location": "Mumbai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 548859,
+      "max": 1447429,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 3,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "SEO Specialist",
+    "description": "SEO Specialist role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 6,
+    "location": "Remote",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 572274,
+      "max": 1145198,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 2,
+      "max": 5
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Digital Marketing Executive",
+    "description": "Digital Marketing Executive role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Python",
+      "SQL"
+    ],
+    "nsqfLevel": 7,
+    "location": "Delhi",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 241074,
+      "max": 1260068,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 0,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Content Writer",
+    "description": "Content Writer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 6,
+    "location": "Remote",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 710468,
+      "max": 1090141,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 2,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Graphic Designer",
+    "description": "Graphic Designer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 3,
+    "location": "Pune",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 743213,
+      "max": 1085765,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 1,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "HR Executive",
+    "description": "HR Executive role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 5,
+    "location": "Noida",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 333039,
+      "max": 1070785,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 3,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Recruiter",
+    "description": "Recruiter role with hands-on responsibilities.",
+    "requiredSkills": [
+      "TensorFlow",
+      "Python"
+    ],
+    "nsqfLevel": 8,
+    "location": "Pune",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 673166,
+      "max": 906237,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 2,
+      "max": 5
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Sales Executive",
+    "description": "Sales Executive role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Node.js",
+      "Express",
+      "MongoDB"
+    ],
+    "nsqfLevel": 4,
+    "location": "Chennai",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 648882,
+      "max": 850125,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 2,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Operations Manager",
+    "description": "Operations Manager role with hands-on responsibilities.",
+    "requiredSkills": [
+      "TensorFlow",
+      "Python"
+    ],
+    "nsqfLevel": 4,
+    "location": "Noida",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 292169,
+      "max": 801317,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 0,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Project Manager",
+    "description": "Project Manager role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Security",
+      "Networking"
+    ],
+    "nsqfLevel": 5,
+    "location": "Hyderabad",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 657513,
+      "max": 1908196,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 0,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Scrum Master",
+    "description": "Scrum Master role with hands-on responsibilities.",
+    "requiredSkills": [
+      "C++",
+      "Java"
+    ],
+    "nsqfLevel": 5,
+    "location": "Gurgaon",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 272645,
+      "max": 1645387,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 2,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Site Reliability Engineer",
+    "description": "Site Reliability Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Python",
+      "SQL"
+    ],
+    "nsqfLevel": 7,
+    "location": "Pune",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 670596,
+      "max": 1885413,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 2,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Big Data Engineer",
+    "description": "Big Data Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 7,
+    "location": "Mumbai",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 596495,
+      "max": 1930763,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 1,
+      "max": 4
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "ETL Developer",
+    "description": "ETL Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 3,
+    "location": "Gurgaon",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 325712,
+      "max": 1033356,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 3,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Automation Engineer",
+    "description": "Automation Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "AWS",
+      "Azure"
+    ],
+    "nsqfLevel": 4,
+    "location": "Bangalore",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 755180,
+      "max": 997426,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 1,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Penetration Tester",
+    "description": "Penetration Tester role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Security",
+      "Networking"
+    ],
+    "nsqfLevel": 8,
+    "location": "Mumbai",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 752436,
+      "max": 1375572,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 1,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "IT Auditor",
+    "description": "IT Auditor role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 7,
+    "location": "Delhi",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 721787,
+      "max": 1230829,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 0,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "IoT Engineer",
+    "description": "IoT Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "C++",
+      "Java"
+    ],
+    "nsqfLevel": 4,
+    "location": "Hyderabad",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 551712,
+      "max": 1956762,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 3,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Robotics Engineer",
+    "description": "Robotics Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Node.js",
+      "Express",
+      "MongoDB"
+    ],
+    "nsqfLevel": 6,
+    "location": "Hyderabad",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 486690,
+      "max": 1322106,
+      "currency": "INR"
+    },
+    "employmentType": "contract",
+    "experience": {
+      "min": 3,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Research Engineer",
+    "description": "Research Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 8,
+    "location": "Pune",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 281561,
+      "max": 1547993,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 1,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Software Architect",
+    "description": "Software Architect role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "nsqfLevel": 8,
+    "location": "Remote",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 289309,
+      "max": 1797017,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 1,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Solutions Architect",
+    "description": "Solutions Architect role with hands-on responsibilities.",
+    "requiredSkills": [
+      "React",
+      "Node.js"
+    ],
+    "nsqfLevel": 4,
+    "location": "Chennai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 495566,
+      "max": 1409021,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 2,
+      "max": 7
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "API Developer",
+    "description": "API Developer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "HTML",
+      "CSS",
+      "JavaScript"
+    ],
+    "nsqfLevel": 7,
+    "location": "Remote",
+    "locationType": "remote",
+    "salaryRange": {
+      "min": 580238,
+      "max": 1317258,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 1,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Integration Engineer",
+    "description": "Integration Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Docker",
+      "Kubernetes"
+    ],
+    "nsqfLevel": 8,
+    "location": "Pune",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 409792,
+      "max": 1113645,
+      "currency": "INR"
+    },
+    "employmentType": "part-time",
+    "experience": {
+      "min": 1,
+      "max": 8
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Support Analyst",
+    "description": "Support Analyst role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 4,
+    "location": "Mumbai",
+    "locationType": "hybrid",
+    "salaryRange": {
+      "min": 610401,
+      "max": 1528352,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 1,
+      "max": 3
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Help Desk Engineer",
+    "description": "Help Desk Engineer role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Figma",
+      "UI",
+      "UX"
+    ],
+    "nsqfLevel": 8,
+    "location": "Delhi",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 652729,
+      "max": 1665910,
+      "currency": "INR"
+    },
+    "employmentType": "full-time",
+    "experience": {
+      "min": 2,
+      "max": 6
+    },
+    "status": "open"
+  },
+  {
+    "employerId": "69bea4a1f5bfa8f2ac4fe1bf",
+    "title": "Tech Lead",
+    "description": "Tech Lead role with hands-on responsibilities.",
+    "requiredSkills": [
+      "Flutter",
+      "Dart"
+    ],
+    "nsqfLevel": 5,
+    "location": "Noida",
+    "locationType": "onsite",
+    "salaryRange": {
+      "min": 445908,
+      "max": 1425968,
+      "currency": "INR"
+    },
+    "employmentType": "internship",
+    "experience": {
+      "min": 3,
+      "max": 3
+    },
+    "status": "open"
+  }
+]
