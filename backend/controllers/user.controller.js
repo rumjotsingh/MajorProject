@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import User from '../models/User.model.js';
 import Employer from '../models/Employer.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
@@ -319,35 +320,151 @@ export const applyToJob = async (req, res, next) => {
 // GET /users/applications (Learner)
 export const getMyApplications = async (req, res, next) => {
   try {
-    const { status, page = 1, limit = 20 } = req.query;
+    const { status, page = 1, limit = 20, search } = req.query;
     const pageNumber = Math.max(1, parseInt(page, 10) || 1);
     const limitNumber = Math.max(1, Math.min(50, parseInt(limit, 10) || 20));
     const skip = (pageNumber - 1) * limitNumber;
 
-    const filter = { learnerId: req.user.userId };
-    if (status) {
+    // Convert userId to ObjectId for proper matching
+    const learnerObjectId = new mongoose.Types.ObjectId(req.user.userId);
+    
+    console.log('User ID:', req.user.userId);
+    console.log('Learner ObjectId:', learnerObjectId);
+    console.log('Search term:', search);
+    
+    const filter = { learnerId: learnerObjectId };
+    if (status && status !== 'all') {
       filter.status = status;
     }
 
-    const [applications, total, statusSummary] = await Promise.all([
-      Application.find(filter)
-        .populate({
-          path: 'jobId',
-          populate: {
-            path: 'employerId',
-            select: 'companyName industry location website',
-          },
-        })
-        .sort({ appliedAt: -1 })
-        .skip(skip)
-        .limit(limitNumber)
-        .lean(),
-      Application.countDocuments(filter),
-      Application.aggregate([
-        { $match: { learnerId: req.user.userId } },
-        { $group: { _id: '$status', count: { $sum: 1 } } },
-      ]),
+    console.log('Filter:', filter);
+
+    // Build aggregation pipeline for search
+    let pipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'jobId',
+          foreignField: '_id',
+          as: 'job'
+        }
+      },
+      { $unwind: '$job' },
+      {
+        $lookup: {
+          from: 'employers',
+          localField: 'job.employerId',
+          foreignField: '_id',
+          as: 'employer'
+        }
+      },
+      { $unwind: '$employer' }
+    ];
+
+    // Add search filter if provided
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'job.title': searchRegex },
+            { 'employer.companyName': searchRegex },
+            { 'job.location': searchRegex },
+            { 'job.description': searchRegex }
+          ]
+        }
+      });
+    }
+
+    // Add sorting, skip, and limit
+    pipeline.push(
+      { $sort: { appliedAt: -1 } },
+      { $skip: skip },
+      { $limit: limitNumber }
+    );
+
+    // Execute aggregation for applications
+    const applications = await Application.aggregate(pipeline);
+
+    // Get total count for pagination (without skip/limit)
+    let countPipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'jobs',
+          localField: 'jobId',
+          foreignField: '_id',
+          as: 'job'
+        }
+      },
+      { $unwind: '$job' },
+      {
+        $lookup: {
+          from: 'employers',
+          localField: 'job.employerId',
+          foreignField: '_id',
+          as: 'employer'
+        }
+      },
+      { $unwind: '$employer' }
+    ];
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      countPipeline.push({
+        $match: {
+          $or: [
+            { 'job.title': searchRegex },
+            { 'employer.companyName': searchRegex },
+            { 'job.location': searchRegex },
+            { 'job.description': searchRegex }
+          ]
+        }
+      });
+    }
+
+    countPipeline.push({ $count: "total" });
+    const countResult = await Application.aggregate(countPipeline);
+    const total = countResult.length > 0 ? countResult[0].total : 0;
+
+    // Get status summary (always for all applications, not filtered by search)
+    const statusSummary = await Application.aggregate([
+      { $match: { learnerId: learnerObjectId } },
+      { $group: { _id: '$status', count: { $sum: 1 } } },
     ]);
+
+    console.log('Applications found:', applications.length);
+    console.log('Total count:', total);
+    console.log('Status summary:', statusSummary);
+
+    // Transform applications to match expected format
+    const formattedApplications = applications.map(app => ({
+      _id: app._id,
+      status: app.status,
+      appliedAt: app.appliedAt,
+      coverLetter: app.coverLetter,
+      resume: app.resume,
+      statusHistory: app.statusHistory,
+      employerNotes: app.employerNotes,
+      rating: app.rating,
+      createdAt: app.createdAt,
+      updatedAt: app.updatedAt,
+      jobId: {
+        _id: app.job._id,
+        title: app.job.title,
+        location: app.job.location,
+        locationType: app.job.locationType,
+        description: app.job.description,
+        employerId: {
+          _id: app.employer._id,
+          companyName: app.employer.companyName,
+          industry: app.employer.industry,
+          location: app.employer.location,
+          website: app.employer.website
+        }
+      }
+    }));
 
     const summary = {
       total: 0,
@@ -361,13 +478,15 @@ export const getMyApplications = async (req, res, next) => {
 
     statusSummary.forEach((item) => {
       summary.total += item.count;
-      if (item._id in summary) {
+      if (summary.hasOwnProperty(item._id)) {
         summary[item._id] = item.count;
       }
     });
 
+    console.log('Final summary:', summary);
+
     res.json({
-      applications,
+      applications: formattedApplications,
       summary,
       pagination: {
         total,
@@ -377,6 +496,7 @@ export const getMyApplications = async (req, res, next) => {
       },
     });
   } catch (error) {
+    console.error('Error in getMyApplications:', error);
     next(error);
   }
 };

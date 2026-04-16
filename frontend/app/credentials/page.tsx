@@ -1,749 +1,418 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Plus, Search, ChevronLeft, ChevronRight, Award, Building, Calendar, Eye, Download, CheckCircle, Clock, XCircle, Trash2, Edit } from "lucide-react";
+  Plus, Search, ChevronLeft, ChevronRight, Award, Building2,
+  Calendar, Eye, Download, CheckCircle, Clock, XCircle, Trash2, Edit, X,
+} from "lucide-react";
 import Link from "next/link";
 import api from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface Credential {
   _id: string;
   title: string;
-  issuerId: {
-    _id: string;
-    name: string;
-  };
+  issuerId: { _id: string; name: string };
   issueDate: string;
   verificationStatus: "verified" | "pending" | "rejected";
   nsqfLevel: number;
   skills: string[];
   certificateUrl: string;
+  credits?: number;
   createdAt: string;
 }
 
+const statusStyle = (s: string) => {
+  if (s === "verified") return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+  if (s === "rejected") return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+  return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+};
+
+const StatusIcon = ({ s }: { s: string }) => {
+  if (s === "verified") return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+  if (s === "rejected") return <XCircle className="h-4 w-4 text-red-500" />;
+  return <Clock className="h-4 w-4 text-amber-500" />;
+};
+
+const fmt = (d: string) => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
 export default function CredentialsPage() {
   const router = useRouter();
+  const { toast } = useToast();
+
   const [loading, setLoading] = useState(true);
   const [credentials, setCredentials] = useState<Credential[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [limit, setLimit] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [selectedCredential, setSelectedCredential] = useState<Credential | null>(null);
-  const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [credentialToDelete, setCredentialToDelete] = useState<string | null>(null);
+
+  // Modal state
+  const [viewCred, setViewCred] = useState<Credential | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const [subscription, setSubscription] = useState<any>(null);
-  const { toast } = useToast();
 
-  // Load subscription info
+  // Debounce search
   useEffect(() => {
-    loadSubscription();
-  }, []);
+    const t = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
 
-  const loadSubscription = async () => {
-    try {
-      const response = await api.get("/payment/subscription");
-      setSubscription(response.data);
-    } catch (error) {
-      console.error("Failed to load subscription:", error);
-    }
-  };
-
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchQuery);
-      setPage(1); // Reset to first page on search
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  useEffect(() => {
-    loadCredentials();
-  }, [page, limit, debouncedSearch, statusFilter]);
-
-  const loadCredentials = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-      });
-      
-      if (debouncedSearch) {
-        params.append('search', debouncedSearch);
-      }
-
-      if (statusFilter && statusFilter !== "all") {
-        params.append('status', statusFilter);
-      }
-
-      const response = await api.get(`/credentials?${params.toString()}`);
-      
-      console.log("Credentials API Response:", response.data);
-      
-      // Handle both paginated and non-paginated responses
-      if (response.data && response.data.credentials && Array.isArray(response.data.credentials)) {
-        console.log("Setting paginated credentials:", response.data.credentials.length);
-        setCredentials(response.data.credentials);
-        setTotalPages(response.data.pagination?.pages || 1);
-        setTotal(response.data.pagination?.total || response.data.credentials.length);
-      } else if (Array.isArray(response.data)) {
-        console.log("Setting array credentials:", response.data.length);
-        setCredentials(response.data);
-        setTotal(response.data.length);
-        setTotalPages(1);
-      } else {
-        // Fallback to empty array
-        console.error("Unexpected response format:", response.data);
-        setCredentials([]);
-        setTotal(0);
+      const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+      if (debouncedSearch) params.append("search", debouncedSearch);
+      if (statusFilter !== "all") params.append("status", statusFilter);
+      const { data } = await api.get(`/credentials?${params}`);
+      if (data.credentials) {
+        setCredentials(data.credentials);
+        setTotalPages(data.pagination?.pages || 1);
+        setTotal(data.pagination?.total || data.credentials.length);
+      } else if (Array.isArray(data)) {
+        setCredentials(data);
+        setTotal(data.length);
         setTotalPages(1);
       }
-    } catch (error: any) {
-      console.error("Failed to load credentials:", error);
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to load credentials",
-        variant: "destructive",
-      });
-      // Set empty array on error
-      setCredentials([]);
-      setTotal(0);
-      setTotalPages(1);
+    } catch (e: any) {
+      toast({ title: "Error", description: e.response?.data?.error || "Failed to load", variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, debouncedSearch, statusFilter]);
 
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value);
-    // Page reset is handled in the debounce useEffect
-  };
+  useEffect(() => { load(); }, [load]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "verified":
-        return <Badge variant="default">Verified</Badge>;
-      case "pending":
-        return <Badge variant="secondary">Pending</Badge>;
-      case "rejected":
-        return <Badge variant="destructive">Rejected</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
-
-  const handleViewCredential = (credential: Credential) => {
-    setSelectedCredential(credential);
-    setViewDialogOpen(true);
-  };
-
-  const handleDeleteClick = (credentialId: string) => {
-    setCredentialToDelete(credentialId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!credentialToDelete) return;
-
+  const handleDelete = async () => {
+    if (!deleteId) return;
     try {
       setDeleting(true);
-      await api.delete(`/credentials/${credentialToDelete}`);
-      
-      toast({
-        title: "Success",
-        description: "Credential deleted successfully",
-      });
-
-      // Reload credentials
-      await loadCredentials();
-      setDeleteDialogOpen(false);
-      setCredentialToDelete(null);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to delete credential",
-        variant: "destructive",
-      });
+      await api.delete(`/credentials/${deleteId}`);
+      toast({ title: "Deleted", description: "Credential removed." });
+      setDeleteId(null);
+      load();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.response?.data?.error || "Failed to delete", variant: "destructive" });
     } finally {
       setDeleting(false);
     }
   };
 
-  const handleEditClick = (credentialId: string) => {
-    router.push(`/credentials/edit/${credentialId}`);
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "verified":
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      default:
-        return null;
-    }
-  };
-
-  const startEntry = (page - 1) * limit + 1;
-  const endEntry = Math.min(page * limit, total);
-
-  if (loading) {
-    return <LoadingSkeleton />;
-  }
+  const start = (page - 1) * limit + 1;
+  const end = Math.min(page * limit, total);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Subscription Warning */}
-      {subscription && subscription.usage && subscription.usage.maxCredentials !== -1 && (
-        subscription.usage.credentials >= subscription.usage.maxCredentials * 0.8 && (
-          <Card className="bg-orange-500/10 border-orange-500/20">
-            <CardContent className="pt-6">
-              <div className="flex items-start gap-3">
-                <div className="text-orange-500 mt-0.5">⚠️</div>
-                <div className="flex-1">
-                  <p className="font-medium text-orange-500">
-                    {subscription.usage.credentials >= subscription.usage.maxCredentials 
-                      ? "Credential Limit Reached" 
-                      : "Approaching Credential Limit"}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    You're using {subscription.usage.credentials} of {subscription.usage.maxCredentials} credentials 
-                    in your {subscription.subscription.plan} plan.
-                    {subscription.usage.credentials >= subscription.usage.maxCredentials 
-                      ? " Please upgrade to add more credentials." 
-                      : " Consider upgrading to avoid hitting your limit."}
-                  </p>
-                  <Link href="/pricing">
-                    <Button variant="outline" size="sm" className="mt-3">
-                      View Plans
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )
-      )}
-      
+    <div className="space-y-5 pb-8 max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Credentials</h1>
-          <p className="text-muted-foreground">
-            Manage and view all your credentials
-          </p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Total Credentials: <span className="font-semibold">{total}</span>
-          </p>
+          <h1 className="text-xl font-bold">My Credentials</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">{total} credential{total !== 1 ? "s" : ""} in your portfolio</p>
         </div>
         <Link href="/credentials/upload">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add Credential</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
+          <Button size="sm" className="gap-2"><Plus className="h-4 w-4" />Add Credential</Button>
         </Link>
       </div>
 
-      {/* Coming Soon Banner */}
-     
-
-      {/* Filters Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            {/* Top Row - Entries and Search */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Show</span>
-                <Select value={limit.toString()} onValueChange={(value) => {
-                  setLimit(parseInt(value));
-                  setPage(1);
-                }}>
-                  <SelectTrigger className="w-20">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="100">100</SelectItem>
-                  </SelectContent>
-                </Select>
-                <span className="text-sm text-muted-foreground">Entries</span>
-              </div>
-
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search credentials..."
-                  value={searchQuery}
-                  onChange={(e) => handleSearchChange(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            {/* Bottom Row - Filters */}
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Status</label>
-                <Select value={statusFilter} onValueChange={(value: string) => {
-                  setStatusFilter(value);
-                  setPage(1);
-                }}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="verified">Verified</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search credentials..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 h-9 text-sm rounded-xl"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={v => { setStatusFilter(v); setPage(1); }}>
+          <SelectTrigger className="w-36 h-9 text-sm rounded-xl">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="verified">Verified</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={limit.toString()} onValueChange={v => { setLimit(parseInt(v)); setPage(1); }}>
+          <SelectTrigger className="w-24 h-9 text-sm rounded-xl">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[10, 25, 50].map(n => <SelectItem key={n} value={n.toString()}>{n} / page</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Table */}
-      <Card>
-        <CardContent className="p-0">
-          {!Array.isArray(credentials) || credentials.length === 0 ? (
-            <div className="text-center py-12">
-              <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">
-                {searchQuery || statusFilter !== "all" ? "No credentials found" : "No credentials yet"}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                {searchQuery || statusFilter !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "Start building your portfolio by uploading your first credential"}
-              </p>
-              {!searchQuery && statusFilter === "all" && (
-                <Link href="/credentials/upload">
-                  <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
-                    Upload Credential
-                  </Button>
-                </Link>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="overflow-x-auto">
-        <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow className="hover:bg-muted/50">
-              <TableHead className="font-semibold text-foreground">Credential</TableHead>
-              <TableHead className="font-semibold text-foreground">Issuer</TableHead>
-              <TableHead className="font-semibold text-foreground">Issue Date</TableHead>
-              <TableHead className="font-semibold text-foreground">NSQF Level</TableHead>
-              <TableHead className="font-semibold text-foreground">Skills</TableHead>
-              <TableHead className="font-semibold text-foreground">Status</TableHead>
-              <TableHead className="text-right font-semibold text-foreground">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {Array.isArray(credentials) && credentials.length > 0 ? (
-              credentials.map((credential) => (
-                <TableRow
-                  key={credential._id}
-                  className="hover:bg-muted/40 transition-colors border-border"
-                >
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="flex-shrink-0 p-2 bg-primary/10 rounded-lg">
-                        <Award className="h-4 w-4 text-primary" />
-                      </div>
-                      <div>
-                        <span className="font-semibold text-foreground block">
-                          {credential.title}
-                        </span>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-2">
-                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm text-foreground">{credential.issuerId.name}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex items-center gap-2 text-sm text-foreground">
-                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      {formatDate(credential.issueDate)}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <Badge variant="outline" className="font-medium">
-                      Level {credential.nsqfLevel}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    <div className="flex flex-wrap gap-1.5 max-w-xs">
-                      {credential.skills.slice(0, 2).map((skill, j) => (
-                        <Badge
-                          key={j}
-                          variant="secondary"
-                          className="text-xs font-medium whitespace-nowrap"
-                        >
-                          {skill}
-                        </Badge>
-                      ))}
-                      {credential.skills.length > 2 && (
-                        <Badge
-                          variant="secondary"
-                          className="text-xs font-medium whitespace-nowrap"
-                        >
-                          +{credential.skills.length - 2}
-                        </Badge>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4">
-                    {getStatusBadge(credential.verificationStatus)}
-                  </TableCell>
-                  <TableCell className="text-right py-4">
-                    <div className="flex items-center justify-end gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-primary hover:text-primary hover:bg-primary/10"
-                        onClick={() => handleViewCredential(credential)}
-                        title="View credential"
-                      >
-                        <Eye className="h-4 w-4" />
-                        <span className="hidden sm:inline text-xs">View</span>
-                      </Button>
-                      {credential.verificationStatus !== 'verified' && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="gap-1.5 text-accent hover:text-accent hover:bg-accent/10"
-                          onClick={() => handleEditClick(credential._id)}
-                          title="Edit credential"
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="hidden sm:inline text-xs">Edit</span>
-                        </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteClick(credential._id)}
-                        title="Delete credential"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="hidden sm:inline text-xs">Delete</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={7} className="text-center py-12">
-                  <div className="text-muted-foreground">
-                    <Award className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p className="font-medium">No credentials found</p>
-                    <p className="text-sm mt-1">Start by adding your first credential</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-              {/* Pagination Footer */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t">
-                <div className="text-sm text-muted-foreground">
-                  Showing {startEntry} to {endEntry} of {total} entries
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Previous
-                  </Button>
-
-                  <div className="flex items-center gap-1">
-                    {totalPages > 0 && [...Array(totalPages)].map((_, i) => {
-                      const pageNum = i + 1;
-                      if (
-                        pageNum === 1 ||
-                        pageNum === totalPages ||
-                        (pageNum >= page - 1 && pageNum <= page + 1)
-                      ) {
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={page === pageNum ? "default" : "outline"}
-                            size="sm"
-                            onClick={() => setPage(pageNum)}
-                            className="w-10"
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      } else if (pageNum === page - 2 || pageNum === page + 2) {
-                        return <span key={pageNum} className="px-2">...</span>;
-                      }
-                      return null;
-                    })}
-                  </div>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
+      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+        {loading ? (
+          <div className="divide-y divide-border/40">
+            {[1,2,3,4,5].map(i => (
+              <div key={i} className="flex items-center gap-4 px-5 py-4">
+                <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                <div className="flex-1 space-y-1.5"><Skeleton className="h-3.5 w-1/2" /><Skeleton className="h-3 w-1/3" /></div>
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-7 w-20 rounded-lg" />
               </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* View Credential Dialog */}
-      <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5 text-primary" />
-              Credential Details
-            </DialogTitle>
-            <DialogDescription>
-              View complete information about this credential
-            </DialogDescription>
-          </DialogHeader>
-
-          {selectedCredential && (
-            <div className="space-y-6">
-              {/* Status Banner */}
-              <div className={`p-4 rounded-lg border ${
-                selectedCredential.verificationStatus === 'verified' 
-                  ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
-                  : selectedCredential.verificationStatus === 'pending'
-                  ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-950 dark:border-yellow-800'
-                  : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-              }`}>
-                <div className="flex items-center gap-2">
-                  {getStatusIcon(selectedCredential.verificationStatus)}
-                  <span className="font-semibold">
-                    {selectedCredential.verificationStatus === 'verified' && 'Verified Credential'}
-                    {selectedCredential.verificationStatus === 'pending' && 'Pending Verification'}
-                    {selectedCredential.verificationStatus === 'rejected' && 'Verification Rejected'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Basic Info */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Title</label>
-                  <p className="text-lg font-semibold mt-1">{selectedCredential.title}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Issuer</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Building className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium">{selectedCredential.issuerId.name}</p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-muted-foreground">Issue Date</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium">{formatDate(selectedCredential.issueDate)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">NSQF Level</label>
-                  <div className="mt-1">
-                    <Badge variant="outline" className="text-sm">
-                      Level {selectedCredential.nsqfLevel}
-                    </Badge>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Skills</label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {selectedCredential.skills.map((skill, i) => (
-                      <Badge key={i} variant="secondary">
-                        {skill}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Credential ID</label>
-                  <p className="text-sm font-mono mt-1 text-muted-foreground">{selectedCredential._id}</p>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-4 border-t">
-                {selectedCredential.certificateUrl && (
-                  <a 
-                    href={selectedCredential.certificateUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="flex-1"
-                  >
-                    <Button className="w-full gap-2">
-                      <Download className="h-4 w-4" />
-                      View Certificate
-                    </Button>
-                  </a>
-                )}
-                <Button 
-                  variant="outline" 
-                  onClick={() => setViewDialogOpen(false)}
-                  className="flex-1"
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the credential from your portfolio.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-4 w-48" />
-        </div>
-        <Skeleton className="h-10 w-32" />
-      </div>
-
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <Skeleton className="h-10 w-32" />
-              <Skeleton className="h-10 w-64" />
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-0">
-          <div className="p-4 space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
             ))}
           </div>
-        </CardContent>
-      </Card>
+        ) : credentials.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
+              <Award className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="font-medium text-sm">
+              {search || statusFilter !== "all" ? "No results found" : "No credentials yet"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 mb-4">
+              {search || statusFilter !== "all" ? "Try adjusting your filters" : "Upload your first credential to get started"}
+            </p>
+            {!search && statusFilter === "all" && (
+              <Link href="/credentials/upload"><Button size="sm" variant="outline">Upload Credential</Button></Link>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Table header */}
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-border/40 bg-muted/30">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Credential</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-28 text-center">Date</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20 text-center">Level</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20 text-center">Status</span>
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-24 text-right">Actions</span>
+            </div>
+
+            {/* Rows */}
+            <div className="divide-y divide-border/40">
+              {credentials.map(cred => (
+                <div key={cred._id}
+                  className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-muted/20 transition-colors">
+                  {/* Title + issuer */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <Award className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{cred.title}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                        <Building2 className="h-3 w-3 shrink-0" />{cred.issuerId.name}
+                      </p>
+                    </div>
+                  </div>
+                  {/* Date */}
+                  <div className="w-28 text-center">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1 justify-center">
+                      <Calendar className="h-3 w-3" />{new Date(cred.issueDate).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                  {/* Level */}
+                  <div className="w-20 text-center">
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                      L{cred.nsqfLevel}
+                    </span>
+                  </div>
+                  {/* Status */}
+                  <div className="w-20 text-center">
+                    <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${statusStyle(cred.verificationStatus)}`}>
+                      {cred.verificationStatus.charAt(0).toUpperCase() + cred.verificationStatus.slice(1)}
+                    </span>
+                  </div>
+                  {/* Actions */}
+                  <div className="w-24 flex items-center justify-end gap-1">
+                    <button onClick={() => setViewCred(cred)}
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-primary transition-colors"
+                      title="View">
+                      <Eye className="h-3.5 w-3.5" />
+                    </button>
+                    {cred.verificationStatus !== "verified" && (
+                      <button onClick={() => router.push(`/credentials/edit/${cred._id}`)}
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                        title="Edit">
+                        <Edit className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <button onClick={() => setDeleteId(cred._id)}
+                      className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30 transition-colors"
+                      title="Delete">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-border/40 bg-muted/10">
+              <p className="text-xs text-muted-foreground">Showing {start}–{end} of {total}</p>
+              <div className="flex items-center gap-1">
+                <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border/50 text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const n = totalPages <= 5 ? i + 1 : page <= 3 ? i + 1 : page >= totalPages - 2 ? totalPages - 4 + i : page - 2 + i;
+                  return (
+                    <button key={n} onClick={() => setPage(n)}
+                      className={`h-7 w-7 flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
+                        page === n ? "bg-primary text-primary-foreground" : "border border-border/50 text-muted-foreground hover:bg-muted"
+                      }`}>
+                      {n}
+                    </button>
+                  );
+                })}
+                <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border/50 text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* ── View Modal ── */}
+      <AnimatePresence >
+        {viewCred && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed "
+              onClick={() => setViewCred(null)} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.15 }}
+                className="w-full max-w-lg rounded-2xl bg-background shadow-2xl overflow-hidden"
+              >
+                {/* Modal header */}
+                <div className="flex items-center justify-between px-6 py-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Award className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{viewCred.title}</p>
+                      <p className="text-xs text-muted-foreground">{viewCred.issuerId.name}</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setViewCred(null)}
+                    className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted transition-colors">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                {/* Status banner */}
+                <div className={`mx-6 mt-4 flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium ${
+                  viewCred.verificationStatus === "verified"
+                    ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400"
+                    : viewCred.verificationStatus === "rejected"
+                    ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                    : "bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400"
+                }`}>
+                  <StatusIcon s={viewCred.verificationStatus} />
+                  {viewCred.verificationStatus === "verified" ? "Verified Credential"
+                    : viewCred.verificationStatus === "rejected" ? "Verification Rejected"
+                    : "Pending Verification"}
+                </div>
+
+                {/* Details */}
+                <div className="px-6 py-4 space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Issue Date</p>
+                      <p className="text-sm font-medium">{fmt(viewCred.issueDate)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">NSQF Level</p>
+                      <span className="text-sm font-medium px-2 py-0.5 rounded-full bg-muted">Level {viewCred.nsqfLevel}</span>
+                    </div>
+                    {viewCred.credits && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Credits</p>
+                        <p className="text-sm font-medium">{viewCred.credits}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {viewCred.skills.length > 0 && (
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-2">Skills</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {viewCred.skills.map((s, i) => (
+                          <span key={i} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-1">Credential ID</p>
+                    <p className="text-xs font-mono text-muted-foreground break-all">{viewCred._id}</p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex gap-2 px-6 pb-5">
+                  {viewCred.certificateUrl && (
+                    <a href={viewCred.certificateUrl} target="_blank" rel="noopener noreferrer" className="flex-1">
+                      <Button size="sm" className="w-full gap-2"><Download className="h-3.5 w-3.5" />View Certificate</Button>
+                    </a>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => setViewCred(null)} className="flex-1">Close</Button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+      
+
+      {/* ── Delete Confirm Modal ── */}
+      <AnimatePresence>
+        {deleteId && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 "
+              onClick={() => !deleting && setDeleteId(null)} />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.15 }}
+                className="w-full max-w-sm rounded-2xl border border-border/60 bg-background shadow-2xl p-6 space-y-4"
+              >
+                <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <p className="font-semibold">Delete credential?</p>
+                  <p className="text-sm text-muted-foreground mt-1">This action cannot be undone. The credential will be permanently removed from your portfolio.</p>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" variant="outline" onClick={() => setDeleteId(null)} disabled={deleting} className="flex-1">Cancel</Button>
+                  <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleting} className="flex-1">
+                    {deleting ? "Deleting..." : "Delete"}
+                  </Button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

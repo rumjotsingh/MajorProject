@@ -21,8 +21,7 @@ const learnerNav = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: Award, label: "Credentials", href: "/credentials" },
   { icon: Upload, label: "Upload", href: "/credentials/upload" },
-  { icon: Map, label: "Skill Map", href: "/skill-map" },
-  { icon: Briefcase, label: "Career Path", href: "/career" },
+  { icon: Map, label: "Career Studio", href: "/career-path" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];

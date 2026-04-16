@@ -13,7 +13,7 @@ const learnerNavItems = [
   { icon: Home, label: "Home", href: "/dashboard" },
   { icon: Award, label: "Credentials", href: "/credentials" },
   { icon: Plus, label: "Add", href: "/credentials/upload", isMain: true },
-  { icon: Map, label: "Skills", href: "/skill-map" },
+  { icon: Map, label: "Career", href: "/career-path" },
   { icon: User, label: "Profile", href: "/profile" },
 ];
 

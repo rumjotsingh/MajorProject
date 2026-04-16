@@ -1,8 +1,9 @@
 import Credential from '../models/Credential.model.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import { calculateNSQFLevel } from '../utils/nsqf.util.js';
+import { normalizeSkillName } from './skill.service.js';
 
-const normalizeSkill = (skill) => (typeof skill === 'string' ? skill.trim() : '');
+const normalizeSkill = (skill) => (typeof skill === 'string' ? normalizeSkillName(skill) : '');
 
 export const recomputeLearnerProfileFromVerifiedCredentials = async (userId) => {
   const verifiedCredentials = await Credential.find({
@@ -19,12 +20,11 @@ export const recomputeLearnerProfileFromVerifiedCredentials = async (userId) => 
     totalCredits += Number(credential.credits) || 0;
 
     (credential.skills || []).forEach((rawSkill) => {
-      const cleaned = normalizeSkill(rawSkill);
-      if (!cleaned) return;
-
-      const key = cleaned.toLowerCase();
+      const canonical = normalizeSkill(rawSkill);
+      if (!canonical) return;
+      const key = canonical.toLowerCase();
       if (!skillMap.has(key)) {
-        skillMap.set(key, cleaned);
+        skillMap.set(key, canonical);
       }
     });
   });

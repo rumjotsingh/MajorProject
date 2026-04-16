@@ -775,42 +775,14 @@ export const verifyCredential = async (req, res, next) => {
 
     // If credential is being verified for the first time, update learner profile
     if (status === 'verified' && previousStatus !== 'verified') {
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
-      if (learnerProfile && credential.credits) {
-        // Add credits to total
-        const newTotalCredits = (learnerProfile.totalCredits || 0) + credential.credits;
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        logger.info(`Updated learner ${credential.userId._id} credits to ${newTotalCredits}, NSQF level to ${nsqfInfo.level}`);
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId._id);
+      logger.info(`Recomputed learner profile for ${credential.userId._id} after verification`);
     }
 
     // If credential is being rejected after being verified, remove credits
     if (status === 'failed' && previousStatus === 'verified') {
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
-      if (learnerProfile && credential.credits) {
-        // Remove credits from total
-        const newTotalCredits = Math.max(0, (learnerProfile.totalCredits || 0) - credential.credits);
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        logger.info(`Removed credits from learner ${credential.userId._id}, new total: ${newTotalCredits}, NSQF level: ${nsqfInfo.level}`);
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId._id);
+      logger.info(`Recomputed learner profile for ${credential.userId._id} after rejection`);
     }
 
     // Send real-time notification to learner

@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'gemma4';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3.5:2b';
 
 const safeJsonParse = (text) => {
   try {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,8 +68,9 @@ export default function ProfilePage() {
       setSaving(true);
       
       // Filter out empty education/experience entries
+      // DO NOT send skills - they are auto-computed from credentials
       const cleanedData = {
-        ...formData,
+        bio: formData.bio,
         education: formData.education.filter(
           (edu) => edu.degree || edu.institution || edu.year || edu.fieldOfStudy
         ),
@@ -217,12 +219,21 @@ export default function ProfilePage() {
       {/* Skills Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            Skills
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Skills
+            </CardTitle>
+            <Badge variant="outline" className="text-xs">Auto-computed</Badge>
+          </div>
         </CardHeader>
         <CardContent>
+          <div className="mb-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+            <p className="text-xs text-muted-foreground">
+              💡 <strong>Skills are automatically extracted</strong> from your verified credentials. 
+              Upload more credentials to add skills to your profile.
+            </p>
+          </div>
           {profile.skills.length > 0 ? (
             <div className="flex flex-wrap gap-2">
               {profile.skills.map((skill, i) => (
@@ -232,7 +243,12 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No skills added yet</p>
+            <div className="text-center py-6">
+              <p className="text-sm text-muted-foreground mb-3">No skills yet</p>
+              <Link href="/credentials/upload">
+                <Button size="sm" variant="outline">Upload Credential</Button>
+              </Link>
+            </div>
           )}
         </CardContent>
       </Card>

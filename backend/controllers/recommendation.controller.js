@@ -163,7 +163,7 @@ export const calculateSkillGap = async (req, res, next) => {
     const userId = req.user.userId;
     const { careerPath } = req.body;
 
-    if (!careerPath) {
+    if (!careerPath || typeof careerPath !== 'string' || careerPath.trim() === '') {
       return res.status(400).json({ error: 'Career path is required' });
     }
 
@@ -171,14 +171,15 @@ export const calculateSkillGap = async (req, res, next) => {
     const skillAnalysis = await skillService.analyzeUserSkills(userId);
     const userSkillMap = {};
     skillAnalysis.skills.forEach(skill => {
-      userSkillMap[skill.name] = skill.level;
+      // Store with lowercase key so calculateSkillGap can find them case-insensitively
+      userSkillMap[skill.name.toLowerCase()] = skill.level;
     });
 
     // Get target skills for career path
-    const targetSkills = skillService.getCareerPathSkills(careerPath);
+    const targetSkills = await skillService.getCareerPathSkills(careerPath.trim());
 
     if (targetSkills.length === 0) {
-      return res.status(400).json({ error: 'Invalid career path' });
+      return res.status(400).json({ error: 'Invalid career path or no skills defined for this path' });
     }
 
     // Calculate skill gaps
@@ -198,7 +199,7 @@ export const calculateSkillGap = async (req, res, next) => {
     );
 
     res.json({
-      careerPath,
+      careerPath: careerPath.trim(),
       currentSkills: skillAnalysis.skills,
       targetSkills,
       skillGaps,
@@ -223,12 +224,12 @@ export const generateRecommendations = async (req, res, next) => {
     
     const userSkillMap = {};
     skillAnalysis.skills.forEach(skill => {
-      userSkillMap[skill.name] = skill.level;
+      userSkillMap[skill.name.toLowerCase()] = skill.level;
     });
 
     // Get target skills
     const targetSkills = careerPath 
-      ? skillService.getCareerPathSkills(careerPath)
+      ? await skillService.getCareerPathSkills(careerPath)
       : [];
 
     // Calculate skill gaps
@@ -509,50 +510,33 @@ export const generateRecommendations = async (req, res, next) => {
 // GET /recommendations/career-paths
 export const getCareerPaths = async (req, res, next) => {
   try {
-    const careerPaths = [
-      {
-        id: 1,
-        name: 'Full Stack Developer',
-        description: 'Build complete web applications from frontend to backend',
-        requiredSkills: ['JavaScript', 'React', 'Node.js', 'MongoDB'],
-        averageSalary: '$80,000 - $120,000',
-        demand: 'High',
-      },
-      {
-        id: 2,
-        name: 'Data Scientist',
-        description: 'Analyze data and build machine learning models',
-        requiredSkills: ['Python', 'Machine Learning', 'Statistics', 'SQL'],
-        averageSalary: '$90,000 - $140,000',
-        demand: 'Very High',
-      },
-      {
-        id: 3,
-        name: 'DevOps Engineer',
-        description: 'Automate and optimize software deployment and infrastructure',
-        requiredSkills: ['Docker', 'Kubernetes', 'CI/CD', 'AWS'],
-        averageSalary: '$85,000 - $130,000',
-        demand: 'High',
-      },
-      {
-        id: 4,
-        name: 'Mobile Developer',
-        description: 'Create mobile applications for iOS and Android',
-        requiredSkills: ['React Native', 'Flutter', 'Mobile UI/UX'],
-        averageSalary: '$75,000 - $115,000',
-        demand: 'High',
-      },
-      {
-        id: 5,
-        name: 'Cloud Architect',
-        description: 'Design and implement cloud infrastructure solutions',
-        requiredSkills: ['AWS', 'Azure', 'Cloud Security', 'Microservices'],
-        averageSalary: '$100,000 - $160,000',
-        demand: 'Very High',
-      },
-    ];
+    const CareerPath = (await import('../models/CareerPath.model.js')).default;
+    
+    const careerPaths = await CareerPath.find()
+      .select('title description requiredSkills averageSalary demand industry experienceLevel growthRate jobOpenings tools certifications color')
+      .sort({ demand: -1, title: 1 })
+      .lean();
 
-    res.json({ careerPaths });
+    // Transform for frontend compatibility
+    const formattedPaths = careerPaths.map(path => ({
+      _id: path._id,
+      id: path._id.toString(),
+      title: path.title,
+      name: path.title, // Alias for backward compatibility
+      description: path.description,
+      requiredSkills: path.requiredSkills || [],
+      averageSalary: path.averageSalary,
+      demand: path.demand,
+      industry: path.industry,
+      experienceLevel: path.experienceLevel,
+      growthRate: path.growthRate,
+      jobOpenings: path.jobOpenings,
+      tools: path.tools,
+      certifications: path.certifications,
+      color: path.color,
+    }));
+
+    res.json({ careerPaths: formattedPaths });
   } catch (error) {
     next(error);
   }
