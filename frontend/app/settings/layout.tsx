@@ -4,6 +4,7 @@ import { CollapsibleSidebar } from "@/components/navigation/collapsible-sidebar"
 import { MobileNav } from "@/components/navigation/mobile-nav";
 import { useEffect, useState } from "react";
 import { authService } from "@/lib/auth";
+import { Header } from "@/components/navigation/header";
 
 export default function SettingsLayout({
   children,
@@ -23,6 +24,7 @@ export default function SettingsLayout({
     <div className="flex h-screen overflow-hidden">
       <CollapsibleSidebar role={role} />
       <div className="flex-1 flex flex-col overflow-hidden">
+        <Header/>
         <main className="flex-1 overflow-y-auto p-6 pb-20 md:pb-6">
           {children}
         </main>

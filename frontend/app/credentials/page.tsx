@@ -388,97 +388,130 @@ export default function CredentialsPage() {
           ) : (
             <>
               <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Credential</TableHead>
-                      <TableHead>Issuer</TableHead>
-                      <TableHead>Issue Date</TableHead>
-                      <TableHead>NSQF Level</TableHead>
-                      <TableHead>Skills</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Array.isArray(credentials) && credentials.map((credential) => (
-                      <TableRow key={credential._id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Award className="h-4 w-4 text-primary flex-shrink-0" />
-                            <span className="font-medium">{credential.title}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">{credential.issuerId.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1 text-sm">
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                            {formatDate(credential.issueDate)}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">Level {credential.nsqfLevel}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {credential.skills.slice(0, 2).map((skill, j) => (
-                              <Badge key={j} variant="secondary" className="text-xs">
-                                {skill}
-                              </Badge>
-                            ))}
-                            {credential.skills.length > 2 && (
-                              <Badge variant="secondary" className="text-xs">
-                                +{credential.skills.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {getStatusBadge(credential.verificationStatus)}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="gap-2"
-                              onClick={() => handleViewCredential(credential)}
-                            >
-                              <Eye className="h-4 w-4" />
-                              View
-                            </Button>
-                            {credential.verificationStatus !== 'verified' && (
-                              <Button 
-                                variant="ghost" 
-                                size="sm" 
-                                className="gap-2"
-                                onClick={() => handleEditClick(credential._id)}
-                              >
-                                <Edit className="h-4 w-4" />
-                                Edit
-                              </Button>
-                            )}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="gap-2 text-destructive hover:text-destructive"
-                              onClick={() => handleDeleteClick(credential._id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Delete
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow className="hover:bg-muted/50">
+              <TableHead className="font-semibold text-foreground">Credential</TableHead>
+              <TableHead className="font-semibold text-foreground">Issuer</TableHead>
+              <TableHead className="font-semibold text-foreground">Issue Date</TableHead>
+              <TableHead className="font-semibold text-foreground">NSQF Level</TableHead>
+              <TableHead className="font-semibold text-foreground">Skills</TableHead>
+              <TableHead className="font-semibold text-foreground">Status</TableHead>
+              <TableHead className="text-right font-semibold text-foreground">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.isArray(credentials) && credentials.length > 0 ? (
+              credentials.map((credential) => (
+                <TableRow
+                  key={credential._id}
+                  className="hover:bg-muted/40 transition-colors border-border"
+                >
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0 p-2 bg-primary/10 rounded-lg">
+                        <Award className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <span className="font-semibold text-foreground block">
+                          {credential.title}
+                        </span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-2">
+                      <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-foreground">{credential.issuerId.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex items-center gap-2 text-sm text-foreground">
+                      <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      {formatDate(credential.issueDate)}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <Badge variant="outline" className="font-medium">
+                      Level {credential.nsqfLevel}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    <div className="flex flex-wrap gap-1.5 max-w-xs">
+                      {credential.skills.slice(0, 2).map((skill, j) => (
+                        <Badge
+                          key={j}
+                          variant="secondary"
+                          className="text-xs font-medium whitespace-nowrap"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                      {credential.skills.length > 2 && (
+                        <Badge
+                          variant="secondary"
+                          className="text-xs font-medium whitespace-nowrap"
+                        >
+                          +{credential.skills.length - 2}
+                        </Badge>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-4">
+                    {getStatusBadge(credential.verificationStatus)}
+                  </TableCell>
+                  <TableCell className="text-right py-4">
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 text-primary hover:text-primary hover:bg-primary/10"
+                        onClick={() => handleViewCredential(credential)}
+                        title="View credential"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="hidden sm:inline text-xs">View</span>
+                      </Button>
+                      {credential.verificationStatus !== 'verified' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="gap-1.5 text-accent hover:text-accent hover:bg-accent/10"
+                          onClick={() => handleEditClick(credential._id)}
+                          title="Edit credential"
+                        >
+                          <Edit className="h-4 w-4" />
+                          <span className="hidden sm:inline text-xs">Edit</span>
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDeleteClick(credential._id)}
+                        title="Delete credential"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        <span className="hidden sm:inline text-xs">Delete</span>
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center py-12">
+                  <div className="text-muted-foreground">
+                    <Award className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="font-medium">No credentials found</p>
+                    <p className="text-sm mt-1">Start by adding your first credential</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
               {/* Pagination Footer */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t">

@@ -94,10 +94,10 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
       >
         {/* Gradient fade at bottom edge */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
         
         <div className="relative flex justify-center pb-4 px-4">
-          <div className="bg-background/90 backdrop-blur-2xl rounded-2xl px-2 py-2 shadow-xl shadow-black/[0.08] dark:shadow-black/[0.3] border border-border/60 max-w-fit">
+          <div className="bg-background/85 backdrop-blur-2xl rounded-2xl px-2 py-2 shadow-xl shadow-primary/[0.06] dark:shadow-black/[0.3] border border-border/40 max-w-fit">
             <div className="flex items-center justify-center gap-0.5">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -110,7 +110,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                         whileTap={{ scale: 0.9 }}
                         className="mx-1"
                       >
-                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-purple-600 text-white flex items-center justify-center shadow-lg shadow-primary/30 -mt-3">
+                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 -mt-3">
                           <Icon className="h-5 w-5" />
                         </div>
                       </motion.div>
@@ -167,7 +167,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                 <Menu className="h-5 w-5" />
                 <span className="text-[10px] mt-0.5 font-medium">More</span>
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-red-500" />
+                  <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
                 )}
               </motion.button>
             </div>
@@ -194,9 +194,9 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
             >
-              <div className="bg-background rounded-t-3xl border-t shadow-2xl p-5 pb-8">
+              <div className="bg-background rounded-t-3xl border-t border-border/50 shadow-2xl p-5 pb-8">
                 {/* Handle bar */}
-                <div className="w-10 h-1 rounded-full bg-muted-foreground/20 mx-auto mb-5" />
+                <div className="w-10 h-1 rounded-full bg-primary/20 mx-auto mb-5" />
 
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Menu</h3>
@@ -247,14 +247,14 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                           <div className="relative h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
                             <Icon className="h-4 w-4" />
                             {isNotifications && unreadCount > 0 && (
-                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
                                 {unreadCount > 9 ? "9+" : unreadCount}
                               </span>
                             )}
                           </div>
                           <span className="font-medium flex-1">{item.label}</span>
                           {isNotifications && unreadCount > 0 && (
-                            <span className="h-6 px-2.5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+                            <span className="h-6 px-2.5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
                               {unreadCount > 99 ? "99+" : unreadCount}
                             </span>
                           )}

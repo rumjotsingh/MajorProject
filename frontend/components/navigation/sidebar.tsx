@@ -73,7 +73,7 @@ export function Sidebar({ role = "learner" }: SidebarProps) {
     <aside className="hidden md:flex w-64 flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Award className="h-6 w-6 text-primary" />
+          <Award className="h-6 w-6 text-foreground" />
           <span className="text-lg">CredMatrix</span>
         </Link>
       </div>

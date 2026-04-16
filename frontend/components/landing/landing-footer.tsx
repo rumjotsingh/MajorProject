@@ -55,21 +55,18 @@ const socials = [
 
 export function LandingFooter() {
   return (
-    <footer className="relative border-t bg-muted/20">
-      {/* Subtle gradient overlay */}
+    <footer className="relative border-t border-border/40 bg-muted/20">
       <div className="absolute inset-0 gradient-mesh opacity-30 pointer-events-none" />
 
       <div className="container relative py-16 md:py-20">
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-6">
           {/* Brand Column */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-5">
             <Link href="/" className="flex items-center gap-2.5 group w-fit">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-purple-600">
-                <Award className="h-4 w-4 text-white" />
+              <div className="p-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-sm shadow-primary/20">
+                <Award className="h-4 w-4" />
               </div>
-              <span className="text-lg font-bold tracking-tight">
-                Cred<span className="text-primary">Matrix</span>
-              </span>
+              <span className="text-lg font-bold tracking-tight">CredMatrix</span>
             </Link>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
               The modern credential management platform. Aggregate, verify, and showcase your skills in one beautiful portfolio.
@@ -79,7 +76,7 @@ export function LandingFooter() {
                 <Link
                   key={social.label}
                   href={social.href}
-                  className="h-9 w-9 rounded-full bg-muted hover:bg-primary/10 hover:text-primary flex items-center justify-center text-muted-foreground transition-all duration-200"
+                  className="h-9 w-9 rounded-xl bg-muted/80 hover:bg-primary hover:text-primary-foreground flex items-center justify-center text-muted-foreground transition-all duration-200 hover:shadow-md hover:shadow-primary/20 hover:scale-105"
                   aria-label={social.label}
                 >
                   {social.icon}
@@ -114,13 +111,14 @@ export function LandingFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="border-t mt-14 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-14 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-border/60 to-transparent absolute left-0 right-0" />
+          <p className="text-xs text-muted-foreground relative mt-4">
             &copy; {new Date().getFullYear()} CredMatrix. All rights reserved.
           </p>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground relative mt-4">
             <span>Crafted with</span>
-            <span className="text-red-500 animate-pulse">♥</span>
+            <span className="text-primary animate-pulse">♥</span>
             <span>for learners worldwide</span>
           </div>
         </div>

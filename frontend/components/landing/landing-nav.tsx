@@ -69,21 +69,18 @@ export function LandingNav() {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
-            ? "bg-background/80 backdrop-blur-2xl border-b border-border/50 shadow-sm"
+            ? "bg-background/80 backdrop-blur-2xl border-b border-border/40 shadow-sm shadow-primary/[0.02]"
             : "bg-transparent"
         }`}
       >
         <div className="container flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-lg blur-md group-hover:bg-primary/30 transition-all" />
-              <div className="relative p-1.5 rounded-lg bg-gradient-to-br from-primary to-purple-600">
-                <Award className="h-5 w-5 text-white" />
-              </div>
+            <div className="relative p-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
+              <Award className="h-5 w-5" />
             </div>
             <span className="text-lg font-bold tracking-tight">
-              Cred<span className="text-primary">Matrix</span>
+              CredMatrix
             </span>
           </Link>
 
@@ -93,9 +90,10 @@ export function LandingNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted/50"
+                className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted/50 group"
               >
                 {link.label}
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary rounded-full transition-all duration-300 group-hover:w-4" />
               </Link>
             ))}
           </nav>
@@ -108,14 +106,14 @@ export function LandingNav() {
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="rounded-full h-9 w-9"
             >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
             </Button>
 
             {isLoggedIn && user ? (
               <div className="hidden sm:flex items-center gap-2">
                 <Link href={getDashboardPath()}>
-                  <Button size="sm" className="gap-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 border-0">
+                  <Button size="sm" className="gap-2 rounded-full">
                     <LayoutDashboard className="h-4 w-4" />
                     Dashboard
                   </Button>
@@ -123,10 +121,10 @@ export function LandingNav() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                      <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-primary/20 transition-all duration-200">
+                      <Avatar className="h-9 w-9 ring-2 ring-border/60">
                         <AvatarImage src={user.avatar || ""} alt={user.name || "User"} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xs font-semibold">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
                           {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -177,7 +175,7 @@ export function LandingNav() {
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm" className="rounded-full px-5 shadow-md shadow-primary/20">
+                  <Button size="sm" className="rounded-full px-5">
                     Get Started
                   </Button>
                 </Link>
@@ -215,7 +213,7 @@ export function LandingNav() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed top-16 left-0 right-0 z-50 md:hidden"
             >
-              <div className="mx-4 mt-2 rounded-2xl bg-background/95 backdrop-blur-2xl border shadow-2xl p-4">
+              <div className="mx-4 mt-2 rounded-2xl bg-background/95 backdrop-blur-2xl border border-border/40 shadow-2xl p-4">
                 <nav className="flex flex-col gap-1">
                   {navLinks.map((link) => (
                     <Link
@@ -228,7 +226,7 @@ export function LandingNav() {
                     </Link>
                   ))}
                 </nav>
-                <div className="border-t mt-3 pt-3 flex flex-col gap-2">
+                <div className="border-t border-border/40 mt-3 pt-3 flex flex-col gap-2">
                   {isLoggedIn && user ? (
                     <>
                       <Link href={getDashboardPath()} onClick={() => setMobileOpen(false)}>

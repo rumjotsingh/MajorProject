@@ -149,6 +149,90 @@ export const extractSkills = async (credentialText) => {
   return result.skills;
 };
 
+export const analyzeCredentialMetadata = async ({
+  title,
+  description,
+  providedSkills = [],
+  learningOutcomes = [],
+  credentialType = 'micro-credential',
+  category = '',
+}) => {
+  const normalizedSkills = sanitizeStringList(providedSkills, 30);
+  const normalizedOutcomes = sanitizeStringList(learningOutcomes, 12);
+  const inputText = [
+    `Title: ${title || ''}`,
+    `Type: ${credentialType || ''}`,
+    `Category: ${category || ''}`,
+    `Description: ${description || ''}`,
+    `Provided skills: ${normalizedSkills.join(', ')}`,
+    `Learning outcomes: ${normalizedOutcomes.join('; ')}`,
+  ].join('\n');
+
+  if (!String(title || description || '').trim()) {
+    return {
+      summary: '',
+      extractedSkills: normalizedSkills,
+      suggestedCareerPaths: [],
+      confidence: null,
+      provider: 'ollama',
+      model: OLLAMA_MODEL,
+      status: 'failed',
+      reason: 'Insufficient credential content for AI analysis',
+      analyzedAt: new Date(),
+    };
+  }
+
+  const prompt = `You are an AI assistant for a micro-credential platform.
+Analyze this credential metadata and return strict JSON only:
+{
+  "summary": "1-2 sentence summary",
+  "extractedSkills": ["skill1", "skill2"],
+  "suggestedCareerPaths": ["role1", "role2"],
+  "confidence": 0.0
+}
+
+Rules:
+- Keep extractedSkills max 20
+- Keep suggestedCareerPaths max 5
+- confidence must be between 0 and 1
+- Do not include markdown
+
+Input:
+${inputText}`;
+
+  try {
+    const result = await requestAIText(prompt);
+    const parsed = safeJsonParse(result.text) || {};
+    const confidenceValue = Number(parsed?.confidence);
+
+    return {
+      summary: typeof parsed?.summary === 'string' ? parsed.summary.trim().slice(0, 500) : '',
+      extractedSkills: sanitizeStringList(parsed?.extractedSkills, 20),
+      suggestedCareerPaths: sanitizeStringList(parsed?.suggestedCareerPaths, 5),
+      confidence: Number.isFinite(confidenceValue)
+        ? Math.max(0, Math.min(1, confidenceValue))
+        : null,
+      provider: result.provider,
+      model: result.modelVersion,
+      status: 'success',
+      reason: '',
+      analyzedAt: new Date(),
+    };
+  } catch (error) {
+    return {
+      summary: '',
+      extractedSkills: normalizedSkills,
+      suggestedCareerPaths: [],
+      confidence: null,
+      provider: 'ollama',
+      model: OLLAMA_MODEL,
+      status: 'failed',
+      reason: error?.message || 'AI analysis failed',
+      analyzedAt: new Date(),
+    };
+  }
+};
+
 export const isAIConfigured = () => {
   return true;
 };

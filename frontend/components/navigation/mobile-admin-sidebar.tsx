@@ -82,7 +82,7 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
       {/* Hamburger Button - Fixed Top Left */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition-colors"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-lg shadow-lg border border-border hover:bg-muted transition-colors"
         aria-label="Open menu"
       >
         <Menu className="w-6 h-6 text-gray-700" />
@@ -110,17 +110,15 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
             animate={{ x: 0 }}
             exit={{ x: '-100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="md:hidden fixed left-0 top-0 bottom-0 w-80 bg-white shadow-2xl z-50 flex flex-col"
+            className="md:hidden fixed left-0 top-0 bottom-0 w-80 bg-background shadow-2xl z-50 flex flex-col"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-border">
               <Link href="/" className="flex items-center gap-2 font-semibold">
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-purple-600">
-                  <Award className="h-5 w-5 text-white" />
+                <div className="p-1.5 rounded-lg bg-foreground text-background">
+                  <Award className="h-5 w-5" />
                 </div>
-                <span className="text-lg">
-                  Cred<span className="text-primary">Matrix</span>
-                </span>
+                <span className="text-lg">CredMatrix</span>
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
@@ -132,15 +130,15 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
             </div>
 
             {/* User Profile */}
-            <div className="p-4 border-b border-gray-200">
+            <div className="p-4 border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                <div className="w-12 h-12 rounded-full bg-foreground flex items-center justify-center text-background font-semibold text-sm">
                   {getInitials(userName)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-                  <p className="text-xs text-gray-600 truncate">{userEmail}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-purple-100 text-purple-800 rounded">
+                  <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                  <span className="inline-block mt-1 px-2 py-0.5 text-xs bg-muted text-foreground rounded">
                     Admin
                   </span>
                 </div>
@@ -159,8 +157,8 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
                     <div
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all relative ${
                         isActive
-                          ? 'bg-gradient-to-r from-primary to-purple-600 text-white shadow-md'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? 'bg-foreground text-background shadow-md'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       }`}
                     >
                       <div className="relative">
@@ -184,7 +182,7 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
             </nav>
 
             {/* Logout Button */}
-            <div className="p-4 border-t border-gray-200">
+            <div className="p-4 border-t border-border">
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-600 hover:bg-red-50 transition-all"

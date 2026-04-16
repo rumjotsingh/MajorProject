@@ -26,6 +26,7 @@ interface Job {
     applied: number;
     shortlisted: number;
     interviewing: number;
+    rejected?: number;
     hired: number;
   };
 }

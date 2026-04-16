@@ -45,6 +45,10 @@ const config: Config = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        "accent-brand": {
+          DEFAULT: "hsl(var(--accent-brand))",
+          foreground: "hsl(var(--accent-brand-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -94,6 +98,18 @@ const config: Config = {
           "0%, 100%": { opacity: "0.5" },
           "50%": { opacity: "1" },
         },
+        "glow-pulse": {
+          "0%, 100%": {
+            boxShadow: "0 0 20px -5px hsl(var(--primary) / 0.2)",
+          },
+          "50%": {
+            boxShadow: "0 0 30px -5px hsl(var(--primary) / 0.35)",
+          },
+        },
+        "shimmer": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -104,12 +120,21 @@ const config: Config = {
         "scale-in": "scale-in 0.3s ease-out",
         "spin-slow": "spin-slow 8s linear infinite",
         "pulse-soft": "pulse-soft 3s ease-in-out infinite",
+        "glow-pulse": "glow-pulse 3s ease-in-out infinite",
+        "shimmer": "shimmer 2s linear infinite",
       },
       boxShadow: {
         "glow-sm": "0 0 15px -3px hsl(var(--primary) / 0.15)",
         "glow": "0 0 30px -5px hsl(var(--primary) / 0.2)",
         "glow-lg": "0 0 60px -10px hsl(var(--primary) / 0.25)",
         "inner-glow": "inset 0 1px 0 0 hsl(var(--primary) / 0.05)",
+        "premium": "0 4px 20px -5px hsl(var(--primary) / 0.1), 0 0 0 1px hsl(var(--primary) / 0.05)",
+        "premium-lg": "0 8px 40px -10px hsl(var(--primary) / 0.15), 0 0 0 1px hsl(var(--primary) / 0.08)",
+      },
+      backgroundImage: {
+        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
+        "gradient-brand": "linear-gradient(135deg, hsl(var(--primary)), hsl(250, 80%, 60%), hsl(280, 65%, 55%))",
+        "gradient-brand-subtle": "linear-gradient(135deg, hsl(var(--primary) / 0.1), hsl(250, 80%, 60% / 0.05))",
       },
     },
   },

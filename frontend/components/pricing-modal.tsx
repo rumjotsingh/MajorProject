@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,27 @@ interface PricingModalProps {
 export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubscriptionComplete }: PricingModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState<string | null>(null);
+  // Keep ref to Razorpay instance for cleanup
+  const razorpayRef = useRef<any>(null);
+  // Track selected plan so we can re-open modal on dismiss
+  const pendingPlanRef = useRef<string | null>(null);
+
+  // When user closes our Dialog while Razorpay is open, also close Razorpay
+  const handleOpenChange = useCallback(
+    (next: boolean) => {
+      if (!next && razorpayRef.current) {
+        try {
+          razorpayRef.current.close();
+        } catch (_) {
+          // ignore if already closed
+        }
+        razorpayRef.current = null;
+        setLoading(null);
+      }
+      onOpenChange(next);
+    },
+    [onOpenChange]
+  );
 
   useEffect(() => {
     if (open) {
@@ -110,17 +131,25 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
 
       const { orderId, amount, currency, keyId } = orderResponse.data;
 
-      // Razorpay options
+      // ─── KEY FIX ────────────────────────────────────────────────────────────
+      // Close our Dialog BEFORE opening Razorpay.
+      // The Radix UI Dialog overlay intercepts all pointer events, which makes
+      // the Razorpay checkout appear frozen/unclickable when both are open.
+      // We hide the Dialog first, let Razorpay run, then re-open if dismissed.
+      pendingPlanRef.current = planId;
+      onOpenChange(false);
+      // ────────────────────────────────────────────────────────────────────────
+
       const options = {
         key: keyId,
         amount,
         currency,
         name: "CredMatrix",
-        description: `${plans.find(p => p.id === planId)?.name} Plan Subscription`,
+        description: `${plans.find((p) => p.id === planId)?.name} Plan Subscription`,
         order_id: orderId,
         handler: async function (response: any) {
+          // Payment successful — verify on backend
           try {
-            // Verify payment
             const verifyResponse = await api.post("/payment/verify", {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
@@ -129,11 +158,13 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
             });
 
             toast({
-              title: "Success! 🎉",
+              title: "Payment Successful! 🎉",
               description: verifyResponse.data.message,
             });
 
-            onOpenChange(false);
+            razorpayRef.current = null;
+            pendingPlanRef.current = null;
+            setLoading(null);
             if (onSubscriptionComplete) {
               onSubscriptionComplete();
             }
@@ -143,20 +174,32 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
               description: error.response?.data?.error || "Please contact support",
               variant: "destructive",
             });
+            // Re-open the pricing modal so user can retry
+            razorpayRef.current = null;
+            pendingPlanRef.current = null;
+            setLoading(null);
+            onOpenChange(true);
           }
         },
         modal: {
-          ondismiss: function() {
+          ondismiss: function () {
+            // User closed Razorpay without paying — re-open our pricing modal
+            razorpayRef.current = null;
+            pendingPlanRef.current = null;
             setLoading(null);
-          }
+            onOpenChange(true);
+          },
         },
         theme: {
-          color: "#3b82f6",
+          color: "#6366f1",
         },
       };
 
       const razorpay = new window.Razorpay(options);
-      razorpay.open();
+      razorpayRef.current = razorpay;
+      // Small delay to let the Dialog finish its close animation before
+      // Razorpay injects its own overlay into the DOM
+      setTimeout(() => razorpay.open(), 150);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -164,16 +207,18 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
         variant: "destructive",
       });
       setLoading(null);
+      // Re-open the modal on network/order error
+      onOpenChange(true);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-[95vw] lg:max-w-7xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center pb-4">
           <div className="flex items-center justify-center mb-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
-              <Sparkles className="h-5 w-5 text-white" />
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md shadow-primary/20">
+              <Sparkles className="h-5 w-5 text-primary-foreground" />
             </div>
           </div>
           <DialogTitle className="text-2xl font-bold">Choose Your Plan</DialogTitle>
@@ -190,22 +235,22 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
             return (
               <Card
                 key={plan.id}
-                className={`relative transition-all hover:shadow-lg ${
+                className={`relative transition-all duration-300 ${
                   plan.popular
-                    ? "border-2 border-primary shadow-lg scale-105"
-                    : "border"
+                    ? "border-2 border-primary/40 shadow-xl shadow-primary/10 scale-105"
+                    : "border border-border/50 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/[0.04]"
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="px-3 py-1 bg-gradient-to-r from-primary to-purple-600 border-0">
+                    <Badge className="px-3 py-1 bg-gradient-to-r from-primary to-primary/80 border-0 shadow-md shadow-primary/20">
                       Most Popular
                     </Badge>
                   </div>
                 )}
 
                 <CardHeader className="text-center pb-6 pt-8">
-                  <div className="mx-auto mb-4 p-3 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-2xl w-fit">
+                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-2xl w-fit">
                     <Icon className="h-8 w-8 text-primary" />
                   </div>
                   <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
@@ -228,8 +273,8 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-start gap-3">
                         {feature.included ? (
-                          <div className="mt-0.5 h-5 w-5 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0">
-                            <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                          <div className="mt-0.5 h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                            <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                           </div>
                         ) : (
                           <div className="mt-0.5 h-5 w-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -250,11 +295,7 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
                   </ul>
 
                   <Button
-                    className={`w-full ${
-                      plan.popular
-                        ? "bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
-                        : ""
-                    }`}
+                    className="w-full rounded-xl"
                     size="lg"
                     variant={plan.popular ? "default" : "outline"}
                     onClick={() => handleSubscribe(plan.id)}
@@ -274,7 +315,7 @@ export function PricingModal({ open, onOpenChange, currentPlan = "free", onSubsc
           })}
         </div>
 
-        <div className="text-center pt-4 pb-2 border-t">
+        <div className="text-center pt-4 pb-2 border-t border-border/40">
           <p className="text-xs text-muted-foreground">
             All plans include secure payment processing and can be cancelled anytime
           </p>
