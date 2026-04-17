@@ -2,8 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { employerApi } from '@/lib/employer-api';
-import { Users, Search, Loader2, Calendar, Briefcase } from 'lucide-react';
+import { Users, Search, Loader2, Calendar, Briefcase, Filter, Eye } from 'lucide-react';
 
 interface ApplicationItem {
   _id: string;
@@ -71,136 +75,173 @@ export default function EmployerApplicationsPage() {
     }
   };
 
-  const getStatusClass = (value: string) => {
-    if (value === 'hired') return 'bg-green-100 text-green-800';
-    if (value === 'shortlisted') return 'bg-blue-100 text-blue-800';
-    if (value === 'interviewing') return 'bg-indigo-100 text-indigo-800';
-    if (value === 'rejected') return 'bg-red-100 text-red-800';
-    if (value === 'withdrawn') return 'bg-gray-200 text-gray-800';
-    return 'bg-yellow-100 text-yellow-800';
+  const getStatusVariant = (value: string) => {
+    if (value === 'hired') return 'default';
+    if (value === 'shortlisted') return 'secondary';
+    if (value === 'interviewing') return 'secondary';
+    if (value === 'rejected') return 'destructive';
+    if (value === 'withdrawn') return 'outline';
+    return 'secondary';
   };
 
   return (
-    <div className="p-6 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">All Applications</h1>
-            <p className="text-gray-600">Track and manage all job applications in one place.</p>
-          </div>
-          <div className="flex gap-2">
-            <input
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Applications</h1>
+          <p className="text-muted-foreground">Track and manage all job applications in one place</p>
+        </div>
+        <div className="flex gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search learner or job"
-              className="w-64 max-w-full px-3 py-2 border rounded-lg"
+              className="pl-10 w-64 rounded-xl"
             />
-            <button
-              onClick={() => setQuery(search)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-flex items-center gap-2"
-            >
-              <Search className="w-4 h-4" />
-              Search
-            </button>
           </div>
+          <Button
+            onClick={() => setQuery(search)}
+            className="rounded-xl"
+          >
+            <Search className="w-4 h-4" />
+          </Button>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setStatus(tab)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-                status === tab ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
-        </div>
+      {/* Filters */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Filter by Status
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-2">
+            {statusTabs.map((tab) => (
+              <Button
+                key={tab}
+                variant={status === tab ? "default" : "outline"}
+                onClick={() => setStatus(tab)}
+                className="rounded-xl"
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="bg-white rounded-xl border border-gray-100">
+      {/* Applications List */}
+      <Card className="rounded-xl">
+        <CardContent className="p-0">
           {loading ? (
-            <div className="py-16 text-center text-gray-600">
+            <div className="py-16 text-center">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-3" />
-              Loading applications...
+              <p className="text-muted-foreground">Loading applications...</p>
             </div>
           ) : applications.length === 0 ? (
-            <div className="py-16 text-center text-gray-600">
-              <Users className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-              No applications found.
+            <div className="py-16 text-center">
+              <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No applications found</h3>
+              <p className="text-muted-foreground">No applications match your current filters</p>
             </div>
           ) : (
             <div className="divide-y">
               {applications.map((app) => (
-                <div key={app._id} className="p-4 md:p-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <p className="font-semibold text-gray-900">{app.learnerId?.name || 'Unknown learner'}</p>
-                    <p className="text-sm text-gray-600">{app.learnerId?.email || 'No email'}</p>
-                    <p className="text-sm text-gray-700 inline-flex items-center gap-1">
-                      <Briefcase className="w-4 h-4" />
-                      {app.jobId?.title || 'Job'}
-                    </p>
-                    <p className="text-xs text-gray-500 inline-flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Applied {new Date(app.appliedAt).toLocaleDateString()}
-                    </p>
+                <div key={app._id} className="p-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2 flex-1">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h3 className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</h3>
+                        <p className="text-sm text-muted-foreground">{app.learnerId?.email || 'No email'}</p>
+                      </div>
+                      <Badge variant={getStatusVariant(app.status)} className="rounded-xl">
+                        {app.status}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Briefcase className="w-4 h-4" />
+                        <span>{app.jobId?.title || 'Job'}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        <span>Applied {new Date(app.appliedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusClass(app.status)}`}>
-                      {app.status}
-                    </span>
-                    <button
-                      className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50"
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => router.push(`/employer/jobs/${app.jobId?._id || ''}`)}
                       disabled={!app.jobId?._id}
+                      className="rounded-xl"
                     >
+                      <Eye className="w-4 h-4 mr-1" />
                       View Job
-                    </button>
-                    <button
-                      className="px-3 py-1.5 border rounded-lg text-sm hover:bg-gray-50"
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => router.push(`/employer/learners/${app.learnerId?._id || ''}`)}
                       disabled={!app.learnerId?._id}
+                      className="rounded-xl"
                     >
+                      <Eye className="w-4 h-4 mr-1" />
                       View Candidate
-                    </button>
+                    </Button>
+                    
                     {app.status === 'applied' && (
                       <>
-                        <button
-                          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                        <Button
+                          size="sm"
                           onClick={() => updateStatus(app._id, 'shortlisted')}
+                          className="rounded-xl"
                         >
                           Shortlist
-                        </button>
-                        <button
-                          className="px-3 py-1.5 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50"
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => updateStatus(app._id, 'rejected')}
+                          className="rounded-xl"
                         >
                           Reject
-                        </button>
+                        </Button>
                       </>
                     )}
+                    
                     {app.status === 'shortlisted' && (
                       <>
-                        <button
-                          className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700"
+                        <Button
+                          size="sm"
                           onClick={() => updateStatus(app._id, 'interviewing')}
+                          className="rounded-xl bg-purple-600 hover:bg-purple-700"
                         >
                           Interview
-                        </button>
-                        <button
-                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700"
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => updateStatus(app._id, 'hired')}
+                          className="rounded-xl bg-green-600 hover:bg-green-700"
                         >
                           Hire
-                        </button>
-                        <button
-                          className="px-3 py-1.5 border border-red-300 text-red-700 rounded-lg text-sm hover:bg-red-50"
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
                           onClick={() => updateStatus(app._id, 'rejected')}
+                          className="rounded-xl"
                         >
                           Reject
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
@@ -208,28 +249,33 @@ export default function EmployerApplicationsPage() {
               ))}
             </div>
           )}
-        </div>
+        </CardContent>
+      </Card>
 
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            Page {pagination.page} of {Math.max(1, pagination.pages)}
-          </p>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
-              disabled={loading || pagination.page <= 1}
-              onClick={() => fetchApplications(pagination.page - 1, status, query)}
-            >
-              Previous
-            </button>
-            <button
-              className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
-              disabled={loading || pagination.page >= pagination.pages}
-              onClick={() => fetchApplications(pagination.page + 1, status, query)}
-            >
-              Next
-            </button>
-          </div>
+      {/* Pagination */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Page {pagination.page} of {Math.max(1, pagination.pages)} ({pagination.total} applications)
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || pagination.page <= 1}
+            onClick={() => fetchApplications(pagination.page - 1, status, query)}
+            className="rounded-xl"
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || pagination.page >= pagination.pages}
+            onClick={() => fetchApplications(pagination.page + 1, status, query)}
+            className="rounded-xl"
+          >
+            Next
+          </Button>
         </div>
       </div>
     </div>

@@ -3,21 +3,20 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   Briefcase, 
   Users, 
   Search, 
   TrendingUp, 
-  FileText, 
   Target, 
-  Building2,
   Plus,
   Eye,
+  ArrowRight,
+  Bookmark,
   Clock,
   CheckCircle,
-  XCircle,
-  Bookmark,
-  ArrowRight
+  Building2
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { employerApi } from '@/lib/employer-api';
@@ -86,8 +85,8 @@ export default function EmployerDashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -98,22 +97,22 @@ export default function EmployerDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employer Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">Find and hire skilled talent</p>
         </div>
         <div className="flex gap-3">
-          <Link href="/employer/search">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <Button variant="outline" asChild>
+            <Link href="/employer/search" className="flex items-center gap-2">
               <Search className="w-4 h-4" />
               Search Talent
-            </button>
-          </Link>
-          <Link href="/employer/jobs/create">
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/employer/jobs/create" className="flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Post Job
-            </button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -124,7 +123,7 @@ export default function EmployerDashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
         >
-          <Card>
+          <Card className="rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Active Jobs</CardTitle>
               <Briefcase className="h-4 w-4 text-muted-foreground" />
@@ -143,7 +142,7 @@ export default function EmployerDashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card>
+          <Card className="rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Applications</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
@@ -162,7 +161,7 @@ export default function EmployerDashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card>
+          <Card className="rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Shortlisted</CardTitle>
               <Target className="h-4 w-4 text-muted-foreground" />
@@ -181,7 +180,7 @@ export default function EmployerDashboardPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
         >
-          <Card>
+          <Card className="rounded-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Hires</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -199,10 +198,10 @@ export default function EmployerDashboardPage() {
       {/* Quick Actions */}
       <div className="grid gap-6 md:grid-cols-3">
         <Link href="/employer/search">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Search className="h-5 w-5 text-blue-600" />
+                <Search className="h-5 w-5 text-primary" />
                 Search Talent
               </CardTitle>
             </CardHeader>
@@ -210,7 +209,7 @@ export default function EmployerDashboardPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Find skilled learners by skills, NSQF level, and experience
               </p>
-              <div className="flex items-center text-sm text-blue-600 font-medium">
+              <div className="flex items-center text-sm text-primary font-medium">
                 Start searching
                 <ArrowRight className="w-4 h-4 ml-1" />
               </div>
@@ -219,10 +218,10 @@ export default function EmployerDashboardPage() {
         </Link>
 
         <Link href="/employer/jobs">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Briefcase className="h-5 w-5 text-green-600" />
+                <Briefcase className="h-5 w-5 text-primary" />
                 Manage Jobs
               </CardTitle>
             </CardHeader>
@@ -230,7 +229,7 @@ export default function EmployerDashboardPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Post new jobs and manage existing job listings
               </p>
-              <div className="flex items-center text-sm text-green-600 font-medium">
+              <div className="flex items-center text-sm text-primary font-medium">
                 View all jobs
                 <ArrowRight className="w-4 h-4 ml-1" />
               </div>
@@ -239,10 +238,10 @@ export default function EmployerDashboardPage() {
         </Link>
 
         <Link href="/employer/bookmarks">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bookmark className="h-5 w-5 text-purple-600" />
+                <Bookmark className="h-5 w-5 text-primary" />
                 Bookmarks
               </CardTitle>
             </CardHeader>
@@ -250,7 +249,7 @@ export default function EmployerDashboardPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 {stats?.totalBookmarks || 0} saved candidates for future reference
               </p>
-              <div className="flex items-center text-sm text-purple-600 font-medium">
+              <div className="flex items-center text-sm text-primary font-medium">
                 View bookmarks
                 <ArrowRight className="w-4 h-4 ml-1" />
               </div>
@@ -262,11 +261,11 @@ export default function EmployerDashboardPage() {
       {/* Recent Jobs & Applications */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Recent Jobs */}
-        <Card>
+        <Card className="rounded-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Jobs</CardTitle>
-              <Link href="/employer/jobs" className="text-sm text-blue-600 hover:text-blue-700">
+              <Link href="/employer/jobs" className="text-sm text-primary hover:underline">
                 View all
               </Link>
             </div>
@@ -276,18 +275,18 @@ export default function EmployerDashboardPage() {
               <div className="space-y-3">
                 {recentJobs.map((job) => (
                   <Link key={job._id} href={`/employer/jobs/${job._id}`}>
-                    <div className="p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div className="p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900">{job.title}</h4>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <h4 className="font-semibold">{job.title}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">
                             {job.applicationsCount || 0} applications
                           </p>
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           job.status === 'open' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                            : 'bg-muted text-muted-foreground'
                         }`}>
                           {job.status}
                         </span>
@@ -298,49 +297,49 @@ export default function EmployerDashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 mb-4">No jobs posted yet</p>
-                <Link href="/employer/jobs/create">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <Briefcase className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground mb-4">No jobs posted yet</p>
+                <Button asChild>
+                  <Link href="/employer/jobs/create">
                     Post Your First Job
-                  </button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Recent Applications */}
-        <Card>
+        <Card className="rounded-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Recent Applications</CardTitle>
-              <Link href="/employer/applications" className="text-sm text-blue-600 hover:text-blue-700">
+              <Link href="/employer/applications" className="text-sm text-primary hover:underline">
                 View all
               </Link>
             </div>
           </CardHeader>
           <CardContent>
-                {stats?.recentApplications && stats.recentApplications.length > 0 ? (
+            {stats?.recentApplications && stats.recentApplications.length > 0 ? (
               <div className="space-y-3">
                 {stats.recentApplications.map((app: any) => (
-                  <div key={app._id} className="p-3 bg-gray-50 rounded-lg">
+                  <div key={app._id} className="p-3 bg-muted/50 rounded-xl">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-semibold text-gray-900">{app.learnerId?.name || 'Unknown learner'}</h4>
-                        <p className="text-sm text-gray-600">{app.jobId?.title || 'Job'}</p>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <h4 className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</h4>
+                        <p className="text-sm text-muted-foreground">{app.jobId?.title || 'Job'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
                           {new Date(app.appliedAt || app.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         app.status === 'applied' 
-                          ? 'bg-yellow-100 text-yellow-800'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
                           : app.status === 'shortlisted'
-                          ? 'bg-blue-100 text-blue-800'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
                           : app.status === 'hired'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
                       }`}>
                         {app.status}
                       </span>
@@ -350,8 +349,8 @@ export default function EmployerDashboardPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600">No applications yet</p>
+                <Users className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No applications yet</p>
               </div>
             )}
           </CardContent>

@@ -27,6 +27,7 @@ import recommendationRoutes from './routes/recommendation.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import blogRoutes from './routes/blog.routes.js';
 import contactRoutes from './routes/contact.routes.js';
+import searchRoutes from './routes/search.routes.js';
 
 dotenv.config();
 
@@ -105,6 +106,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/search', searchRoutes);
 
 // 404 handler
 app.use((req, res) => {

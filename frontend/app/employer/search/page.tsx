@@ -3,6 +3,12 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, Filter, Award, MapPin, Briefcase, Bookmark, BookmarkCheck, Eye } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { employerApi } from '@/lib/employer-api';
 
 interface Learner {
@@ -28,7 +34,7 @@ export default function EmployerSearchPage() {
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     skills: '',
-    nsqfLevel: '',
+    nsqfLevel: 'all',
     location: '',
   });
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
@@ -53,7 +59,7 @@ export default function EmployerSearchPage() {
       setLoading(true);
       const params = new URLSearchParams();
       if (filters.skills) params.append('skills', filters.skills);
-      if (filters.nsqfLevel) params.append('nsqfLevel', filters.nsqfLevel);
+      if (filters.nsqfLevel && filters.nsqfLevel !== 'all') params.append('nsqfLevel', filters.nsqfLevel);
       if (filters.location) params.append('location', filters.location);
 
       const data = await employerApi.searchLearners(params);
@@ -84,111 +90,124 @@ export default function EmployerSearchPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Search Talent</h1>
-          <p className="text-gray-600">Find skilled learners for your organization</p>
-        </div>
+    <div className="space-y-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Search Talent</h1>
+        <p className="text-muted-foreground">Find skilled learners for your organization</p>
+      </div>
 
-        {/* Search & Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+      {/* Search & Filters */}
+      <Card className="rounded-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5" />
+            Search Filters
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
+              <Label htmlFor="skills">Skills</Label>
+              <div className="relative mt-2">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  id="skills"
                   type="text"
                   value={filters.skills}
                   onChange={(e) => setFilters({ ...filters, skills: e.target.value })}
                   placeholder="e.g., JavaScript, Python, Data Science"
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="pl-10 rounded-xl"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">NSQF Level</label>
-              <select
-                value={filters.nsqfLevel}
-                onChange={(e) => setFilters({ ...filters, nsqfLevel: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">All Levels</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
-                  <option key={level} value={level}>Level {level}</option>
-                ))}
-              </select>
+              <Label htmlFor="nsqfLevel">NSQF Level</Label>
+              <Select value={filters.nsqfLevel} onValueChange={(value) => setFilters({ ...filters, nsqfLevel: value })}>
+                <SelectTrigger className="mt-2 rounded-xl">
+                  <SelectValue placeholder="All Levels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Levels</SelectItem>
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(level => (
+                    <SelectItem key={level} value={level.toString()}>Level {level}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-              <input
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
                 type="text"
                 value={filters.location}
                 onChange={(e) => setFilters({ ...filters, location: e.target.value })}
                 placeholder="City or region"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="mt-2 rounded-xl"
               />
             </div>
           </div>
           <div className="mt-4">
-            <button
+            <Button
               onClick={searchLearners}
               disabled={loading}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              className="rounded-xl"
             >
               {loading ? 'Searching...' : 'Search'}
-            </button>
+            </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Results */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">
+            {learners.length} {learners.length === 1 ? 'Result' : 'Results'}
+          </h2>
         </div>
 
-        {/* Results */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-900">
-              {learners.length} {learners.length === 1 ? 'Result' : 'Results'}
-            </h2>
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-4 text-muted-foreground">Searching...</p>
           </div>
-
-          {loading ? (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Searching...</p>
-            </div>
-          ) : learners.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {learners.map((learner) => {
-                const learnerId = learner.userId?._id || learner._id;
-                const learnerName = learner.userId?.name || learner.name || 'Unknown';
-                const learnerEmail = learner.userId?.email || learner.email || '';
-                
-                return (
-                  <div key={learner._id} className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+        ) : learners.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {learners.map((learner) => {
+              const learnerId = learner.userId?._id || learner._id;
+              const learnerName = learner.userId?.name || learner.name || 'Unknown';
+              const learnerEmail = learner.userId?.email || learner.email || '';
+              
+              return (
+                <Card key={learner._id} className="hover:shadow-md transition-shadow rounded-xl">
+                  <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900">{learnerName}</h3>
-                        <p className="text-sm text-gray-600">{learnerEmail}</p>
+                        <h3 className="text-lg font-bold">{learnerName}</h3>
+                        <p className="text-sm text-muted-foreground">{learnerEmail}</p>
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleBookmark(learnerId)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 rounded-xl"
                       >
                         {bookmarkedIds.has(learnerId) ? (
-                          <BookmarkCheck className="w-5 h-5 text-blue-600" />
+                          <BookmarkCheck className="w-4 h-4 text-primary" />
                         ) : (
-                          <Bookmark className="w-5 h-5 text-gray-400" />
+                          <Bookmark className="w-4 h-4" />
                         )}
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="space-y-3 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Award className="w-4 h-4" />
                         <span>NSQF Level {learner.nsqfLevel} • {learner.totalCredits} credits</span>
                       </div>
                       {learner.experience && learner.experience.length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Briefcase className="w-4 h-4" />
                           <span>{learner.experience.length} {learner.experience.length === 1 ? 'experience' : 'experiences'}</span>
                         </div>
@@ -196,42 +215,44 @@ export default function EmployerSearchPage() {
                     </div>
 
                     {learner.bio && (
-                      <p className="text-sm text-gray-700 mb-4 line-clamp-2">{learner.bio}</p>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{learner.bio}</p>
                     )}
 
                     {learner.skills && learner.skills.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
                         {learner.skills.slice(0, 3).map((skill, index) => (
-                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
+                          <Badge key={index} variant="secondary" className="rounded-xl">
                             {skill}
-                          </span>
+                          </Badge>
                         ))}
                         {learner.skills.length > 3 && (
-                          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium">
+                          <Badge variant="outline" className="rounded-xl">
                             +{learner.skills.length - 3} more
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     )}
 
-                    <Link href={`/employer/learners/${learnerId}`}>
-                      <button className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <Button asChild className="w-full rounded-xl">
+                      <Link href={`/employer/learners/${learnerId}`} className="flex items-center justify-center gap-2">
                         <Eye className="w-4 h-4" />
                         View Profile
-                      </button>
-                    </Link>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
-              <Search className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No results found</h3>
-              <p className="text-gray-600">Try adjusting your search filters</p>
-            </div>
-          )}
-        </div>
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        ) : (
+          <Card className="rounded-xl">
+            <CardContent className="text-center py-12">
+              <Search className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No results found</h3>
+              <p className="text-muted-foreground">Try adjusting your search filters</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

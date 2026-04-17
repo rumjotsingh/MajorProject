@@ -16,29 +16,59 @@ import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
 import { NotificationPanel } from "@/components/ui/notification-panel";
-import { GlobalSearch } from "@/components/ui/global-search";
+import { RoleBasedSearch } from "@/components/ui/role-based-search";
 
-interface UserData { name: string; email: string; }
+interface UserData { 
+  name: string; 
+  email: string; 
+  role: "Learner" | "Employer" | "Issuer" | "Admin";
+}
 
 export function Header() {
   const { theme, setTheme } = useTheme();
-  const [userData, setUserData] = useState<UserData>({ name: "User", email: "" });
+  const [userData, setUserData] = useState<UserData>({ 
+    name: "User", 
+    email: "", 
+    role: "Learner" 
+  });
 
   useEffect(() => {
     api.get("/auth/me")
-      .then(r => setUserData({ name: r.data.name || "User", email: r.data.email || "" }))
+      .then(r => setUserData({ 
+        name: r.data.name || "User", 
+        email: r.data.email || "",
+        role: r.data.role || "Learner"
+      }))
       .catch(() => {});
   }, []);
 
   const getInitials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
 
+  const getProfileLink = (role: string) => {
+    switch (role) {
+      case "Employer": return "/employer/profile";
+      case "Issuer": return "/issuer/profile";
+      case "Admin": return "/admin/profile";
+      default: return "/profile";
+    }
+  };
+
+  const getSettingsLink = (role: string) => {
+    switch (role) {
+      case "Employer": return "/employer/settings";
+      case "Issuer": return "/issuer/settings";
+      case "Admin": return "/admin/settings";
+      default: return "/settings";
+    }
+  };
+
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
       <div className="flex h-14 items-center gap-4 px-6">
-        {/* Global Search */}
+        {/* Role-Based Global Search */}
         <div className="flex-1">
-          <GlobalSearch />
+          <RoleBasedSearch role={userData.role.toLowerCase() as "learner" | "employer" | "issuer" | "admin"} />
         </div>
 
         {/* Right actions */}
@@ -46,7 +76,9 @@ export function Header() {
           {/* Language */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-             
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted/70">
+                <Globe className="h-4 w-4" />
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
@@ -88,10 +120,15 @@ export function Header() {
               <DropdownMenuLabel className="font-normal">
                 <p className="text-sm font-semibold">{userData.name}</p>
                 <p className="text-xs text-muted-foreground">{userData.email}</p>
+                <p className="text-xs text-primary font-medium">{userData.role}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild><Link href="/profile">Profile</Link></DropdownMenuItem>
-              <DropdownMenuItem asChild><Link href="/settings">Settings</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={getProfileLink(userData.role)}>Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={getSettingsLink(userData.role)}>Settings</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive focus:text-destructive"
                 onClick={() => { localStorage.clear(); window.location.href = "/login"; }}>

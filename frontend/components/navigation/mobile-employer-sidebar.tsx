@@ -44,7 +44,7 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
       {/* Mobile Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-lg shadow-lg border border-border"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-xl shadow-lg border border-border"
       >
         <Menu className="w-6 h-6 text-gray-700" />
       </button>
@@ -70,7 +70,7 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
               <h2 className="text-xl font-bold text-gray-900">Employer</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100 rounded-xl"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
@@ -98,7 +98,7 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                       isActive
                         ? 'bg-foreground text-background font-medium'
                         : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -116,7 +116,7 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
           <div className="p-4 border-t border-border">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-xl transition-colors"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>

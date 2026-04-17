@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Award, ChevronLeft, ChevronRight, FileCheck, Home, LogOut,
-  Map, Settings, Sparkles, Upload, User, Briefcase, CheckSquare,
+  Map, Sparkles, Upload, User, Briefcase, CheckSquare,
   Search, Bookmark, Users, Crown, Mail, Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,7 +13,7 @@ import api from "@/lib/api";
 
 interface NavItem  { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
 interface NavSection { title: string; items: NavItem[]; }
-interface UserData  { name: string; email: string; }
+interface UserData  { name: string; email: string; role: string; }
 interface CollapsibleSidebarProps { role?: "learner" | "employer" | "issuer" | "admin"; }
 
 const learnerSections: NavSection[] = [
@@ -38,7 +38,6 @@ const issuerSections: NavSection[] = [
   ]},
   { title: "Account",     items: [
     { label: "Profile",  href: "/issuer/profile",  icon: User },
-    { label: "Settings", href: "/issuer/settings", icon: Settings },
   ]},
 ];
 
@@ -47,6 +46,7 @@ const employerSections: NavSection[] = [
   { title: "Hiring",  items: [
     { label: "Search Talent", href: "/employer/search",    icon: Search },
     { label: "Jobs",          href: "/employer/jobs",      icon: Briefcase },
+    { label: "Applications",  href: "/employer/applications", icon: FileCheck },
     { label: "Bookmarks",     href: "/employer/bookmarks", icon: Bookmark },
   ]},
   { title: "Account", items: [{ label: "Profile", href: "/employer/profile", icon: User }] },
@@ -69,20 +69,56 @@ const adminSections: NavSection[] = [
 export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
-  const [userData, setUserData] = useState<UserData>({ name: "User", email: "" });
+  const [mounted, setMounted] = useState(false);
+  const [userData, setUserData] = useState<UserData>({ name: "User", email: "", role: "Learner" });
+
+  // Handle hydration
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     api.get("/auth/me")
-      .then(r => setUserData({ name: r.data.name || "User", email: r.data.email || "" }))
+      .then(r => setUserData({ 
+        name: r.data.name || "User", 
+        email: r.data.email || "",
+        role: r.data.role || "Learner"
+      }))
       .catch(() => {});
   }, []);
 
+  // Load collapsed state from localStorage on mount (client-side only)
   useEffect(() => {
-    const check = () => setCollapsed(window.innerWidth < 1200);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+    if (!mounted) return;
+    
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+    if (savedCollapsed !== null) {
+      setCollapsed(JSON.parse(savedCollapsed));
+    } else {
+      // Auto-collapse on smaller screens initially
+      setCollapsed(window.innerWidth < 1200);
+    }
+  }, [mounted]);
+
+  // Save collapsed state to localStorage when it changes (client-side only)
+  useEffect(() => {
+    if (!mounted) return;
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
+  }, [collapsed, mounted]);
+
+  // Handle window resize (but don't auto-collapse if user manually expanded)
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
 
   const sections = useMemo(() => {
     if (role === "issuer")   return issuerSections;
@@ -99,6 +135,18 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
   const initials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
 
+  const getProfileLink = () => {
+    switch (role) {
+      case "issuer": return "/issuer/profile";
+      case "employer": return "/employer/profile";
+      case "admin": return "/admin/profile";
+      default: return "/profile";
+    }
+  };
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
 
   return (
     <aside
@@ -108,14 +156,17 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
       {/* Logo */}
       <div className={cn("flex h-14 items-center border-b border-border/40 px-4", collapsed ? "justify-center" : "justify-between")}>
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Award className="h-4 w-4" />
           </span>
           {!collapsed && <span className="text-sm font-semibold tracking-tight truncate">CredMatrix</span>}
         </Link>
         {!collapsed && (
-          <button onClick={() => setCollapsed(true)}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+          <button 
+            onClick={toggleCollapsed}
+            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title="Collapse sidebar"
+          >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
         )}
@@ -123,8 +174,11 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
 
       {/* Expand button when collapsed */}
       {collapsed && (
-        <button onClick={() => setCollapsed(false)}
-          className="mx-auto mt-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors">
+        <button 
+          onClick={toggleCollapsed}
+          className="mx-auto mt-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          title="Expand sidebar"
+        >
           <ChevronRight className="h-3.5 w-3.5" />
         </button>
       )}
@@ -146,7 +200,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
                   <Link key={item.href} href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors",
                       collapsed && "justify-center px-2",
                       active
                         ? "bg-primary/10 text-primary font-medium"
@@ -173,7 +227,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         </div>
         {!collapsed && (
           <>
-            <Link className="flex-1 min-w-0" href="/profile">
+            <Link className="flex-1 min-w-0" href={getProfileLink()}>
               <p className="text-xs font-medium truncate">{userData.name}</p>
               <p className="text-[10px] text-muted-foreground truncate">{userData.email}</p>
             </Link>

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Home, Award, Plus, Map, User, Menu, X, Settings, Bell, LogOut, Users, Upload, CheckSquare } from "lucide-react";
+import { Home, Award, Plus, Map, User, Menu, X, Settings, Bell, LogOut, Users, Upload, CheckSquare, Search, Briefcase, Bookmark } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,11 @@ const issuerNavItems = [
 ];
 
 const employerNavItems = [
-  { icon: Home, label: "Home", href: "/employer/dashboard", isMain: true },
+  { icon: Home, label: "Home", href: "/employer/dashboard" },
+  { icon: Search, label: "Search", href: "/employer/search" },
+  { icon: Plus, label: "Jobs", href: "/employer/jobs", isMain: true },
+  { icon: CheckSquare, label: "Apps", href: "/employer/applications" },
+  { icon: User, label: "Profile", href: "/employer/profile" },
 ];
 
 const adminNavItems = [
@@ -46,8 +50,8 @@ const issuerMenuItems = [
 ];
 
 const employerMenuItems = [
-  { icon: Settings, label: "Settings", href: "/settings" },
-  { icon: Bell, label: "Notifications", href: "/notifications" },
+  { icon: Settings, label: "Settings", href: "/employer/settings" },
+  { icon: Bell, label: "Notifications", href: "/employer/notifications" },
   { icon: LogOut, label: "Logout", href: "/", isAction: true },
 ];
 

@@ -82,7 +82,7 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
       {/* Hamburger Button - Fixed Top Left */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-lg shadow-lg border border-border hover:bg-muted transition-colors"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-xl shadow-lg border border-border hover:bg-muted transition-colors"
         aria-label="Open menu"
       >
         <Menu className="w-6 h-6 text-gray-700" />
@@ -115,14 +115,14 @@ export function MobileAdminSidebar({ userName = 'Admin', userEmail = 'admin@exam
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
               <Link href="/" className="flex items-center gap-2 font-semibold">
-                <div className="p-1.5 rounded-lg bg-foreground text-background">
+                <div className="p-1.5 rounded-xl bg-foreground text-background">
                   <Award className="h-5 w-5" />
                 </div>
                 <span className="text-lg">CredMatrix</span>
               </Link>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 hover:bg-gray-100 rounded-xl transition-colors"
                 aria-label="Close menu"
               >
                 <X className="w-5 h-5 text-gray-600" />

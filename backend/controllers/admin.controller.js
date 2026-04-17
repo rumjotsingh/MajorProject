@@ -10,6 +10,44 @@ import Subscription from '../models/Subscription.model.js';
 import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 import logger from '../utils/logger.js';
 
+// ==================== ADMIN PROFILE ====================
+
+export const updateAdminProfile = async (req, res, next) => {
+  try {
+    const { name, email } = req.body;
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // Ensure only admin can update admin profile
+    if (user.role !== 'Admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Update fields
+    if (name) user.name = name;
+    if (email) user.email = email;
+
+    await user.save();
+
+    logger.info(`Admin profile updated: ${req.user.userId}`);
+    res.json({
+      message: 'Admin profile updated successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    logger.error('Error updating admin profile:', error);
+    next(error);
+  }
+};
+
 // ==================== DASHBOARD ====================
 
 export const getStats = async (req, res, next) => {

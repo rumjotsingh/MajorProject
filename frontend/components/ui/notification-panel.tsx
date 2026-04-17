@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { initializeSocket, disconnectSocket } from "@/lib/socket";
+import { authService } from "@/lib/auth";
 
 interface Notification {
   _id: string;
@@ -77,25 +79,45 @@ export function NotificationPanel() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // Load notifications on component mount and set up real-time updates
+  useEffect(() => {
+    loadNotifications();
+
+    // Initialize WebSocket for real-time notifications
+    const user = authService.getCurrentUser();
+    if (user) {
+      const socket = initializeSocket(user.userId);
+
+      // Listen for new notifications
+      socket.on("notification", (notification: Notification) => {
+        console.log("New notification received:", notification);
+        
+        // Add to notifications list
+        setNotifications((prev) => [notification, ...prev]);
+      });
+
+      return () => {
+        disconnectSocket();
+      };
+    }
+  }, []);
+
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
+      if (open && panelRef.current && !panelRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // Load when opened
-  useEffect(() => {
-    if (open) loadNotifications();
+    if (open) {
+      document.addEventListener("mousedown", handler);
+      return () => document.removeEventListener("mousedown", handler);
+    }
   }, [open]);
 
   const loadNotifications = async () => {
@@ -103,8 +125,9 @@ export function NotificationPanel() {
       setLoading(true);
       const res = await api.get("/notifications");
       setNotifications(res.data || []);
-    } catch {
-      // silent
+    } catch (error) {
+      console.error("Failed to load notifications:", error);
+      setNotifications([]);
     } finally {
       setLoading(false);
     }
@@ -118,7 +141,9 @@ export function NotificationPanel() {
         setNotifications((prev) =>
           prev.map((item) => item._id === n._id ? { ...item, read: true } : item)
         );
-      } catch {}
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
     }
     // Close panel and navigate
     setOpen(false);
@@ -129,7 +154,9 @@ export function NotificationPanel() {
     try {
       await api.put("/notifications/mark-all-read");
       setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    } catch {}
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+    }
   };
 
   return (
@@ -161,7 +188,7 @@ export function NotificationPanel() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-11 z-50 w-[380px] rounded-2xl border border-border/60 bg-background shadow-2xl shadow-black/10 overflow-hidden"
+            className="absolute right-0 top-11 z-50 w-[380px] rounded-xl border border-border/60 bg-background shadow-2xl shadow-black/10 overflow-hidden"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
@@ -178,7 +205,7 @@ export function NotificationPanel() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
+                    className="flex items-center gap-1 rounded-xl px-2 py-1 text-xs text-muted-foreground hover:bg-muted/70 hover:text-foreground transition-colors"
                   >
                     <Check className="h-3 w-3" />
                     Mark all read
@@ -186,7 +213,7 @@ export function NotificationPanel() {
                 )}
                 <button
                   onClick={() => setOpen(false)}
-                  className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted/70 transition-colors"
+                  className="flex h-7 w-7 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted/70 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -201,15 +228,15 @@ export function NotificationPanel() {
                     <div key={i} className="flex items-start gap-3 p-3 rounded-xl animate-pulse">
                       <div className="h-8 w-8 rounded-full bg-muted shrink-0" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-3 bg-muted rounded w-3/4" />
-                        <div className="h-2.5 bg-muted rounded w-1/3" />
+                        <div className="h-3 bg-muted rounded-xl w-3/4" />
+                        <div className="h-2.5 bg-muted rounded-xl w-1/3" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <div className="h-12 w-12 rounded-2xl bg-muted flex items-center justify-center mb-3">
+                  <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
                     <Bell className="h-6 w-6 text-muted-foreground" />
                   </div>
                   <p className="font-medium text-sm">All caught up!</p>
@@ -231,7 +258,7 @@ export function NotificationPanel() {
                     >
                       {/* Icon */}
                       <div className={cn(
-                        "h-8 w-8 rounded-full flex items-center justify-center shrink-0 mt-0.5",
+                        "h-8 w-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5",
                         getIconBg(n.type)
                       )}>
                         {getIcon(n.type)}

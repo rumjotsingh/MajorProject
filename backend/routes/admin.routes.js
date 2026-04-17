@@ -7,6 +7,9 @@ import upload from '../middleware/upload.middleware.js';
 // All routes require Admin authentication
 const adminAuth = [authenticate, authorize('Admin')];
 
+// ==================== ADMIN PROFILE ====================
+router.put('/profile', adminAuth, adminController.updateAdminProfile);
+
 // ==================== DASHBOARD ====================
 router.get('/dashboard/stats', adminAuth, adminController.getStats);
 
