@@ -56,13 +56,14 @@ export default function LoginPage() {
 
       const redirectPath = roleRedirectMap[user.role] || "/dashboard";
 
-      // ✅ Use router.push instead of window.location.href
-      // This keeps it client-side — no page reload, no state wipe
+      // Use router.push instead of window.location.href to prevent page reload
       router.push(redirectPath);
     } catch (error: any) {
+      console.error("Login error:", error);
+      
       const errorMessage =
-        error.response?.data?.message ||
         error.response?.data?.error ||
+        error.response?.data?.message ||
         error.message ||
         "Invalid email or password";
 
@@ -75,8 +76,6 @@ export default function LoginPage() {
         nextErrors.password = errorMessage;
       } else {
         nextErrors.general = errorMessage;
-        nextErrors.email = "Check username/email and password";
-        nextErrors.password = "Check username/email and password";
       }
 
       setFieldErrors(nextErrors);
