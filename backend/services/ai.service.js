@@ -287,76 +287,98 @@ Rules:
 - portfolioSuggestions: max 6
 - skillMapInsights: max 6
 - Keep text short and actionable.`;
+  try {
+    const result = await requestAIText(prompt);
+    console.log('Raw AI response:', result.text); 
+    const parsed = safeJsonParse(result.text) || {};
 
-  const result = await requestAIText(prompt);
-  const parsed = safeJsonParse(result.text) || {};
+    const courses = Array.isArray(parsed.courses)
+      ? parsed.courses
+          .map((course) => ({
+            title: String(course?.title || '').trim(),
+            platform: String(course?.platform || 'Online Platform').trim(),
+            targetSkill: String(course?.targetSkill || '').trim(),
+            duration: String(course?.duration || '').trim(),
+          }))
+          .filter((course) => course.title)
+          .slice(0, 5)
+      : [];
 
-  const courses = Array.isArray(parsed.courses)
-    ? parsed.courses
-        .map((course) => ({
-          title: String(course?.title || '').trim(),
-          platform: String(course?.platform || 'Online Platform').trim(),
-          targetSkill: String(course?.targetSkill || '').trim(),
-          duration: String(course?.duration || '').trim(),
-        }))
-        .filter((course) => course.title)
-        .slice(0, 5)
-    : [];
+    const projects = Array.isArray(parsed.projects)
+      ? parsed.projects
+          .map((project) => ({
+            title: String(project?.title || '').trim(),
+            difficulty: ['Beginner', 'Intermediate', 'Advanced'].includes(project?.difficulty)
+              ? project.difficulty
+              : 'Intermediate',
+            skills: sanitizeStringList(project?.skills, 6),
+            estimatedTime: String(project?.estimatedTime || '').trim(),
+          }))
+          .filter((project) => project.title)
+          .slice(0, 5)
+      : [];
 
-  const projects = Array.isArray(parsed.projects)
-    ? parsed.projects
-        .map((project) => ({
-          title: String(project?.title || '').trim(),
-          difficulty: ['Beginner', 'Intermediate', 'Advanced'].includes(project?.difficulty)
-            ? project.difficulty
-            : 'Intermediate',
-          skills: sanitizeStringList(project?.skills, 6),
-          estimatedTime: String(project?.estimatedTime || '').trim(),
-        }))
-        .filter((project) => project.title)
-        .slice(0, 5)
-    : [];
+    const recommendedJobs = Array.isArray(parsed.recommendedJobs)
+      ? parsed.recommendedJobs
+          .map((job) => ({
+            title: String(job?.title || '').trim(),
+            matchScore: Number(job?.matchScore) || 0,
+            salaryRange: String(job?.salaryRange || '').trim(),
+            whyMatch: String(job?.whyMatch || '').trim(),
+          }))
+          .filter((job) => job.title)
+          .slice(0, 6)
+      : [];
 
-  const recommendedJobs = Array.isArray(parsed.recommendedJobs)
-    ? parsed.recommendedJobs
-        .map((job) => ({
-          title: String(job?.title || '').trim(),
-          matchScore: Number(job?.matchScore) || 0,
-          salaryRange: String(job?.salaryRange || '').trim(),
-          whyMatch: String(job?.whyMatch || '').trim(),
-        }))
-        .filter((job) => job.title)
-        .slice(0, 6)
-    : [];
+    const recommendedCertifications = Array.isArray(parsed.recommendedCertifications)
+      ? parsed.recommendedCertifications
+          .map((cert) => ({
+            name: String(cert?.name || '').trim(),
+            provider: String(cert?.provider || '').trim(),
+            level: String(cert?.level || '').trim(),
+            reason: String(cert?.reason || '').trim(),
+          }))
+          .filter((cert) => cert.name)
+          .slice(0, 6)
+      : [];
 
-  const recommendedCertifications = Array.isArray(parsed.recommendedCertifications)
-    ? parsed.recommendedCertifications
-        .map((cert) => ({
-          name: String(cert?.name || '').trim(),
-          provider: String(cert?.provider || '').trim(),
-          level: String(cert?.level || '').trim(),
-          reason: String(cert?.reason || '').trim(),
-        }))
-        .filter((cert) => cert.name)
-        .slice(0, 6)
-    : [];
-
-  return {
-    careerRoles: sanitizeStringList(parsed.careerRoles, 5),
-    courses,
-    projects,
-    recommendedJobs,
-    recommendedCertifications,
-    portfolioSuggestions: sanitizeStringList(parsed.portfolioSuggestions, 6),
-    skillMapInsights: sanitizeStringList(parsed.skillMapInsights, 6),
-    summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
-    aiMetadata: {
-      provider: result.provider,
-      model: result.modelVersion,
-      responseId: result.responseId,
-      usageMetadata: result.usageMetadata,
-    },
-  };
+    return {
+      careerRoles: sanitizeStringList(parsed.careerRoles, 5),
+      courses,
+      projects,
+      recommendedJobs,
+      recommendedCertifications,
+      portfolioSuggestions: sanitizeStringList(parsed.portfolioSuggestions, 6),
+      skillMapInsights: sanitizeStringList(parsed.skillMapInsights, 6),
+      summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
+      aiMetadata: {
+        provider: result.provider,
+        model: result.modelVersion,
+        responseId: result.responseId,
+        usageMetadata: result.usageMetadata,
+      },
+    };
+  } catch (error) {
+    return {
+      careerRoles: [],
+      courses: [],
+      projects: [],
+      recommendedJobs: [],
+      recommendedCertifications: [],
+      portfolioSuggestions: [],
+      skillMapInsights: [],
+      summary: '',
+      aiMetadata: {
+        provider: 'ollama',
+        model: OLLAMA_MODEL,
+        responseId: null,
+        usageMetadata: null,
+        status: 'failed',
+        reason: error?.message || 'AI recommendation generation failed',
+        analyzedAt: new Date(),
+      },
+    };
+  }
 };
 
 /**
