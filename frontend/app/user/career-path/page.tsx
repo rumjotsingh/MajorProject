@@ -356,18 +356,29 @@ export default function CareerPathPage() {
                     <canvas ref={canvasRef} className="max-w-full" />
                   </div>
                   <div className="space-y-2">
-                    {skillDistribution.slice(0, 6).map((skill, i) => (
-                      <div key={skill.name} className="flex items-center gap-3 p-2.5 rounded-lg border bg-card hover:bg-muted/30 transition">
-                        <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${Object.values(COLORS)[i % 8]} flex items-center justify-center text-white font-bold text-xs shadow-sm`}>
-                          {skill.count}
+                    {skillDistribution.slice(0, 6).map((skill, i) => {
+                      const colors = [
+                        { bg: "bg-blue-500", text: "text-white" },
+                        { bg: "bg-purple-500", text: "text-white" },
+                        { bg: "bg-green-500", text: "text-white" },
+                        { bg: "bg-orange-500", text: "text-white" },
+                        { bg: "bg-pink-500", text: "text-white" },
+                        { bg: "bg-teal-500", text: "text-white" },
+                      ];
+                      const color = colors[i % colors.length];
+                      return (
+                        <div key={skill.name} className="flex items-center gap-3 p-2.5 rounded-lg border border-[rgba(0,0,0,0.1)] bg-card hover:bg-[#f6f5f4] transition-all duration-200">
+                          <div className={`h-8 w-8 rounded-full ${color.bg} flex items-center justify-center ${color.text} font-bold text-xs shadow-sm`}>
+                            {skill.count}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{skill.name}</p>
+                            <p className="text-xs text-muted-foreground">{skill.count} credential{skill.count > 1 ? "s" : ""}</p>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">{Math.round(skill.level)}%</Badge>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{skill.name}</p>
-                          <p className="text-xs text-muted-foreground">{skill.count} credential{skill.count > 1 ? "s" : ""}</p>
-                        </div>
-                        <Badge variant="secondary" className="text-xs">{Math.round(skill.level)}%</Badge>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -376,17 +387,30 @@ export default function CareerPathPage() {
 
           {/* Skill Cloud */}
           {profile && profile.skills.length > 0 && (
-            <Card>
+            <Card className="border border-[rgba(0,0,0,0.1)]">
               <CardHeader>
                 <CardTitle className="text-lg">All Skills</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-wrap gap-2">
-                  {profile.skills.map((skill, i) => (
-                    <Badge key={i} variant="secondary" className={`px-3 py-1.5 bg-gradient-to-br ${Object.values(COLORS)[i % 8]} text-white border-0 shadow-sm`}>
-                      {skill}
-                    </Badge>
-                  ))}
+                  {profile.skills.map((skill, i) => {
+                    const colors = [
+                      { bg: "bg-blue-100 dark:bg-blue-900/30", text: "text-blue-700 dark:text-blue-300" },
+                      { bg: "bg-purple-100 dark:bg-purple-900/30", text: "text-purple-700 dark:text-purple-300" },
+                      { bg: "bg-green-100 dark:bg-green-900/30", text: "text-green-700 dark:text-green-300" },
+                      { bg: "bg-orange-100 dark:bg-orange-900/30", text: "text-orange-700 dark:text-orange-300" },
+                      { bg: "bg-pink-100 dark:bg-pink-900/30", text: "text-pink-700 dark:text-pink-300" },
+                      { bg: "bg-teal-100 dark:bg-teal-900/30", text: "text-teal-700 dark:text-teal-300" },
+                      { bg: "bg-indigo-100 dark:bg-indigo-900/30", text: "text-indigo-700 dark:text-indigo-300" },
+                      { bg: "bg-cyan-100 dark:bg-cyan-900/30", text: "text-cyan-700 dark:text-cyan-300" },
+                    ];
+                    const color = colors[i % colors.length];
+                    return (
+                      <span key={i} className={`px-3 py-1.5 rounded-full text-sm font-medium ${color.bg} ${color.text} border border-transparent`}>
+                        {skill}
+                      </span>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -444,8 +468,8 @@ export default function CareerPathPage() {
               <Card key={path._id} onClick={() => handlePathSelect(path.title)}
                 className={`cursor-pointer transition-all hover:shadow-lg ${
                   selectedPath === path.title 
-                    ? "border-2 border-primary bg-primary/5 shadow-lg ring-2 ring-primary/20" 
-                    : "hover:border-primary/40 hover:scale-[1.02]"
+                    ? "border border-[#0075de] bg-[#f2f9ff] shadow-lg" 
+                    : "hover:border-[#0075de]/30 hover:scale-[1.01]"
                 }`}>
                 <CardContent className="pt-5 pb-5 space-y-3">
                   {/* Header */}
@@ -531,7 +555,7 @@ export default function CareerPathPage() {
           {analyzing && (
             <div className="space-y-6">
               {/* Match Score Skeleton */}
-              <Card className="border-2">
+              <Card className="border border-[rgba(0,0,0,0.1)] shadow-sm">
                 <CardContent className="pt-6 pb-6">
                   <div className="text-center space-y-3">
                     <Skeleton className="inline-flex w-20 h-20 rounded-full" />
@@ -552,7 +576,7 @@ export default function CareerPathPage() {
                 <CardContent>
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="p-4 rounded-lg border-2">
+                      <div key={i} className="p-4 rounded-lg border border-[rgba(0,0,0,0.1)]">
                         <div className="flex items-center justify-between mb-3">
                           <Skeleton className="h-5 w-32" />
                           <Skeleton className="h-5 w-20 rounded-full" />
@@ -590,11 +614,11 @@ export default function CareerPathPage() {
               </Card>
 
               {/* Simple Match Score */}
-              <Card className="border-2">
+              <Card className="border border-[rgba(0,0,0,0.1)] shadow-sm">
                 <CardContent className="pt-6 pb-6">
                   <div className="text-center space-y-3">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 border-4 border-primary/20">
-                      <span className="text-3xl font-bold text-primary">{skillGap.proficiency}%</span>
+                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-[#f2f9ff] border border-[#0075de]/30">
+                      <span className="text-3xl font-bold text-[#0075de]">{skillGap.proficiency}%</span>
                     </div>
                     <div>
                       <p className="font-bold text-lg">Your Match Score</p>
@@ -626,7 +650,7 @@ export default function CareerPathPage() {
                   <CardContent>
                     <div className="space-y-3">
                       {skillGap.skillGaps.map((gap, i) => (
-                        <div key={i} className="p-4 rounded-lg border-2 bg-card hover:bg-muted/30 transition">
+                        <div key={i} className="p-4 rounded-xl border border-[rgba(0,0,0,0.1)] bg-card hover:bg-[#f6f5f4] transition-all duration-200">
                           <div className="flex items-center justify-between mb-3">
                             <h4 className="font-bold text-base">{gap.name}</h4>
                             <Badge variant="outline" className="text-xs font-semibold">

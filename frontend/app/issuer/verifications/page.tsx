@@ -244,7 +244,7 @@ export default function VerificationsPage() {
       </div>
 
       {/* Credentials List */}
-      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+      <div className="rounded-xl border bg-card overflow-hidden">
         {credentials.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-6">
             <div className="h-12 w-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">

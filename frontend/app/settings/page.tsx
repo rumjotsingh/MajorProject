@@ -35,8 +35,11 @@ export default function SettingsPage() {
 
   useEffect(() => {
     loadUserData();
-    loadSubscription();
-  }, []);
+    // Only load subscription for learners
+    if (user?.role === 'Learner') {
+      loadSubscription();
+    }
+  }, [user?.role]);
 
   const loadUserData = async () => {
     try {
@@ -53,6 +56,11 @@ export default function SettingsPage() {
   };
 
   const loadSubscription = async () => {
+    // Only allow learners to access subscriptions
+    if (user?.role !== 'Learner') {
+      return;
+    }
+    
     try {
       const response = await api.get("/payment/subscription");
       setSubscription(response.data);
@@ -165,11 +173,9 @@ export default function SettingsPage() {
       </div>
 
       <Tabs defaultValue="account" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 max-w-xl">
+        <TabsList className={`grid w-full max-w-xl ${user?.role === 'Learner' ? 'grid-cols-2' : 'grid-cols-1'}`}>
           <TabsTrigger value="account">Account</TabsTrigger>
-          <TabsTrigger value="subscription">Subscription</TabsTrigger>
-         
-      
+          {user?.role === 'Learner' && <TabsTrigger value="subscription">Subscription</TabsTrigger>}
         </TabsList>
 
         {/* Account Tab */}
@@ -216,8 +222,9 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        {/* Subscription Tab */}
-        <TabsContent value="subscription" className="space-y-6">
+        {/* Subscription Tab - Only for Learners */}
+        {user?.role === 'Learner' && (
+          <TabsContent value="subscription" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -332,20 +339,23 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        )}
 
         {/* Verifications Tab */}
         
       </Tabs>
 
-      <PricingModal
-        open={pricingModalOpen}
-        onOpenChange={setPricingModalOpen}
-        currentPlan={subscription?.subscription?.plan || 'free'}
-        onSubscriptionComplete={() => {
-          setPricingModalOpen(false);
-          loadSubscription();
-        }}
-      />
+      {user?.role === 'Learner' && (
+        <PricingModal
+          open={pricingModalOpen}
+          onOpenChange={setPricingModalOpen}
+          currentPlan={subscription?.subscription?.plan || 'free'}
+          onSubscriptionComplete={() => {
+            setPricingModalOpen(false);
+            loadSubscription();
+          }}
+        />
+      )}
     </div>
   );
 }

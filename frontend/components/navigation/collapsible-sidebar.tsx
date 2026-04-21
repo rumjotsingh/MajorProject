@@ -17,15 +17,15 @@ interface UserData  { name: string; email: string; role: string; }
 interface CollapsibleSidebarProps { role?: "learner" | "employer" | "issuer" | "admin"; }
 
 const learnerSections: NavSection[] = [
-  { title: "Main",        items: [{ label: "Dashboard",          href: "/dashboard",          icon: Home }] },
+  { title: "Main",        items: [{ label: "Dashboard",          href: "/user/dashboard",          icon: Home }] },
   { title: "Credentials", items: [
-    { label: "Upload",       href: "/credentials/upload", icon: Upload },
-    { label: "My Credentials", href: "/credentials",       icon: Award },
+    { label: "Upload",       href: "/user/credentials/upload", icon: Upload },
+    { label: "My Credentials", href: "/user/credentials",       icon: Award },
   ]},
   { title: "Career", items: [
-    { label: "Career Studio",       href: "/career-path",      icon: Map },
-    { label: "Job Recommendations", href: "/jobs/recommended", icon: Sparkles },
-    { label: "Applied Jobs",        href: "/jobs/applied",     icon: FileCheck },
+    { label: "Career Studio",       href: "/user/career-path",      icon: Map },
+    { label: "Job Recommendations", href: "/user/jobs/recommended", icon: Sparkles },
+    { label: "Applied Jobs",        href: "/user/jobs/applied",     icon: FileCheck },
   ]},
 ];
 
@@ -128,8 +128,17 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
   }, [role]);
 
   const isActive = (href: string) => {
-    if (href === "/credentials") return pathname === "/credentials";
-    return pathname === href || pathname.startsWith(`${href}/`);
+    // Exact match
+    if (pathname === href) return true;
+    
+    // Special case for credentials base route - only exact match
+    if (href === "/credentials" || href === "/user/credentials") {
+      return pathname === href;
+    }
+    
+    // For child routes, only mark parent as active if no exact match exists
+    // This prevents both "Upload" and "My Credentials" from being active
+    return false;
   };
 
   const initials = (name: string) =>
@@ -151,10 +160,10 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
   return (
     <aside
       style={{ width: collapsed ? 64 : 240 }}
-      className="relative hidden h-full shrink-0 flex-col border-r border-border/40 bg-background transition-[width] duration-200 ease-in-out md:flex"
+      className="relative hidden h-full shrink-0 flex-col bg-background transition-[width] duration-200 ease-in-out md:flex"
     >
       {/* Logo */}
-      <div className={cn("flex h-14 items-center border-b border-border/40 px-4", collapsed ? "justify-center" : "justify-between")}>
+      <div className={cn("flex h-14 items-center px-4", collapsed ? "justify-center" : "justify-between")}>
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Award className="h-4 w-4" />
@@ -164,10 +173,11 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         {!collapsed && (
           <button 
             onClick={toggleCollapsed}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
             title="Collapse sidebar"
+            aria-label="Collapse sidebar"
           >
-            <ChevronLeft className="h-3.5 w-3.5" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
         )}
       </div>
@@ -176,10 +186,11 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
       {collapsed && (
         <button 
           onClick={toggleCollapsed}
-          className="mx-auto mt-2 flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="mx-auto mt-2 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           title="Expand sidebar"
+          aria-label="Expand sidebar"
         >
-          <ChevronRight className="h-3.5 w-3.5" />
+          <ChevronRight className="h-4 w-4" />
         </button>
       )}
 
@@ -219,7 +230,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
 
       {/* Bottom user row */}
       <div className={cn(
-        "border-t border-border/40 px-3 py-3 flex items-center gap-2.5",
+        "px-3 py-3 flex items-center gap-2.5",
         collapsed && "justify-center"
       )}>
         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">

@@ -1075,6 +1075,46 @@ export const getNSQFMappings = async (req, res, next) => {
   }
 };
 
+export const updateNSQFMapping = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { credentialType, nsqfLevel, description } = req.body;
+
+    const mapping = await NSQFMapping.findById(id);
+    if (!mapping) {
+      return res.status(404).json({ error: 'NSQF mapping not found' });
+    }
+
+    if (credentialType) mapping.skill = credentialType;
+    if (nsqfLevel) {
+      if (nsqfLevel < 1 || nsqfLevel > 10) {
+        return res.status(400).json({ error: 'Invalid NSQF level (1-10)' });
+      }
+      mapping.nsqfLevel = nsqfLevel;
+    }
+    if (description !== undefined) mapping.description = description;
+
+    await mapping.save();
+
+    logger.info(`NSQF mapping updated by admin: ${id}`);
+    
+    const responseMapping = {
+      _id: mapping._id,
+      credentialType: mapping.skill,
+      nsqfLevel: mapping.nsqfLevel,
+      description: mapping.description,
+    };
+    
+    res.json({ 
+      message: 'NSQF mapping updated successfully', 
+      mapping: responseMapping 
+    });
+  } catch (error) {
+    logger.error('Error updating NSQF mapping:', error);
+    next(error);
+  }
+};
+
 export const deleteNSQFMapping = async (req, res, next) => {
   try {
     const { id } = req.params;

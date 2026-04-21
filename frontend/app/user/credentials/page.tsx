@@ -156,9 +156,9 @@ export default function CredentialsPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+      <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card overflow-hidden">
         {loading ? (
-          <div className="divide-y divide-border/40">
+          <div className="divide-y divide-[rgba(0,0,0,0.06)]">
             {[1,2,3,4,5].map(i => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
                 <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
@@ -186,7 +186,7 @@ export default function CredentialsPage() {
         ) : (
           <>
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-border/40 bg-muted/30">
+            <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 px-5 py-3 border-b border-[rgba(0,0,0,0.06)] bg-muted/30">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Credential</span>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-28 text-center">Date</span>
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide w-20 text-center">Level</span>
@@ -195,7 +195,7 @@ export default function CredentialsPage() {
             </div>
 
             {/* Rows */}
-            <div className="divide-y divide-border/40">
+            <div className="divide-y divide-[rgba(0,0,0,0.06)]">
               {credentials.map(cred => (
                 <div key={cred._id}
                   className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-4 items-center px-5 py-3.5 hover:bg-muted/20 transition-colors">
@@ -254,11 +254,11 @@ export default function CredentialsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-5 py-3 border-t border-border/40 bg-muted/10">
+            <div className="flex items-center justify-between px-5 py-3 border-t border-[rgba(0,0,0,0.06)] bg-muted/10">
               <p className="text-xs text-muted-foreground">Showing {start}–{end} of {total}</p>
               <div className="flex items-center gap-1">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border/50 text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-[rgba(0,0,0,0.1)] text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
                   <ChevronLeft className="h-3.5 w-3.5" />
                 </button>
                 {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
@@ -266,14 +266,14 @@ export default function CredentialsPage() {
                   return (
                     <button key={n} onClick={() => setPage(n)}
                       className={`h-7 w-7 flex items-center justify-center rounded-lg text-xs font-medium transition-colors ${
-                        page === n ? "bg-primary text-primary-foreground" : "border border-border/50 text-muted-foreground hover:bg-muted"
+                        page === n ? "bg-primary text-primary-foreground" : "border border-[rgba(0,0,0,0.1)] text-muted-foreground hover:bg-muted"
                       }`}>
                       {n}
                     </button>
                   );
                 })}
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
-                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-border/50 text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
+                  className="h-7 w-7 flex items-center justify-center rounded-lg border border-[rgba(0,0,0,0.1)] text-muted-foreground hover:bg-muted disabled:opacity-40 transition-colors">
                   <ChevronRight className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -283,13 +283,14 @@ export default function CredentialsPage() {
       </div>
 
       {/* ── View Modal ── */}
-      <AnimatePresence >
+      <AnimatePresence>
         {viewCred && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed "
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => setViewCred(null)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div className="pointer-events-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -374,26 +375,27 @@ export default function CredentialsPage() {
                   <Button size="sm" variant="outline" onClick={() => setViewCred(null)} className="flex-1">Close</Button>
                 </div>
               </motion.div>
+              </div>
             </div>
           </>
         )}
       </AnimatePresence>
-      
 
       {/* ── Delete Confirm Modal ── */}
       <AnimatePresence>
         {deleteId && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 "
+              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
               onClick={() => !deleting && setDeleteId(null)} />
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <div className="pointer-events-auto">
               <motion.div
                 initial={{ opacity: 0, scale: 0.96, y: 8 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: 8 }}
                 transition={{ duration: 0.15 }}
-                className="w-full max-w-sm rounded-2xl border border-border/60 bg-background shadow-2xl p-6 space-y-4"
+                className="w-full max-w-sm rounded-2xl border border-[rgba(0,0,0,0.1)] bg-background shadow-2xl p-6 space-y-4"
               >
                 <div className="h-10 w-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                   <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -409,6 +411,7 @@ export default function CredentialsPage() {
                   </Button>
                 </div>
               </motion.div>
+              </div>
             </div>
           </>
         )}

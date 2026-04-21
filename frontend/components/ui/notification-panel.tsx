@@ -188,10 +188,10 @@ export function NotificationPanel() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -6 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-11 z-50 w-[380px] rounded-xl border border-border/60 bg-background shadow-2xl shadow-black/10 overflow-hidden"
+            className="absolute right-0 top-11 z-50 w-[380px] rounded-xl bg-background shadow-2xl shadow-black/10 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
+            <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <Bell className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-sm">Notifications</span>
@@ -285,7 +285,7 @@ export function NotificationPanel() {
             </div>
 
             {/* Footer */}
-            <div className="border-t border-border/50 px-4 py-2.5 flex items-center justify-between">
+            <div className="px-4 py-2.5 flex items-center justify-between">
               <Link
                 href="/notifications"
                 onClick={() => setOpen(false)}

@@ -164,7 +164,7 @@ export default function IssuerProfilePage() {
       </div>
 
       {/* Profile Card */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <div className="flex items-start gap-4">
           <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <Building2 className="h-8 w-8 text-primary" />
@@ -249,7 +249,7 @@ export default function IssuerProfilePage() {
       </div>
 
       {/* API Key Section */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <div className="flex items-center gap-2 mb-4">
           <Key className="h-5 w-5 text-primary" />
           <h3 className="font-semibold">API Integration</h3>
@@ -315,7 +315,7 @@ function ProfileSkeleton() {
         <Skeleton className="h-9 w-24" />
       </div>
 
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <div className="flex items-start gap-4">
           <Skeleton className="h-16 w-16 rounded-xl" />
           <div className="flex-1 space-y-2">
@@ -331,7 +331,7 @@ function ProfileSkeleton() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <Skeleton className="h-6 w-32 mb-4" />
         <Skeleton className="h-20 w-full" />
       </div>

@@ -74,6 +74,7 @@ router.delete('/nsqf/levels/:id', adminAuth, adminController.deleteNSQFLevel);
 
 router.post('/nsqf/map', adminAuth, adminController.createNSQFMapping);
 router.get('/nsqf/mappings', adminAuth, adminController.getNSQFMappings);
+router.put('/nsqf/mappings/:id', adminAuth, adminController.updateNSQFMapping);
 router.delete('/nsqf/mappings/:id', adminAuth, adminController.deleteNSQFMapping);
 
 // ==================== ANALYTICS ====================

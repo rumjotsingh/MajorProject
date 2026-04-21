@@ -3,16 +3,28 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  "inline-flex items-center rounded-pill px-2 py-1 text-badge font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-notion-blue-focus focus:ring-offset-2",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground shadow-sm shadow-primary/20 hover:bg-primary/90",
-        secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        destructive: "border-transparent bg-destructive/10 text-destructive hover:bg-destructive/20",
-        outline: "text-foreground border-border/60",
-        success: "border-transparent bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20",
-        warning: "border-transparent bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20",
+        // Notion pill badge - primary
+        default: "bg-badge-blue-bg text-badge-blue-text border-0",
+        // Secondary warm gray
+        secondary: "bg-warm-white text-warm-gray-500 border-0",
+        // Success - teal
+        success: "bg-teal/10 text-teal border-0",
+        // Warning - orange
+        warning: "bg-orange/10 text-orange border-0",
+        // Destructive
+        destructive: "bg-orange/10 text-orange border-0",
+        // Outline with whisper border
+        outline: "text-near-black border-whisper bg-white",
+        // Green
+        green: "bg-green/10 text-green border-0",
+        // Pink
+        pink: "bg-pink/10 text-pink border-0",
+        // Purple
+        purple: "bg-purple/10 text-purple border-0",
       },
     },
     defaultVariants: {

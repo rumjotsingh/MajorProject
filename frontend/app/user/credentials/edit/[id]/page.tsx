@@ -385,7 +385,7 @@ export default function EditCredentialPage() {
               <Label>Certificate</Label>
               
               {/* File Upload */}
-              <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors">
+              <div className="border border-[rgba(0,0,0,0.1)] rounded-xl p-6 text-center hover:border-[#0075de]/30 hover:bg-[#f6f5f4] transition-all duration-200 cursor-pointer">
                 <input
                   type="file"
                   id="certificateFile"

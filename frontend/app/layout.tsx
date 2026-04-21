@@ -3,18 +3,21 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { cn } from "@/lib/utils";
 import { Analytics } from "@vercel/analytics/next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 
+// Notion uses Inter as NotionInter (modified Inter)
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
   display: "swap",
+  weight: ["400", "500", "600", "700"],
 });
 
-const plusJakarta = Plus_Jakarta_Sans({
+const interDisplay = Inter({
   subsets: ["latin"],
   variable: "--font-display",
   display: "swap",
+  weight: ["700"],
 });
 
 export const metadata: Metadata = {
@@ -35,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(inter.variable, plusJakarta.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn(inter.variable, interDisplay.variable)}>
       <body className="font-sans antialiased">
         <Providers>{children}</Providers>
         <Analytics />

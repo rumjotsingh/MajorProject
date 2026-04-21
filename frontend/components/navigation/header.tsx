@@ -1,7 +1,6 @@
 "use client";
 
-import { Moon, Sun, Globe } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -25,7 +24,6 @@ interface UserData {
 }
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
   const [userData, setUserData] = useState<UserData>({ 
     name: "User", 
     email: "", 
@@ -64,7 +62,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/50 bg-background/80 backdrop-blur-2xl">
+    <header className="sticky top-0 z-40 border-b border-whisper bg-white/80 backdrop-blur-xl">
       <div className="flex h-14 items-center gap-4 px-6">
         {/* Role-Based Global Search */}
         <div className="flex-1">
@@ -76,12 +74,12 @@ export function Header() {
           {/* Language */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-muted/70">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-micro hover:bg-warm-white">
                 <Globe className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-caption">Language</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>English</DropdownMenuItem>
               <DropdownMenuItem>हिंदी</DropdownMenuItem>
@@ -89,15 +87,6 @@ export function Header() {
               <DropdownMenuItem>தமிழ்</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Theme */}
-          <Button variant="ghost" size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-9 w-9 rounded-xl hover:bg-muted/70"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
 
           {/* Notifications */}
           <NotificationPanel />
@@ -107,10 +96,10 @@ export function Header() {
           {/* Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-primary/20">
-                <Avatar className="h-8 w-8 ring-2 ring-border/60">
+              <Button variant="ghost" className="h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-notion-blue/20">
+                <Avatar className="h-8 w-8 border-whisper">
                   <AvatarImage src="" alt={userData.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
+                  <AvatarFallback className="bg-notion-blue text-white text-badge font-semibold">
                     {getInitials(userData.name)}
                   </AvatarFallback>
                 </Avatar>
@@ -118,9 +107,9 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-52 mt-1">
               <DropdownMenuLabel className="font-normal">
-                <p className="text-sm font-semibold">{userData.name}</p>
-                <p className="text-xs text-muted-foreground">{userData.email}</p>
-                <p className="text-xs text-primary font-medium">{userData.role}</p>
+                <p className="text-body-semibold">{userData.name}</p>
+                <p className="text-caption text-warm-gray-500">{userData.email}</p>
+                <p className="text-caption text-notion-blue font-medium">{userData.role}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
@@ -130,7 +119,7 @@ export function Header() {
                 <Link href={getSettingsLink(userData.role)}>Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive"
+              <DropdownMenuItem className="text-orange focus:text-orange"
                 onClick={() => { localStorage.clear(); window.location.href = "/login"; }}>
                 Log out
               </DropdownMenuItem>

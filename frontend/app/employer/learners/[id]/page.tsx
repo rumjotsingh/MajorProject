@@ -220,7 +220,7 @@ export default function EmployerLearnerDetailPage() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <Award className="h-6 w-6 text-primary" />
@@ -232,7 +232,7 @@ export default function EmployerLearnerDetailPage() {
           </div>
         </div>
         
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <Shield className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
@@ -244,7 +244,7 @@ export default function EmployerLearnerDetailPage() {
           </div>
         </div>
         
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
               <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -259,7 +259,7 @@ export default function EmployerLearnerDetailPage() {
 
       {/* Bio */}
       {learner.bio && (
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <h2 className="text-xl font-semibold mb-4">About</h2>
           <p className="text-muted-foreground leading-relaxed">{learner.bio}</p>
         </div>
@@ -267,7 +267,7 @@ export default function EmployerLearnerDetailPage() {
 
       {/* Skills */}
       {learner.skills && learner.skills.length > 0 && (
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <h2 className="text-xl font-semibold mb-4">Skills</h2>
           <div className="flex flex-wrap gap-2">
             {learner.skills.map((skill, index) => (
@@ -284,11 +284,11 @@ export default function EmployerLearnerDetailPage() {
 
       {/* Experience */}
       {learner.experience && learner.experience.length > 0 && (
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <h2 className="text-xl font-semibold mb-4">Experience</h2>
           <div className="space-y-4">
             {learner.experience.map((exp, index) => (
-              <div key={index} className="rounded-xl border border-border/30 p-4">
+              <div key={index} className="rounded-xl border  p-4">
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
                     <Briefcase className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -319,11 +319,11 @@ export default function EmployerLearnerDetailPage() {
 
       {/* Education */}
       {learner.education && learner.education.length > 0 && (
-        <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="rounded-xl border  bg-card p-6">
           <h2 className="text-xl font-semibold mb-4">Education</h2>
           <div className="space-y-4">
             {learner.education.map((edu, index) => (
-              <div key={index} className="rounded-xl border border-border/30 p-4">
+              <div key={index} className="rounded-xl border  p-4">
                 <div className="flex items-start gap-3">
                   <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
                     <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -353,12 +353,12 @@ export default function EmployerLearnerDetailPage() {
       )}
 
       {/* Credentials */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <h2 className="text-xl font-semibold mb-4">Credentials</h2>
         {credentials.length > 0 ? (
           <div className="space-y-4">
             {credentials.map((credential) => (
-              <div key={credential._id} className="rounded-xl border border-border/30 p-4">
+              <div key={credential._id} className="rounded-xl border  p-4">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -402,12 +402,12 @@ export default function EmployerLearnerDetailPage() {
                         View
                       </a>
                     )}
-                    <button
+                    {/* <button
                       onClick={() => handleVerifyCredential(credential._id)}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 text-sm"
                     >
                       Verify
-                    </button>
+                    </button> */}
                   </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function EmployerLearnerDetailPage() {
       </div>
 
       {/* Member Since */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border  bg-card p-6">
         <div className="flex items-center gap-3">
           <Calendar className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">

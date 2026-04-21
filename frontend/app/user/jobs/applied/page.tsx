@@ -235,7 +235,7 @@ export default function AppliedJobsPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-border/50 bg-card p-4">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Total Applied</p>
@@ -247,7 +247,7 @@ export default function AppliedJobsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/50 bg-card p-4">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">In Progress</p>
@@ -259,7 +259,7 @@ export default function AppliedJobsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/50 bg-card p-4">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Interviews</p>
@@ -271,7 +271,7 @@ export default function AppliedJobsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border/50 bg-card p-4">
+        <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Success Rate</p>
@@ -324,9 +324,9 @@ export default function AppliedJobsPage() {
       </div>
 
       {/* Applications List */}
-      <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+      <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card overflow-hidden">
         {loading ? (
-          <div className="divide-y divide-border/40">
+          <div className="divide-y divide-[rgba(0,0,0,0.06)]">
             {[1,2,3,4,5].map(i => (
               <div key={i} className="flex items-center gap-4 px-6 py-4">
                 <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
@@ -360,7 +360,7 @@ export default function AppliedJobsPage() {
         ) : (
           <>
             {/* Applications */}
-            <div className="divide-y divide-border/40">
+            <div className="divide-y divide-[rgba(0,0,0,0.06)]">
               {applications.map((application, index) => {
                 const latestStatus = application.statusHistory?.[application.statusHistory.length - 1];
                 const canWithdraw = !["hired", "rejected", "withdrawn"].includes(application.status);
@@ -432,7 +432,7 @@ export default function AppliedJobsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border/40 bg-muted/10">
+            <div className="flex items-center justify-between px-6 py-4 border-t border-[rgba(0,0,0,0.06)] bg-muted/10">
               <p className="text-sm text-muted-foreground">
                 Showing {start}–{end} of {pagination.total}
               </p>

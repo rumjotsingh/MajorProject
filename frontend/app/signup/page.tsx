@@ -171,15 +171,15 @@ export default function SignupPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <Card className="rounded-3xl border-border/50 shadow-2xl shadow-primary/[0.04]">
+            <Card className="rounded-large border-whisper shadow-notion-deep">
               <CardHeader className="space-y-3 pb-6">
                 <div className="flex items-center gap-3">
-                  <span className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 text-primary-foreground shadow-md shadow-primary/20">
+                  <span className="rounded-standard bg-notion-blue p-2 text-white">
                     <Sparkles className="h-5 w-5" />
                   </span>
                   <div>
-                    <CardTitle className="text-3xl font-bold">Create your account</CardTitle>
-                    <CardDescription className="text-base">Choose your role and start in minutes</CardDescription>
+                    <CardTitle className="text-section-heading text-near-black">Create your account</CardTitle>
+                    <CardDescription className="text-body text-warm-gray-500">Choose your role and start in minutes</CardDescription>
                   </div>
                 </div>
               </CardHeader>
@@ -201,19 +201,19 @@ export default function SignupPage() {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setFormData({ ...formData, role: role.value })}
                             className={cn(
-                              "relative rounded-xl border p-4 text-left transition-all duration-200",
+                              "relative rounded-standard border p-4 text-left transition-all duration-200",
                               isSelected
-                                ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/10"
-                                : "border-border/60 bg-background hover:border-primary/30 hover:bg-primary/[0.02]"
+                                ? "border-notion-blue/50 bg-badge-blue-bg"
+                                : "border-whisper bg-white hover:border-notion-blue/30 hover:bg-badge-blue-bg/30"
                             )}
                           >
-                            <Icon className={cn("mb-2 h-5 w-5", isSelected ? "text-primary" : "text-muted-foreground")} />
-                            <div className={cn("text-sm font-semibold", isSelected && "text-primary")}>{role.label}</div>
-                            <div className={cn("mt-1 text-xs", isSelected ? "text-primary/70" : "text-muted-foreground")}>{role.description}</div>
+                            <Icon className={cn("mb-2 h-5 w-5", isSelected ? "text-notion-blue" : "text-warm-gray-500")} />
+                            <div className={cn("text-body-semibold", isSelected && "text-notion-blue")}>{role.label}</div>
+                            <div className={cn("mt-1 text-caption", isSelected ? "text-notion-blue/70" : "text-warm-gray-500")}>{role.description}</div>
                             {isSelected && (
                               <motion.div
                                 layoutId="roleIndicator"
-                                className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary"
+                                className="absolute top-2 right-2 h-2 w-2 rounded-full bg-notion-blue"
                                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
                               />
                             )}
@@ -411,7 +411,7 @@ export default function SignupPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="hidden rounded-3xl border border-border/50 bg-muted/30 backdrop-blur-sm p-8 lg:flex lg:flex-col lg:justify-between"
+            className="hidden rounded-large border-whisper bg-warm-white p-8 lg:flex lg:flex-col lg:justify-between"
           >
             <div className="space-y-6">
               <Link href="/" className="inline-flex items-center gap-3">
@@ -428,23 +428,23 @@ export default function SignupPage() {
               </p>
             </div>
 
-            <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 backdrop-blur-sm p-5">
+            <div className="space-y-4 rounded-comfortable border-whisper bg-white p-5">
               <div className="flex items-start gap-3">
-                <span className="rounded-lg bg-primary/10 p-1.5 text-primary">
+                <span className="rounded-standard bg-badge-blue-bg p-1.5 text-notion-blue">
                   <ShieldCheck className="h-3.5 w-3.5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">Smart onboarding</p>
-                  <p className="text-xs text-muted-foreground">Fields adapt to your selected role.</p>
+                  <p className="text-body-semibold">Smart onboarding</p>
+                  <p className="text-caption text-warm-gray-500">Fields adapt to your selected role.</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <span className="rounded-lg bg-primary/10 p-1.5 text-primary">
+                <span className="rounded-standard bg-badge-blue-bg p-1.5 text-notion-blue">
                   <ShieldCheck className="h-3.5 w-3.5" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold">Secure verification workflow</p>
-                  <p className="text-xs text-muted-foreground">Credential-ready profile from day one.</p>
+                  <p className="text-body-semibold">Secure verification workflow</p>
+                  <p className="text-caption text-warm-gray-500">Credential-ready profile from day one.</p>
                 </div>
               </div>
             </div>

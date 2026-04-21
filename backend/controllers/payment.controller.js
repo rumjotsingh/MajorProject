@@ -68,6 +68,11 @@ export const getPlans = async (req, res, next) => {
 // POST /payment/create-order
 export const createOrder = async (req, res, next) => {
   try {
+    // Only allow learners to create subscription orders
+    if (req.user.role !== 'Learner') {
+      return res.status(403).json({ error: 'Subscriptions are only available for learners' });
+    }
+
     const { plan } = req.body;
 
     if (!PLANS[plan]) {
@@ -108,6 +113,11 @@ export const createOrder = async (req, res, next) => {
 // POST /payment/verify
 export const verifyPayment = async (req, res, next) => {
   try {
+    // Only allow learners to verify payments
+    if (req.user.role !== 'Learner') {
+      return res.status(403).json({ error: 'Subscriptions are only available for learners' });
+    }
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -173,6 +183,11 @@ export const verifyPayment = async (req, res, next) => {
 // GET /payment/subscription
 export const getSubscription = async (req, res, next) => {
   try {
+    // Only allow learners to get subscription info
+    if (req.user.role !== 'Learner') {
+      return res.status(403).json({ error: 'Subscriptions are only available for learners' });
+    }
+
     let subscription = await Subscription.findOne({
       userId: req.user.userId,
       status: 'active',
@@ -218,6 +233,11 @@ export const getSubscription = async (req, res, next) => {
 // POST /payment/cancel-subscription
 export const cancelSubscription = async (req, res, next) => {
   try {
+    // Only allow learners to cancel subscriptions
+    if (req.user.role !== 'Learner') {
+      return res.status(403).json({ error: 'Subscriptions are only available for learners' });
+    }
+
     const subscription = await Subscription.findOne({
       userId: req.user.userId,
       status: 'active',

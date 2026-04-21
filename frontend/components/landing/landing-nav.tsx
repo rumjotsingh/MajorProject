@@ -12,8 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Award, Moon, Sun, LayoutDashboard, User, Settings, LogOut, Menu, X } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Award, LayoutDashboard, User, Settings, LogOut, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { authService } from "@/lib/auth";
 
@@ -25,7 +24,6 @@ const navLinks = [
 ];
 
 export function LandingNav() {
-  const { theme, setTheme } = useTheme();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -67,19 +65,19 @@ export function LandingNav() {
         initial={{ y: -100 }}
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-background/80 backdrop-blur-2xl border-b border-border/40 shadow-sm shadow-primary/[0.02]"
-            : "bg-transparent"
+            ? "bg-white border-b border-whisper shadow-sm"
+            : "bg-white border-b border-whisper"
         }`}
       >
         <div className="container flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="relative p-1.5 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/25 transition-transform duration-300 group-hover:scale-105">
+            <div className="relative p-1.5 rounded-standard bg-notion-blue text-white transition-transform duration-200 group-hover:scale-105">
               <Award className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">
+            <span className="text-body-large font-bold text-near-black">
               CredMatrix
             </span>
           </Link>
@@ -90,30 +88,19 @@ export function LandingNav() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors rounded-xl hover:bg-muted/50 group"
+                className="px-4 py-2 text-nav text-warm-gray-500 hover:text-near-black transition-colors rounded-micro hover:bg-warm-white"
               >
                 {link.label}
-                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-primary rounded-full transition-all duration-300 group-hover:w-4" />
               </Link>
             ))}
           </nav>
 
           {/* Right Side */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="rounded-full h-9 w-9"
-            >
-              <Sun className="h-4 w-4 rotate-0 scale-100 transition-all duration-300 dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all duration-300 dark:rotate-0 dark:scale-100" />
-            </Button>
-
             {isLoggedIn && user ? (
               <div className="hidden sm:flex items-center gap-2">
                 <Link href={getDashboardPath()}>
-                  <Button size="sm" className="gap-2 rounded-full">
+                  <Button size="sm" className="gap-2">
                     <LayoutDashboard className="h-4 w-4" />
                     Dashboard
                   </Button>
@@ -121,10 +108,10 @@ export function LandingNav() {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-primary/20 transition-all duration-200">
-                      <Avatar className="h-9 w-9 ring-2 ring-border/60">
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-notion-blue/20 transition-all duration-200">
+                      <Avatar className="h-9 w-9 border-whisper">
                         <AvatarImage src={user.avatar || ""} alt={user.name || "User"} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary/70 text-primary-foreground text-xs font-semibold">
+                        <AvatarFallback className="bg-notion-blue text-white text-badge font-semibold">
                           {getInitials(user.name)}
                         </AvatarFallback>
                       </Avatar>
@@ -133,8 +120,8 @@ export function LandingNav() {
                   <DropdownMenuContent align="end" className="w-56 mt-2">
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-semibold">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.email}</p>
+                        <p className="text-body-semibold">{user.name}</p>
+                        <p className="text-caption text-warm-gray-500">{user.email}</p>
                       </div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
@@ -159,7 +146,7 @@ export function LandingNav() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => authService.logout()}
-                      className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                      className="gap-2 cursor-pointer text-orange focus:text-orange"
                     >
                       <LogOut className="h-4 w-4" />
                       Log out
@@ -170,12 +157,12 @@ export function LandingNav() {
             ) : (
               <div className="hidden sm:flex items-center gap-2">
                 <Link href="/login">
-                  <Button variant="ghost" size="sm" className="rounded-full">
+                  <Button variant="ghost" size="sm">
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button size="sm" className="rounded-full px-5">
+                  <Button size="sm">
                     Get Started
                   </Button>
                 </Link>
@@ -186,7 +173,7 @@ export function LandingNav() {
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden h-9 w-9 rounded-full"
+              className="md:hidden h-9 w-9 rounded-micro"
               onClick={() => setMobileOpen(!mobileOpen)}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -204,7 +191,7 @@ export function LandingNav() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setMobileOpen(false)}
-              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-black/40 z-40 md:hidden"
             />
             <motion.div
               initial={{ opacity: 0, y: -20 }}
@@ -213,31 +200,31 @@ export function LandingNav() {
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
               className="fixed top-16 left-0 right-0 z-50 md:hidden"
             >
-              <div className="mx-4 mt-2 rounded-2xl bg-background/95 backdrop-blur-2xl border border-border/40 shadow-2xl p-4">
+              <div className="mx-4 mt-2 rounded-comfortable bg-white border border-whisper shadow-notion-deep p-4">
                 <nav className="flex flex-col gap-1">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
                       href={link.href}
                       onClick={() => setMobileOpen(false)}
-                      className="px-4 py-3 text-sm font-medium rounded-xl hover:bg-muted transition-colors"
+                      className="px-4 py-3 text-body-medium rounded-standard hover:bg-warm-white transition-colors"
                     >
                       {link.label}
                     </Link>
                   ))}
                 </nav>
-                <div className="border-t border-border/40 mt-3 pt-3 flex flex-col gap-2">
+                <div className="border-t border-whisper mt-3 pt-3 flex flex-col gap-2">
                   {isLoggedIn && user ? (
                     <>
                       <Link href={getDashboardPath()} onClick={() => setMobileOpen(false)}>
-                        <Button className="w-full rounded-xl gap-2" size="sm">
+                        <Button className="w-full gap-2" size="sm">
                           <LayoutDashboard className="h-4 w-4" />
                           Go to Dashboard
                         </Button>
                       </Link>
                       <Button
                         variant="outline"
-                        className="w-full rounded-xl gap-2 text-destructive border-destructive/20 hover:bg-destructive/5"
+                        className="w-full gap-2 text-orange border-orange/20 hover:bg-orange/5"
                         size="sm"
                         onClick={() => authService.logout()}
                       >
@@ -248,12 +235,12 @@ export function LandingNav() {
                   ) : (
                     <>
                       <Link href="/login" onClick={() => setMobileOpen(false)}>
-                        <Button variant="outline" className="w-full rounded-xl" size="sm">
+                        <Button variant="outline" className="w-full" size="sm">
                           Sign In
                         </Button>
                       </Link>
                       <Link href="/signup" onClick={() => setMobileOpen(false)}>
-                        <Button className="w-full rounded-xl" size="sm">
+                        <Button className="w-full" size="sm">
                           Get Started
                         </Button>
                       </Link>

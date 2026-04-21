@@ -157,11 +157,11 @@ export function GlobalSearch() {
       {/* Trigger button in header */}
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-3 h-9 w-full max-w-sm px-3 rounded-xl bg-muted/50 border border-border/50 hover:bg-muted/70 hover:border-primary/20 text-muted-foreground text-sm transition-all duration-200"
+        className="flex items-center gap-3 border-none h-9 w-full max-w-sm px-3 rounded-xl bg-muted/50 hover:bg-muted/70 text-muted-foreground text-sm transition-all duration-200"
       >
         <Search className="h-4 w-4 shrink-0" />
         <span className="flex-1 text-left">Search credentials, skills...</span>
-        <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md border border-border/60 bg-background px-1.5 font-mono text-[10px] font-medium">
+        <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md bg-background px-1.5 font-mono text-[10px] font-medium">
           ⌘K
         </kbd>
       </button>
@@ -174,7 +174,7 @@ export function GlobalSearch() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/20 z-40"
+              className="fixed inset-0 z-40 bg-black/50"
               onClick={(e) => {
                 e.stopPropagation();
                 setOpen(false);
@@ -188,7 +188,7 @@ export function GlobalSearch() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.96, y: -10 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
-                className="w-full max-w-lg rounded-2xl bg-background shadow-2xl border border-border/60 overflow-hidden"
+                className="w-full max-w-lg rounded-2xl bg-background shadow-2xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Input */}

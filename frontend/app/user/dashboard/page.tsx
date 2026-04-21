@@ -136,7 +136,7 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {statCards.map((s) => (
-          <div key={s.label} className="rounded-xl border border-border/50 bg-card p-4">
+          <div key={s.label} className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-4">
             <div className={`h-8 w-8 rounded-lg ${s.bg} flex items-center justify-center mb-3`}>
               <s.icon className={`h-4 w-4 ${s.color}`} />
             </div>
@@ -151,8 +151,8 @@ export default function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-5">
 
         {/* Recent credentials */}
-        <div className="lg:col-span-3 rounded-xl border border-border/50 bg-card">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+        <div className="lg:col-span-3 rounded-xl border border-[rgba(0,0,0,0.1)] bg-card">
+          <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,0,0,0.06)]">
             <p className="font-semibold text-sm">Recent Credentials</p>
             <Link href="/credentials">
               <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
@@ -173,7 +173,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           ) : (
-            <div className="divide-y divide-border/40">
+            <div className="divide-y divide-[rgba(0,0,0,0.06)]">
               {credentials.slice(0, 6).map((cred) => (
                 <div key={cred._id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-muted/30 transition-colors">
                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -204,8 +204,8 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-4">
 
           {/* Top skills */}
-          <div className="rounded-xl border border-border/50 bg-card">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+          <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(0,0,0,0.06)]">
               <p className="font-semibold text-sm">Top Skills</p>
               <Link href="/career-path">
                 <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
@@ -242,14 +242,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick actions */}
-          <div className="rounded-xl border border-border/50 bg-card">
-            <p className="px-5 py-4 font-semibold text-sm border-b border-border/40">Quick Actions</p>
+          <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card">
+            <p className="px-5 py-4 font-semibold text-sm border-b border-[rgba(0,0,0,0.06)]">Quick Actions</p>
             <div className="p-2">
               {[
-                { href: "/credentials/upload", icon: Upload,      label: "Upload Credential" },
-                { href: "/credentials",        icon: Award,       label: "My Credentials" },
-                { href: "/career-path",        icon: Target,      label: "Career Studio" },
-                { href: "/jobs/recommended",   icon: TrendingUp,  label: "Job Recommendations" },
+                { href: "/user/credentials/upload", icon: Upload,      label: "Upload Credential" },
+                { href: "/user/credentials",        icon: Award,       label: "My Credentials" },
+                { href: "/user/career-path",        icon: Target,      label: "Career Studio" },
+                { href: "/user/jobs/recommended",   icon: TrendingUp,  label: "Job Recommendations" },
                 { href: "/profile",            icon: ChevronRight, label: "Edit Profile" },
               ].map((a) => (
                 <Link key={a.href} href={a.href}>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
 
           {/* Plan usage */}
           {subscription && (
-            <div className="rounded-xl border border-border/50 bg-card px-5 py-4 space-y-3">
+            <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card px-5 py-4 space-y-3">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold">Plan</p>
                 <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
@@ -317,7 +317,7 @@ function DashboardSkeleton() {
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[1,2,3,4].map(i => (
-          <div key={i} className="rounded-xl border border-border/50 p-4 space-y-3">
+          <div key={i} className="rounded-xl border border-[rgba(0,0,0,0.1)] p-4 space-y-3">
             <Skeleton className="h-8 w-8 rounded-lg" />
             <Skeleton className="h-7 w-12" />
             <Skeleton className="h-3 w-20" />
@@ -325,9 +325,9 @@ function DashboardSkeleton() {
         ))}
       </div>
       <div className="grid gap-6 lg:grid-cols-5">
-        <div className="lg:col-span-3 rounded-xl border border-border/50">
-          <div className="px-5 py-4 border-b border-border/40"><Skeleton className="h-4 w-36" /></div>
-          <div className="divide-y divide-border/40">
+        <div className="lg:col-span-3 rounded-xl border border-[rgba(0,0,0,0.1)]">
+          <div className="px-5 py-4 border-b border-[rgba(0,0,0,0.06)]"><Skeleton className="h-4 w-36" /></div>
+          <div className="divide-y divide-[rgba(0,0,0,0.06)]">
             {[1,2,3,4].map(i => (
               <div key={i} className="flex items-center gap-3 px-5 py-3.5">
                 <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
@@ -341,8 +341,8 @@ function DashboardSkeleton() {
           </div>
         </div>
         <div className="lg:col-span-2 space-y-4">
-          <div className="rounded-xl border border-border/50">
-            <div className="px-5 py-4 border-b border-border/40"><Skeleton className="h-4 w-24" /></div>
+          <div className="rounded-xl border border-[rgba(0,0,0,0.1)]">
+            <div className="px-5 py-4 border-b border-[rgba(0,0,0,0.06)]"><Skeleton className="h-4 w-24" /></div>
             <div className="px-5 py-4 space-y-3">
               {[1,2,3].map(i => <div key={i} className="space-y-1.5"><Skeleton className="h-3 w-full" /><Skeleton className="h-1.5 w-full rounded-full" /></div>)}
             </div>

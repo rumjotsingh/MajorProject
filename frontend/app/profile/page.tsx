@@ -114,7 +114,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-6 pb-8 max-w-4xl">
+    <div className="space-y-6 pb-8 max-w-4xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -142,7 +142,7 @@ export default function ProfilePage() {
       </div>
 
       {/* Profile Card */}
-      <div className="rounded-xl border border-border/50 bg-card p-6">
+      <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-6">
         <div className="flex items-start gap-4">
           <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             <User className="h-8 w-8 text-primary" />

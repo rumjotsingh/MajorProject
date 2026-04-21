@@ -15,7 +15,7 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Blockchain Verified",
+    title: "Secure Verification",
     description: "Tamper-proof verification ensures every credential is authentic and trusted.",
   },
   {
@@ -61,43 +61,35 @@ export default function LandingPage() {
       <LandingNav />
 
       {/* ═══ Hero ═══ */}
-      <section className="relative overflow-hidden border-b border-border/40">
-        <div className="absolute inset-0 gradient-mesh-hero" />
-        <div className="absolute inset-0 dot-pattern opacity-30" />
-        
-        {/* Floating orbs */}
-        <div className="absolute top-20 left-[15%] w-72 h-72 rounded-full bg-primary/10 blur-3xl animate-orb-1" />
-        <div className="absolute bottom-20 right-[10%] w-96 h-96 rounded-full bg-primary/[0.07] blur-3xl animate-orb-2" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-3xl" />
-
-        <div className="container relative section-padding">
+      <section className="relative overflow-hidden border-b border-whisper bg-white">
+        <div className="container relative section-spacing">
           <motion.div initial="hidden" animate="visible" className="mx-auto max-w-5xl text-center space-y-8">
             <motion.div custom={0} variants={fadeUp}>
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm backdrop-blur-sm">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                <span className="font-medium text-primary">Trusted by 50,000+ learners worldwide</span>
+              <div className="badge-pill inline-flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-notion-blue animate-pulse" />
+                <span>Trusted by 50,000+ learners worldwide</span>
               </div>
             </motion.div>
 
-            <motion.h1 custom={1} variants={fadeUp} className="text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
-              <span className="text-gradient-brand">Your Skills,</span>
+            <motion.h1 custom={1} variants={fadeUp} className="text-display-hero text-near-black">
+              Your Skills,
               <br />
               One Portfolio
             </motion.h1>
 
-            <motion.p custom={2} variants={fadeUp} className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl leading-relaxed">
+            <motion.p custom={2} variants={fadeUp} className="mx-auto max-w-2xl text-body-large text-warm-gray-500">
               Aggregate credentials from universities, training providers, and edtech platforms into a unified digital skill portfolio that showcases your true potential.
             </motion.p>
 
             <motion.div custom={3} variants={fadeUp} className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">
-                <Button size="lg" className="gap-2 h-12 px-8 text-base rounded-full group">
+                <Button size="lg" className="gap-2 group">
                   Start Building Your Portfolio
                   <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
               </Link>
               <Link href="#features">
-                <Button size="lg" variant="outline" className="h-12 px-8 text-base rounded-full bg-background/60 backdrop-blur-sm border-border/60 hover:border-primary/30">
+                <Button size="lg" variant="secondary">
                   Learn More
                 </Button>
               </Link>
@@ -107,7 +99,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ Stats ═══ */}
-      <section className="relative border-b border-border/40 bg-muted/30">
+      <section className="relative border-b border-whisper bg-warm-white">
         <div className="container py-14">
           <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
             {stats.map((stat, i) => (
@@ -119,8 +111,8 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="text-center"
               >
-                <div className="text-3xl md:text-4xl font-bold text-gradient-brand">{stat.value}</div>
-                <div className="text-sm text-muted-foreground mt-1">{stat.label}</div>
+                <div className="text-subheading-large text-notion-blue">{stat.value}</div>
+                <div className="text-caption text-warm-gray-500 mt-1">{stat.label}</div>
               </motion.div>
             ))}
           </div>
@@ -128,7 +120,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ Features ═══ */}
-      <section id="features" className="section-padding">
+      <section id="features" className="section-spacing bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -136,12 +128,12 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="text-center space-y-4 mb-16"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium mb-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-primary">Features</span>
+            <div className="badge-pill inline-flex items-center gap-2 mb-2">
+              <Sparkles className="h-4 w-4" />
+              <span>Features</span>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">Everything You Need</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">A comprehensive platform for learners, employers, and training providers</p>
+            <h2 className="text-section-heading text-near-black">Everything You Need</h2>
+            <p className="text-body-large text-warm-gray-500 max-w-2xl mx-auto">A comprehensive platform for learners, employers, and training providers</p>
           </motion.div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -154,12 +146,12 @@ export default function LandingPage() {
                 viewport={{ once: true }}
                 className="group relative"
               >
-                <div className="premium-card-interactive p-6 h-full flex flex-col items-start text-left space-y-4">
-                  <div className="p-3 rounded-xl bg-primary/10 border border-primary/20 group-hover:bg-primary/15 transition-colors duration-300">
-                    <feature.icon className="h-6 w-6 text-primary" />
+                <div className="card-notion hover-notion-lift p-6 h-full flex flex-col items-start text-left space-y-4">
+                  <div className="p-3 rounded-standard bg-badge-blue-bg border-whisper group-hover:bg-notion-blue/10 transition-colors duration-300">
+                    <feature.icon className="h-6 w-6 text-notion-blue" />
                   </div>
-                  <h3 className="text-lg font-semibold">{feature.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+                  <h3 className="text-card-title text-near-black">{feature.title}</h3>
+                  <p className="text-body text-warm-gray-500">{feature.description}</p>
                 </div>
               </motion.div>
             ))}
@@ -168,8 +160,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ Benefits ═══ */}
-      <section className="relative section-padding bg-muted/10 border-y border-border/40">
-        <div className="absolute inset-0 gradient-mesh opacity-30 pointer-events-none" />
+      <section className="relative section-spacing bg-warm-white">
         <div className="container relative">
           <div className="grid gap-16 lg:grid-cols-2 items-center">
             <motion.div
@@ -179,11 +170,11 @@ export default function LandingPage() {
               className="space-y-8"
             >
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium mb-4">
-                  <span className="text-primary">Why CredMatrix</span>
+                <div className="badge-pill inline-flex items-center gap-2 mb-4">
+                  <span>Why CredMatrix</span>
                 </div>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Built for Modern Learners</h2>
-                <p className="text-muted-foreground text-lg mt-4 leading-relaxed">
+                <h2 className="text-section-heading text-near-black">Built for Modern Learners</h2>
+                <p className="text-body-large text-warm-gray-500 mt-4">
                   Build a comprehensive skill portfolio that stands out to employers and showcases your continuous learning journey.
                 </p>
               </div>
@@ -195,44 +186,42 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.08 }}
                     viewport={{ once: true }}
-                    className="flex items-center gap-4 p-3 rounded-xl hover:bg-background/60 transition-all duration-200 group"
+                    className="flex items-center gap-4 p-3 rounded-standard hover:bg-white transition-all duration-200 group"
                   >
-                    <div className="flex-shrink-0 h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                      <benefit.icon className="h-5 w-5 text-primary" />
+                    <div className="flex-shrink-0 h-10 w-10 rounded-standard bg-badge-blue-bg border-whisper flex items-center justify-center group-hover:bg-notion-blue/10 transition-colors">
+                      <benefit.icon className="h-5 w-5 text-notion-blue" />
                     </div>
-                    <span className="font-medium">{benefit.text}</span>
+                    <span className="text-body-medium text-near-black">{benefit.text}</span>
                   </motion.div>
                 ))}
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}>
-              <div className="relative aspect-square rounded-3xl bg-background border-2 border-border/60 p-10 flex items-center justify-center overflow-hidden">
-                <div className="absolute top-8 right-8 w-32 h-32 rounded-full bg-primary/10 blur-2xl animate-orb-1" />
-                <div className="absolute bottom-8 left-8 w-40 h-40 rounded-full bg-primary/[0.07] blur-2xl animate-orb-2" />
+              <div className="relative aspect-square rounded-large bg-white border-whisper p-10 flex items-center justify-center overflow-hidden shadow-notion-card">
                 <div className="relative z-10 space-y-5 w-full">
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                     viewport={{ once: true }}
-                    className="bg-background/95 rounded-2xl p-5 shadow-lg shadow-primary/[0.04] border border-border/50"
+                    className="bg-white rounded-comfortable p-5 shadow-notion-card border-whisper"
                   >
                     <div className="flex items-center gap-4 mb-3">
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                        <Award className="h-5 w-5 text-primary" />
+                      <div className="w-11 h-11 rounded-standard bg-badge-blue-bg border-whisper flex items-center justify-center">
+                        <Award className="h-5 w-5 text-notion-blue" />
                       </div>
                       <div className="flex-1">
-                        <div className="h-3 bg-foreground/20 rounded-full w-3/4 mb-2" />
-                        <div className="h-2 bg-muted rounded-full w-1/2" />
+                        <div className="h-3 bg-warm-gray-300/40 rounded-pill w-3/4 mb-2" />
+                        <div className="h-2 bg-warm-gray-300/30 rounded-pill w-1/2" />
                       </div>
-                      <div className="h-6 px-2.5 rounded-full bg-primary text-primary-foreground text-xs font-medium flex items-center shadow-sm shadow-primary/20">
+                      <div className="badge-pill">
                         Verified
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="h-2 bg-muted rounded-full w-full" />
-                      <div className="h-2 bg-muted rounded-full w-5/6" />
+                      <div className="h-2 bg-warm-gray-300/30 rounded-pill w-full" />
+                      <div className="h-2 bg-warm-gray-300/30 rounded-pill w-5/6" />
                     </div>
                   </motion.div>
 
@@ -241,15 +230,15 @@ export default function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                     viewport={{ once: true }}
-                    className="bg-background/95 rounded-2xl p-5 shadow-lg shadow-primary/[0.04] border border-border/50 translate-x-6"
+                    className="bg-white rounded-comfortable p-5 shadow-notion-card border-whisper translate-x-6"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
-                        <Shield className="h-5 w-5 text-primary" />
+                      <div className="w-11 h-11 rounded-standard bg-badge-blue-bg border-whisper flex items-center justify-center">
+                        <Shield className="h-5 w-5 text-notion-blue" />
                       </div>
                       <div className="flex-1">
-                        <div className="h-3 bg-foreground/20 rounded-full w-2/3 mb-2" />
-                        <div className="h-2 bg-muted rounded-full w-1/3" />
+                        <div className="h-3 bg-warm-gray-300/40 rounded-pill w-2/3 mb-2" />
+                        <div className="h-2 bg-warm-gray-300/30 rounded-pill w-1/3" />
                       </div>
                     </div>
                   </motion.div>
@@ -261,30 +250,24 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ CTA ═══ */}
-      <section className="section-padding">
+      <section className="section-spacing bg-white">
         <div className="container">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative rounded-3xl overflow-hidden"
+            className="relative rounded-large overflow-hidden bg-notion-blue p-12 md:p-16 text-center text-white"
           >
-            <div className="absolute inset-0 gradient-brand" />
-            <div className="absolute inset-0 dot-pattern opacity-10" />
-            <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-            <div className="absolute bottom-0 left-0 w-72 h-72 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-            <div className="relative p-12 md:p-16 text-center text-white">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Ready to Build Your Portfolio?</h2>
-              <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-                Join thousands of learners who are already showcasing their skills and getting discovered by top employers.
-              </p>
-              <Link href="/signup">
-                <Button size="lg" className="gap-2 h-12 px-8 text-base rounded-full bg-white text-primary hover:bg-white/90 shadow-xl shadow-black/20 group">
-                  Get Started for Free
-                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
-                </Button>
-              </Link>
-            </div>
+            <h2 className="text-section-heading text-white mb-4">Ready to Build Your Portfolio?</h2>
+            <p className="text-body-large opacity-90 max-w-2xl mx-auto mb-8">
+              Join thousands of learners who are already showcasing their skills and getting discovered by top employers.
+            </p>
+            <Link href="/signup">
+              <Button size="lg" variant="secondary" className="gap-2 bg-white text-notion-blue hover:bg-white/90 group">
+                Get Started for Free
+                <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </motion.div>
         </div>
       </section>

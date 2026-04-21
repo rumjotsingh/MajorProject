@@ -168,7 +168,7 @@ export default function UploadCredentialPage() {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          className="h-24 w-24 rounded-full bg-emerald-500/10 border-2 border-emerald-500/20 flex items-center justify-center"
+          className="h-24 w-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center"
         >
           <CheckCircle2 className="h-12 w-12 text-emerald-500" />
         </motion.div>
@@ -243,7 +243,7 @@ export default function UploadCredentialPage() {
 
       {/* ── Form Card ── */}
       <motion.div custom={1} variants={fadeUp}>
-        <Card className="border-border/50 shadow-sm">
+        <Card className="border-[rgba(0,0,0,0.1)] shadow-sm">
           <CardHeader className="pb-2">
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -369,9 +369,12 @@ export default function UploadCredentialPage() {
                   onDrop={handleDrop}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
-                  animate={{ borderColor: dragging ? "hsl(var(--primary))" : file ? "hsl(var(--primary) / 0.4)" : "hsl(var(--border) / 0.8)" }}
-                  className={`relative rounded-2xl border-2 border-dashed p-8 text-center cursor-pointer transition-all duration-200 overflow-hidden ${
-                    dragging ? "bg-primary/5 scale-[1.01]" : file ? "bg-primary/[0.02]" : "hover:bg-muted/40 hover:border-primary/30"
+                  className={`relative rounded-xl p-8 text-center cursor-pointer transition-all duration-200 overflow-hidden ${
+                    dragging 
+                      ? "bg-[#f2f9ff] scale-[1.01] border border-[#0075de]/30" 
+                      : file 
+                      ? "bg-[#f2f9ff]/50 border border-[rgba(0,0,0,0.1)]" 
+                      : "hover:bg-[#f6f5f4] border border-[rgba(0,0,0,0.1)] hover:border-[#0075de]/20"
                   }`}
                 >
                   {/* glow when file present */}
@@ -394,7 +397,7 @@ export default function UploadCredentialPage() {
                         type="button"
                         variant="outline"
                         size="sm"
-                        className="rounded-full text-xs border-border/60"
+                        className="rounded-full text-xs border-[rgba(0,0,0,0.1)]"
                         onClick={(e) => { e.stopPropagation(); setFile(null); if (fileInputRef.current) fileInputRef.current.value = ""; }}
                       >
                         <X className="h-3 w-3 mr-1" /> Remove
@@ -429,7 +432,7 @@ export default function UploadCredentialPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1 rounded-full border-border/60"
+                  className="flex-1 rounded-full border-[rgba(0,0,0,0.1)]"
                   onClick={() => router.push("/credentials")}
                   disabled={loading}
                 >
@@ -455,7 +458,7 @@ export default function UploadCredentialPage() {
       {/* ── Progress Preview ── */}
       {credits > 0 && currentLevel && (
         <motion.div custom={2} variants={fadeUp}>
-          <Card className="border-border/50 border-primary/10 bg-primary/[0.02]">
+          <Card className="border-[rgba(0,0,0,0.1)] border-primary/10 bg-primary/[0.02]">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -477,7 +480,7 @@ export default function UploadCredentialPage() {
       {/* ── NSQF Reference ── */}
       {nsqfLevels.length > 0 && (
         <motion.div custom={3} variants={fadeUp}>
-          <Card className="border-border/50">
+          <Card className="border-[rgba(0,0,0,0.1)]">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Award className="h-4 w-4 text-primary" /> NSQF Level Reference
@@ -494,7 +497,7 @@ export default function UploadCredentialPage() {
                       className={`p-3 rounded-xl border transition-all duration-200 ${
                         isCurrentLev
                           ? "border-primary/40 bg-primary/8 shadow-sm shadow-primary/10"
-                          : "border-border/50 hover:border-primary/20"
+                          : "border-[rgba(0,0,0,0.1)] hover:border-primary/20"
                       }`}
                     >
                       <div className="flex items-start justify-between gap-1">

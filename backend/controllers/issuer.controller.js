@@ -150,6 +150,18 @@ export const issueCredential = async (req, res, next) => {
         return res.status(404).json({ error: 'Issuer profile not found' });
       }
       issuerId = issuer._id;
+      
+      // Check if learner is blocked
+      const userEmail = req.body.userEmail;
+      if (userEmail) {
+        const learner = await User.findOne({ email: userEmail });
+        if (learner && issuer.blockedLearners.includes(learner._id)) {
+          return res.status(403).json({ 
+            error: 'Cannot issue credential to blocked learner',
+            message: 'This learner has been blocked. Unblock them first to issue credentials.'
+          });
+        }
+      }
     } else {
       return res.status(401).json({ error: 'Issuer authentication required' });
     }
@@ -825,3 +837,118 @@ export const verifyCredential = async (req, res, next) => {
   }
 };
 
+
+
+// POST /issuer/learners/:id/block - Block a learner
+export const blockLearner = async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, 'User ID');
+    
+    let issuer;
+    
+    if (req.issuer) {
+      issuer = req.issuer;
+    } else if (req.user && req.user.role === 'Issuer') {
+      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      if (!issuer) {
+        return res.status(404).json({ error: 'Issuer not found' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not authorized as issuer' });
+    }
+
+    const learnerId = req.params.id;
+
+    // Check if learner exists
+    const learner = await User.findById(learnerId);
+    if (!learner || learner.role !== 'Learner') {
+      return res.status(404).json({ error: 'Learner not found' });
+    }
+
+    // Check if already blocked
+    if (issuer.blockedLearners.includes(learnerId)) {
+      return res.status(400).json({ error: 'Learner is already blocked' });
+    }
+
+    // Add to blocked list
+    issuer.blockedLearners.push(learnerId);
+    await issuer.save();
+
+    logger.info(`Issuer ${issuer._id} blocked learner ${learnerId}`);
+
+    // Send notification to learner
+    try {
+      await sendNotification(
+        req.app,
+        learnerId,
+        'System',
+        `You have been blocked by ${issuer.name}. You will no longer receive credentials from this issuer.`,
+        { issuerId: issuer._id }
+      );
+    } catch (notificationError) {
+      logger.error('Failed to send block notification:', notificationError);
+    }
+
+    res.json({ 
+      message: 'Learner blocked successfully',
+      blockedLearners: issuer.blockedLearners 
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /issuer/learners/:id/unblock - Unblock a learner
+export const unblockLearner = async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, 'User ID');
+    
+    let issuer;
+    
+    if (req.issuer) {
+      issuer = req.issuer;
+    } else if (req.user && req.user.role === 'Issuer') {
+      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      if (!issuer) {
+        return res.status(404).json({ error: 'Issuer not found' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not authorized as issuer' });
+    }
+
+    const learnerId = req.params.id;
+
+    // Check if learner is blocked
+    if (!issuer.blockedLearners.includes(learnerId)) {
+      return res.status(400).json({ error: 'Learner is not blocked' });
+    }
+
+    // Remove from blocked list
+    issuer.blockedLearners = issuer.blockedLearners.filter(
+      id => id.toString() !== learnerId
+    );
+    await issuer.save();
+
+    logger.info(`Issuer ${issuer._id} unblocked learner ${learnerId}`);
+
+    // Send notification to learner
+    try {
+      await sendNotification(
+        req.app,
+        learnerId,
+        'System',
+        `You have been unblocked by ${issuer.name}. You can now receive credentials from this issuer again.`,
+        { issuerId: issuer._id }
+      );
+    } catch (notificationError) {
+      logger.error('Failed to send unblock notification:', notificationError);
+    }
+
+    res.json({ 
+      message: 'Learner unblocked successfully',
+      blockedLearners: issuer.blockedLearners 
+    });
+  } catch (error) {
+    next(error);
+  }
+};

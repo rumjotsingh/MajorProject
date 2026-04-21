@@ -16,6 +16,8 @@ import {
   XCircle,
   Calendar,
   TrendingUp,
+  Ban,
+  Unlock,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
@@ -55,10 +57,13 @@ export default function LearnerDetailPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<LearnerData | null>(null);
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [blockLoading, setBlockLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadLearnerDetails();
+    checkBlockStatus();
   }, [params.id]);
 
   const loadLearnerDetails = async () => {
@@ -74,6 +79,38 @@ export default function LearnerDetailPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkBlockStatus = async () => {
+    try {
+      const response = await api.get('/issuer/profile');
+      const blockedLearners = response.data.blockedLearners || [];
+      setIsBlocked(blockedLearners.includes(params.id));
+    } catch (error) {
+      console.error('Failed to check block status:', error);
+    }
+  };
+
+  const handleBlockToggle = async () => {
+    try {
+      setBlockLoading(true);
+      const endpoint = isBlocked ? 'unblock' : 'block';
+      await api.post(`/issuer/learners/${params.id}/${endpoint}`);
+      
+      setIsBlocked(!isBlocked);
+      toast({
+        title: "Success",
+        description: `Learner ${isBlocked ? 'unblocked' : 'blocked'} successfully`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || `Failed to ${isBlocked ? 'unblock' : 'block'} learner`,
+        variant: "destructive",
+      });
+    } finally {
+      setBlockLoading(false);
     }
   };
 
@@ -152,7 +189,30 @@ export default function LearnerDetailPage() {
                   NSQF Level {data.profile.nsqfLevel}
                 </Badge>
               )}
+              {isBlocked && (
+                <Badge variant="destructive" className="mt-2 ml-2">
+                  Blocked
+                </Badge>
+              )}
             </div>
+            <Button
+              variant={isBlocked ? "outline" : "destructive"}
+              onClick={handleBlockToggle}
+              disabled={blockLoading}
+              className="gap-2"
+            >
+              {isBlocked ? (
+                <>
+                  <Unlock className="h-4 w-4" />
+                  Unblock
+                </>
+              ) : (
+                <>
+                  <Ban className="h-4 w-4" />
+                  Block
+                </>
+              )}
+            </Button>
           </div>
         </CardContent>
       </Card>

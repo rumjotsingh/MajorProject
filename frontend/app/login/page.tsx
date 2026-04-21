@@ -48,7 +48,7 @@ export default function LoginPage() {
       const { user } = await authService.login(formData);
 
       const roleRedirectMap: Record<string, string> = {
-        Learner: "/dashboard",
+        Learner: "/user/dashboard",
         Employer: "/employer/dashboard",
         Issuer: "/issuer/dashboard",
         Admin: "/admin/dashboard",
@@ -85,17 +85,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background">
-      <div className="absolute inset-0 gradient-mesh-hero" />
-      <div className="absolute inset-0 dot-pattern opacity-20" />
-
-      {/* Animated orbs */}
-      <div className="absolute -top-32 -left-16 h-72 w-72 rounded-full bg-primary/15 blur-3xl animate-orb-1" />
-      <div className="absolute -bottom-28 -right-20 h-80 w-80 rounded-full bg-primary/10 blur-3xl animate-orb-2" />
-      <div className="absolute top-1/2 left-1/3 h-64 w-64 rounded-full bg-primary/[0.06] blur-3xl" />
+    <div className="relative min-h-screen overflow-hidden bg-white">
 
       <Link href="/" className="fixed top-5 left-5 z-50">
-        <Button variant="outline" size="sm" className="gap-2 rounded-full bg-background/80 backdrop-blur-xl border-border/50">
+        <Button variant="outline" size="sm" className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           <span className="hidden sm:inline">Back Home</span>
         </Button>
@@ -108,33 +101,32 @@ export default function LoginPage() {
             initial={!mounted.current ? { opacity: 0, y: 20 } : false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="hidden rounded-3xl border border-border/50 bg-muted/30 backdrop-blur-sm p-8 lg:flex lg:flex-col lg:justify-between"
+            className="hidden rounded-large border-whisper bg-warm-white p-8 lg:flex lg:flex-col lg:justify-between"
           >
             <div className="space-y-6">
               <Link href="/" className="inline-flex items-center gap-3">
-                <span className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 text-primary-foreground shadow-md shadow-primary/20">
+                <span className="rounded-standard bg-notion-blue p-2 text-white">
                   <Award className="h-5 w-5" />
                 </span>
-                <span className="text-2xl font-bold">CredMatrix</span>
+                <span className="text-body-large font-bold text-near-black">CredMatrix</span>
               </Link>
               <div className="space-y-4">
-                <h1 className="text-4xl font-bold leading-tight">
-                  Sign in and continue building your{" "}
-                  <span className="text-gradient-brand">verified profile.</span>
+                <h1 className="text-subheading-large text-near-black leading-tight">
+                  Sign in and continue building your verified profile.
                 </h1>
-                <p className="max-w-md text-sm text-muted-foreground">
+                <p className="max-w-md text-body text-warm-gray-500">
                   Access your credentials, analytics, and opportunities from one clean dashboard.
                 </p>
               </div>
             </div>
 
-            <div className="space-y-4 rounded-2xl border border-border/50 bg-background/60 backdrop-blur-sm p-5">
+            <div className="space-y-4 rounded-comfortable border-whisper bg-white p-5">
               {highlights.map((item) => (
                 <div key={item} className="flex items-center gap-3">
-                  <span className="rounded-lg bg-primary/10 p-1.5 text-primary">
+                  <span className="rounded-standard bg-badge-blue-bg p-1.5 text-notion-blue">
                     <ShieldCheck className="h-3.5 w-3.5" />
                   </span>
-                  <span className="text-sm font-medium">{item}</span>
+                  <span className="text-body-medium">{item}</span>
                 </div>
               ))}
             </div>
@@ -147,13 +139,13 @@ export default function LoginPage() {
             transition={{ duration: 0.5 }}
             className="mx-auto flex w-full max-w-md items-center"
           >
-            <Card className="w-full rounded-3xl border-border/50 shadow-2xl shadow-primary/[0.04]">
+            <Card className="w-full rounded-large border-whisper shadow-notion-deep">
               <CardHeader className="space-y-3 text-center pb-6">
-                <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-md shadow-primary/20">
+                <div className="mx-auto inline-flex h-11 w-11 items-center justify-center rounded-standard bg-notion-blue text-white">
                   <Sparkles className="h-5 w-5" />
                 </div>
-                <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-                <CardDescription className="text-base">
+                <CardTitle className="text-subheading text-near-black">Welcome back</CardTitle>
+                <CardDescription className="text-body text-warm-gray-500">
                   Sign in to access your credential portfolio
                 </CardDescription>
               </CardHeader>
@@ -162,8 +154,8 @@ export default function LoginPage() {
                 <form onSubmit={handleSubmit} className="space-y-5">
                   {/* Email */}
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary/70" />
+                    <label htmlFor="email" className="text-body-medium flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-notion-blue/70" />
                       Email Address
                     </label>
                     <Input
@@ -178,24 +170,24 @@ export default function LoginPage() {
                         }
                       }}
                       required
-                      className={`h-11 rounded-xl ${fieldErrors.email ? "border-destructive focus-visible:ring-destructive/30" : ""
+                      className={`h-11 ${fieldErrors.email ? "border-orange focus-visible:ring-orange/30" : ""
                         }`}
                     />
                     {fieldErrors.email && (
-                      <p className="text-xs text-destructive">{fieldErrors.email}</p>
+                      <p className="text-caption text-orange">{fieldErrors.email}</p>
                     )}
                   </div>
 
                   {/* Password */}
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
-                        <Lock className="h-4 w-4 text-primary/70" />
+                      <label htmlFor="password" className="text-body-medium flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-notion-blue/70" />
                         Password
                       </label>
                       <Link
                         href="/forgot-password"
-                        className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                        className="text-body-medium text-notion-blue hover:text-notion-blue-active transition-colors"
                       >
                         Forgot?
                       </Link>
@@ -214,23 +206,22 @@ export default function LoginPage() {
                           }
                         }}
                         required
-                        className={`h-11 rounded-xl pr-10 ${fieldErrors.password ? "border-destructive focus-visible:ring-destructive/30" : ""
+                        className={`h-11 pr-10 ${fieldErrors.password ? "border-orange focus-visible:ring-orange/30" : ""
                           }`}
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-gray-500 hover:text-near-black transition-colors"
                       >
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
                     </div>
                     {fieldErrors.password && (
-                      <p className="text-xs text-destructive">{fieldErrors.password}</p>
+                      <p className="text-caption text-orange">{fieldErrors.password}</p>
                     )}
                   </div>
 
-                  {/* General error banner — animated independently so only IT animates on error, not the whole page */}
                   <AnimatePresence mode="wait">
                     {fieldErrors.general && (
                       <motion.div
@@ -239,7 +230,7 @@ export default function LoginPage() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -6, scale: 0.98 }}
                         transition={{ duration: 0.2 }}
-                        className="flex items-start gap-2.5 rounded-xl border border-destructive/30 bg-destructive/5 px-3.5 py-3 text-sm text-destructive"
+                        className="flex items-start gap-2.5 rounded-standard border border-orange/30 bg-orange/5 px-3.5 py-3 text-body text-orange"
                       >
                         <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                         <span>{fieldErrors.general}</span>
@@ -249,7 +240,7 @@ export default function LoginPage() {
 
                   <Button
                     type="submit"
-                    className="h-11 w-full rounded-xl text-base font-semibold group"
+                    className="h-11 w-full text-body-medium group"
                     disabled={loading}
                   >
                     {loading ? (
@@ -268,17 +259,17 @@ export default function LoginPage() {
 
                 <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border/60" />
+                    <span className="w-full border-t border-whisper" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">New to CredMatrix?</span>
+                  <div className="relative flex justify-center text-caption uppercase">
+                    <span className="bg-white px-2 text-warm-gray-500">New to CredMatrix?</span>
                   </div>
                 </div>
 
                 <Link href="/signup">
                   <Button
                     variant="outline"
-                    className="h-11 w-full rounded-xl font-semibold border-border/60 hover:border-primary/30"
+                    className="h-11 w-full font-semibold"
                   >
                     Create an Account
                   </Button>

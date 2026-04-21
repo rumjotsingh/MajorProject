@@ -210,6 +210,11 @@ export default function EmployerJobsPage() {
                           <Eye className="w-4 h-4" />
                         </Link>
                       </Button>
+                      <Button variant="ghost" size="sm" asChild className="rounded-xl">
+                        <Link href={`/employer/jobs/edit/${job._id}`}>
+                          <Edit className="w-4 h-4" />
+                        </Link>
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

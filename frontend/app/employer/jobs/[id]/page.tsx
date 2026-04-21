@@ -34,17 +34,18 @@ interface Application {
   _id: string;
   learnerId: {
     _id: string;
-    userId: {
-      _id: string;
-      name: string;
-      email: string;
-    };
+    name: string;
+    email: string;
+  };
+  learnerProfile?: {
+    _id: string;
     nsqfLevel: number;
     totalCredits: number;
     skills: string[];
   };
   status: string;
   appliedAt: string;
+  credentials?: any[];
 }
 
 export default function EmployerJobDetailPage() {
@@ -308,8 +309,9 @@ export default function EmployerJobDetailPage() {
             <div className="space-y-4">
               {applications.map((application) => {
                 const learner = application.learnerId;
-                const learnerName = learner?.userId?.name || 'Unknown';
-                const learnerEmail = learner?.userId?.email || '';
+                const profile = application.learnerProfile;
+                const learnerName = learner?.name || 'Unknown';
+                const learnerEmail = learner?.email || '';
                 
                 return (
                   <div key={application._id} className="p-4 bg-gray-50 rounded-lg">
@@ -324,23 +326,23 @@ export default function EmployerJobDetailPage() {
                         <p className="text-sm text-gray-600 mb-2">{learnerEmail}</p>
                         
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span>NSQF Level {learner?.nsqfLevel || 0}</span>
+                          <span>NSQF Level {profile?.nsqfLevel || 0}</span>
                           <span>•</span>
-                          <span>{learner?.totalCredits || 0} credits</span>
+                          <span>{profile?.totalCredits || 0} credits</span>
                           <span>•</span>
                           <span>Applied {new Date(application.appliedAt).toLocaleDateString()}</span>
                         </div>
 
-                        {learner?.skills && learner.skills.length > 0 && (
+                        {profile?.skills && profile.skills.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {learner.skills.slice(0, 5).map((skill, index) => (
+                            {profile.skills.slice(0, 5).map((skill, index) => (
                               <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                 {skill}
                               </span>
                             ))}
-                            {learner.skills.length > 5 && (
+                            {profile.skills.length > 5 && (
                               <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                +{learner.skills.length - 5} more
+                                +{profile.skills.length - 5} more
                               </span>
                             )}
                           </div>
@@ -381,7 +383,7 @@ export default function EmployerJobDetailPage() {
                           </>
                         )}
                         <button
-                          onClick={() => router.push(`/employer/learners/${learner?.userId?._id}`)}
+                          onClick={() => router.push(`/employer/learners/${learner?._id}`)}
                           className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                         >
                           View Profile
