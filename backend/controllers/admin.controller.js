@@ -7,8 +7,46 @@ import { uploadToCloudinary } from '../utils/cloudinary.util.js';
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import Employer from '../models/Employer.model.js';
 import Subscription from '../models/Subscription.model.js';
-import { calculateNSQFLevel } from '../utils/nsqf.util.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 import logger from '../utils/logger.js';
+
+// ==================== ADMIN PROFILE ====================
+
+export const updateAdminProfile = async (req, res, next) => {
+  try {
+    const { name, email } = req.body;
+
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'Admin user not found' });
+    }
+
+    // Ensure only admin can update admin profile
+    if (user.role !== 'Admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Update fields
+    if (name) user.name = name;
+    if (email) user.email = email;
+
+    await user.save();
+
+    logger.info(`Admin profile updated: ${req.user.userId}`);
+    res.json({
+      message: 'Admin profile updated successfully',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    logger.error('Error updating admin profile:', error);
+    next(error);
+  }
+};
 
 // ==================== DASHBOARD ====================
 
@@ -204,6 +242,12 @@ export const updateLearnerProfile = async (req, res, next) => {
     const { id } = req.params;
     const { bio, skills, education, experience } = req.body;
 
+    if (skills !== undefined) {
+      return res.status(400).json({
+        error: 'Manual skill updates are not allowed. Skills are derived from verified credentials only.',
+      });
+    }
+
     const profile = await LearnerProfile.findOne({ userId: id });
     if (!profile) {
       return res.status(404).json({ error: 'Learner profile not found' });
@@ -211,7 +255,6 @@ export const updateLearnerProfile = async (req, res, next) => {
 
     // Update profile fields
     if (bio !== undefined) profile.bio = bio;
-    if (skills !== undefined) profile.skills = skills;
     if (education !== undefined) profile.education = education;
     if (experience !== undefined) profile.experience = experience;
 
@@ -590,14 +633,8 @@ export const approveCredential = async (req, res, next) => {
     if (notes) credential.verificationNotes = notes;
     await credential.save();
 
-    // Update learner profile NSQF level if not already verified
     if (!wasVerified) {
-      const profile = await LearnerProfile.findOne({ userId: credential.userId });
-      if (profile) {
-        profile.totalCredits = (profile.totalCredits || 0) + credential.credits;
-        profile.nsqfLevel = calculateNSQFLevel(profile.totalCredits);
-        await profile.save();
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
     }
 
     logger.info(`Credential approved by admin: ${id}`);
@@ -624,14 +661,8 @@ export const rejectCredential = async (req, res, next) => {
     if (notes) credential.verificationNotes = notes;
     await credential.save();
 
-    // Remove credits from learner profile if was previously verified
     if (wasVerified) {
-      const profile = await LearnerProfile.findOne({ userId: credential.userId });
-      if (profile) {
-        profile.totalCredits = Math.max(0, (profile.totalCredits || 0) - credential.credits);
-        profile.nsqfLevel = calculateNSQFLevel(profile.totalCredits);
-        await profile.save();
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
     }
 
     logger.info(`Credential rejected by admin: ${id}`, { notes });
@@ -651,17 +682,9 @@ export const deleteCredential = async (req, res, next) => {
       return res.status(404).json({ error: 'Credential not found' });
     }
 
-    // Remove credits from learner profile if verified
-    if (credential.verificationStatus === 'verified') {
-      const profile = await LearnerProfile.findOne({ userId: credential.userId });
-      if (profile) {
-        profile.totalCredits = Math.max(0, (profile.totalCredits || 0) - credential.credits);
-        profile.nsqfLevel = calculateNSQFLevel(profile.totalCredits);
-        await profile.save();
-      }
-    }
-
     await Credential.deleteOne({ _id: id });
+
+    await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
 
     logger.info(`Credential deleted by admin: ${id}`);
     res.json({ message: 'Credential deleted successfully' });
@@ -1048,6 +1071,46 @@ export const getNSQFMappings = async (req, res, next) => {
     });
   } catch (error) {
     logger.error('Error fetching NSQF mappings:', error);
+    next(error);
+  }
+};
+
+export const updateNSQFMapping = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { credentialType, nsqfLevel, description } = req.body;
+
+    const mapping = await NSQFMapping.findById(id);
+    if (!mapping) {
+      return res.status(404).json({ error: 'NSQF mapping not found' });
+    }
+
+    if (credentialType) mapping.skill = credentialType;
+    if (nsqfLevel) {
+      if (nsqfLevel < 1 || nsqfLevel > 10) {
+        return res.status(400).json({ error: 'Invalid NSQF level (1-10)' });
+      }
+      mapping.nsqfLevel = nsqfLevel;
+    }
+    if (description !== undefined) mapping.description = description;
+
+    await mapping.save();
+
+    logger.info(`NSQF mapping updated by admin: ${id}`);
+    
+    const responseMapping = {
+      _id: mapping._id,
+      credentialType: mapping.skill,
+      nsqfLevel: mapping.nsqfLevel,
+      description: mapping.description,
+    };
+    
+    res.json({ 
+      message: 'NSQF mapping updated successfully', 
+      mapping: responseMapping 
+    });
+  } catch (error) {
+    logger.error('Error updating NSQF mapping:', error);
     next(error);
   }
 };

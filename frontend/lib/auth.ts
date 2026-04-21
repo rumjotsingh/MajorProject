@@ -53,10 +53,13 @@ export const authService = {
       
       return { user, token };
     } catch (error: any) {
-      // Clean up on error
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("user");
+      // Clean up on error - but only if we actually stored tokens
+      const hasStoredToken = localStorage.getItem("token");
+      if (hasStoredToken) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+      }
       
       console.error("Login error:", error.response?.data || error.message);
       throw error;

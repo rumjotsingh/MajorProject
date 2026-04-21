@@ -44,7 +44,7 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
       {/* Mobile Menu Button - Only visible on mobile */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-lg border border-gray-200"
+        className="md:hidden fixed top-4 left-4 z-40 p-2 bg-background rounded-xl shadow-lg border border-border"
       >
         <Menu className="w-6 h-6 text-gray-700" />
       </button>
@@ -59,29 +59,29 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
 
       {/* Sidebar */}
       <div
-        className={`md:hidden fixed top-0 left-0 h-full w-64 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`md:hidden fixed top-0 left-0 h-full w-64 bg-background shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200">
+          <div className="p-4 border-b border-border">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Employer</h2>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
+                className="p-2 hover:bg-gray-100 rounded-xl"
               >
                 <X className="w-5 h-5 text-gray-600" />
               </button>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white font-semibold">
+              <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center text-background font-semibold">
                 {userName.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 truncate">{userName}</p>
-                <p className="text-xs text-gray-600 truncate">{userEmail}</p>
+                <p className="text-sm font-semibold text-foreground truncate">{userName}</p>
+                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
               </div>
             </div>
           </div>
@@ -98,10 +98,10 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
                       isActive
-                        ? 'bg-green-50 text-green-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-foreground text-background font-medium'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -113,10 +113,10 @@ export function MobileEmployerSidebar({ userName, userEmail }: MobileEmployerSid
           </nav>
 
           {/* Footer */}
-          <div className="p-4 border-t border-gray-200">
+          <div className="p-4 border-t border-border">
             <button
               onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              className="flex items-center gap-3 px-4 py-3 w-full text-red-600 hover:bg-red-50 rounded-xl transition-colors"
             >
               <LogOut className="w-5 h-5" />
               <span>Logout</span>

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Award, Mail, Lock, User, Loader2, GraduationCap, Briefcase, Building2, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { Award, Mail, Lock, User, Loader2, GraduationCap, Briefcase, Building2, ArrowLeft, Eye, EyeOff, ShieldCheck, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { authService } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -62,7 +62,6 @@ export default function SignupPage() {
       return;
     }
 
-    // Validate role-specific required fields
     if (formData.role === "Employer" && !formData.companyName.trim()) {
       toast({
         title: "Company name required",
@@ -135,12 +134,10 @@ export default function SignupPage() {
         description: "Please sign in with your credentials",
       });
 
-      // Redirect to login page after successful registration
       setTimeout(() => {
         router.push("/login");
       }, 1500);
     } catch (error: any) {
-      console.error("Registration error:", error);
       toast({
         title: "Registration failed",
         description: error.response?.data?.error || error.message || "Something went wrong. Please try again.",
@@ -152,302 +149,308 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-primary/5 relative">
-      {/* Back to Home Button */}
-      <Link href="/" className="fixed top-4 left-4 z-50">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="glass glass-border backdrop-blur-xl gap-2 hover:bg-primary/10"
-        >
+    <div className="relative min-h-screen overflow-hidden bg-background">
+      <div className="absolute inset-0 gradient-mesh-hero" />
+      <div className="absolute inset-0 dot-pattern opacity-20" />
+      
+      {/* Animated orbs */}
+      <div className="absolute -top-24 left-[5%] h-72 w-72 rounded-full bg-primary/12 blur-3xl animate-orb-1" />
+      <div className="absolute -bottom-28 right-[10%] h-80 w-80 rounded-full bg-primary/10 blur-3xl animate-orb-2" />
+
+      <Link href="/" className="fixed top-5 left-5 z-50">
+        <Button variant="outline" size="sm" className="gap-2 rounded-full bg-background/80 backdrop-blur-xl border-border/50">
           <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to Home</span>
+          <span className="hidden sm:inline">Back Home</span>
         </Button>
       </Link>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-2xl relative z-10"
-      >
-        <div className="flex justify-center mb-8">
-          <Link href="/" className="flex items-center gap-2 group">
-            <motion.div
-              whileHover={{ rotate: 360 }}
-              transition={{ duration: 0.6 }}
-            >
-              <Award className="h-10 w-10 text-primary" />
-            </motion.div>
-            <span className="text-3xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-              CredMatrix
-            </span>
-          </Link>
-        </div>
-
-        <Card className="border-2 shadow-2xl">
-          <CardHeader className="space-y-2 text-center pb-6">
-            <CardTitle className="text-3xl font-bold">Create your account</CardTitle>
-            <CardDescription className="text-base">
-              Join thousands building their skill portfolios
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Role Selection */}
-              <div className="space-y-3">
-                <label className="text-sm font-medium">I am a...</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {roles.map((role) => {
-                    const Icon = role.icon;
-                    const isSelected = formData.role === role.value;
-                    
-                    return (
-                      <motion.button
-                        key={role.value}
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setFormData({ ...formData, role: role.value })}
-                        className={cn(
-                          "relative p-4 rounded-lg border-2 transition-all text-left",
-                          isSelected
-                            ? "border-primary bg-primary/5 shadow-md"
-                            : "border-border hover:border-primary/50"
-                        )}
-                      >
-                        <Icon className={cn(
-                          "h-6 w-6 mb-2",
-                          isSelected ? "text-primary" : "text-muted-foreground"
-                        )} />
-                        <div className="font-semibold text-sm">{role.label}</div>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {role.description}
-                        </div>
-                        {isSelected && (
-                          <motion.div
-                            layoutId="role-indicator"
-                            className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary"
-                          />
-                        )}
-                      </motion.button>
-                    );
-                  })}
+      <div className="container relative z-10 py-10 md:py-14">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[1.2fr_1fr]">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <Card className="rounded-large border-whisper shadow-notion-deep">
+              <CardHeader className="space-y-3 pb-6">
+                <div className="flex items-center gap-3">
+                  <span className="rounded-standard bg-notion-blue p-2 text-white">
+                    <Sparkles className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <CardTitle className="text-section-heading text-near-black">Create your account</CardTitle>
+                    <CardDescription className="text-body text-warm-gray-500">Choose your role and start in minutes</CardDescription>
+                  </div>
                 </div>
-              </div>
+              </CardHeader>
 
-              {/* Company/Institution Name (for Employer/Issuer) */}
-              {formData.role === "Employer" && (
-                <div className="space-y-2">
-                  <label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    Company Name
-                  </label>
-                  <Input
-                    id="companyName"
-                    placeholder="Your company name"
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    required
-                    className="h-11"
-                  />
-                </div>
-              )}
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">I am a...</label>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {roles.map((role) => {
+                        const Icon = role.icon;
+                        const isSelected = formData.role === role.value;
 
-              {formData.role === "Issuer" && (
-                <div className="space-y-2">
-                  <label htmlFor="institutionName" className="text-sm font-medium flex items-center gap-2">
-                    <Building2 className="h-4 w-4 text-primary" />
-                    Institution Name
-                  </label>
-                  <Input
-                    id="institutionName"
-                    placeholder="Your institution name"
-                    value={formData.institutionName}
-                    onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
-                    required
-                    className="h-11"
-                  />
-                </div>
-              )}
+                        return (
+                          <motion.button
+                            key={role.value}
+                            type="button"
+                            whileHover={{ y: -2 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setFormData({ ...formData, role: role.value })}
+                            className={cn(
+                              "relative rounded-standard border p-4 text-left transition-all duration-200",
+                              isSelected
+                                ? "border-notion-blue/50 bg-badge-blue-bg"
+                                : "border-whisper bg-white hover:border-notion-blue/30 hover:bg-badge-blue-bg/30"
+                            )}
+                          >
+                            <Icon className={cn("mb-2 h-5 w-5", isSelected ? "text-notion-blue" : "text-warm-gray-500")} />
+                            <div className={cn("text-body-semibold", isSelected && "text-notion-blue")}>{role.label}</div>
+                            <div className={cn("mt-1 text-caption", isSelected ? "text-notion-blue/70" : "text-warm-gray-500")}>{role.description}</div>
+                            {isSelected && (
+                              <motion.div
+                                layoutId="roleIndicator"
+                                className="absolute top-2 right-2 h-2 w-2 rounded-full bg-notion-blue"
+                                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                              />
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-              {/* Name */}
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
-                  <User className="h-4 w-4 text-primary" />
-                  {formData.role === "Employer" || formData.role === "Issuer" ? "Contact Person Name" : "Full Name"}
-                </label>
-                <Input
-                  id="name"
-                  placeholder={formData.role === "Employer" || formData.role === "Issuer" ? "Contact person name" : "John Doe"}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  className="h-11"
-                />
-              </div>
+                  {formData.role === "Employer" && (
+                    <div className="space-y-2">
+                      <label htmlFor="companyName" className="text-sm font-medium flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary/70" />
+                        Company Name
+                      </label>
+                      <Input
+                        id="companyName"
+                        placeholder="Your company name"
+                        value={formData.companyName}
+                        onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                        required
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  )}
 
-              {/* Email and Mobile */}
-              {(formData.role === "Employer" || formData.role === "Issuer") ? (
-                <div className="grid grid-cols-2 gap-4">
+                  {formData.role === "Issuer" && (
+                    <div className="space-y-2">
+                      <label htmlFor="institutionName" className="text-sm font-medium flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary/70" />
+                        Institution Name
+                      </label>
+                      <Input
+                        id="institutionName"
+                        placeholder="Your institution name"
+                        value={formData.institutionName}
+                        onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
+                        required
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  )}
+
                   <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-primary" />
-                      Email Address
+                    <label htmlFor="name" className="text-sm font-medium flex items-center gap-2">
+                      <User className="h-4 w-4 text-primary/70" />
+                      {formData.role === "Employer" || formData.role === "Issuer" ? "Contact Person Name" : "Full Name"}
                     </label>
                     <Input
-                      id="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      id="name"
+                      placeholder={formData.role === "Employer" || formData.role === "Issuer" ? "Contact person name" : "John Doe"}
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
-                      className="h-11"
+                      className="h-11 rounded-xl"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="mobile" className="text-sm font-medium">
-                      Mobile Number
-                    </label>
-                    <Input
-                      id="mobile"
-                      type="tel"
-                      placeholder="10-digit number"
-                      value={formData.mobile}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-                        setFormData({ ...formData, mobile: value });
-                      }}
-                      maxLength={10}
-                      pattern="\d{10}"
-                      required
-                      className="h-11"
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-primary" />
-                    Email Address
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="name@example.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    required
-                    className="h-11"
-                  />
-                </div>
-              )}
 
-              {/* Password */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
-                    <Lock className="h-4 w-4 text-primary" />
-                    Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                      required
-                      className="h-11 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
+                  {(formData.role === "Employer" || formData.role === "Issuer") ? (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-primary/70" />
+                          Email Address
+                        </label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="name@example.com"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          required
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label htmlFor="mobile" className="text-sm font-medium">Mobile Number</label>
+                        <Input
+                          id="mobile"
+                          type="tel"
+                          placeholder="10-digit number"
+                          value={formData.mobile}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+                            setFormData({ ...formData, mobile: value });
+                          }}
+                          maxLength={10}
+                          pattern="\d{10}"
+                          required
+                          className="h-11 rounded-xl"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-primary/70" />
+                        Email Address
+                      </label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="name@example.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                        required
+                        className="h-11 rounded-xl"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label htmlFor="password" className="text-sm font-medium flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-primary/70" />
+                        Password
+                      </label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          required
+                          className="h-11 rounded-xl pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label htmlFor="confirmPassword" className="text-sm font-medium">Confirm Password</label>
+                      <div className="relative">
+                        <Input
+                          id="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          value={formData.confirmPassword}
+                          onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                          required
+                          className="h-11 rounded-xl pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">Use at least 8 characters for a stronger password.</p>
+
+                  <Button type="submit" className="h-11 w-full rounded-xl text-base font-semibold" disabled={loading}>
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </Button>
+                </form>
+
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-border/60" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Already have an account?</span>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="confirmPassword" className="text-sm font-medium">
-                    Confirm Password
-                  </label>
-                  <div className="relative">
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      placeholder="••••••••"
-                      value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                      required
-                      className="h-11 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
 
-              <Button 
-                type="submit" 
-                className="w-full h-11 text-base font-semibold" 
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
-              </Button>
-            </form>
+                <Link href="/login">
+                  <Button variant="outline" className="h-11 w-full rounded-xl font-semibold border-border/60 hover:border-primary/30">
+                    Sign In Instead
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          </motion.div>
 
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Already have an account?
+          <motion.aside
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="hidden rounded-large border-whisper bg-warm-white p-8 lg:flex lg:flex-col lg:justify-between"
+          >
+            <div className="space-y-6">
+              <Link href="/" className="inline-flex items-center gap-3">
+                <span className="rounded-xl bg-gradient-to-br from-primary to-primary/80 p-2 text-primary-foreground shadow-md shadow-primary/20">
+                  <Award className="h-5 w-5" />
                 </span>
-              </div>
+                <span className="text-2xl font-bold">CredMatrix</span>
+              </Link>
+              <h2 className="text-4xl font-bold leading-tight">
+                Launch your <span className="text-gradient-brand">verified profile</span> with a role that fits you.
+              </h2>
+              <p className="max-w-md text-sm text-muted-foreground">
+                Whether you are learning, hiring, or issuing credentials, this setup creates the right workspace for your goals.
+              </p>
             </div>
 
-            <Link href="/login">
-              <Button variant="outline" className="w-full h-11 font-semibold">
-                Sign In Instead
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          By creating an account, you agree to our{" "}
-          <Link href="/terms" className="text-primary hover:underline">
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link href="/privacy" className="text-primary hover:underline">
-            Privacy Policy
-          </Link>
-        </p>
-      </motion.div>
+            <div className="space-y-4 rounded-comfortable border-whisper bg-white p-5">
+              <div className="flex items-start gap-3">
+                <span className="rounded-standard bg-badge-blue-bg p-1.5 text-notion-blue">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <p className="text-body-semibold">Smart onboarding</p>
+                  <p className="text-caption text-warm-gray-500">Fields adapt to your selected role.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="rounded-standard bg-badge-blue-bg p-1.5 text-notion-blue">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                </span>
+                <div>
+                  <p className="text-body-semibold">Secure verification workflow</p>
+                  <p className="text-caption text-warm-gray-500">Credential-ready profile from day one.</p>
+                </div>
+              </div>
+            </div>
+          </motion.aside>
+        </div>
+      </div>
     </div>
   );
 }

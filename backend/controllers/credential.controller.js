@@ -9,6 +9,103 @@ import { validateObjectId, isValidObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
+import { analyzeCredentialMetadata } from '../services/ai.service.js';
+
+const sanitizeStringArray = (items = [], maxItems = 20, maxLength = 120) => {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+    .filter((item) => item.length <= maxLength)
+    .slice(0, maxItems);
+};
+
+const toIsoOrNull = (value) => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString();
+};
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const ALLOWED_SORT_FIELDS = new Set(['createdAt', 'updatedAt', 'issueDate', 'credits', 'title']);
+const ALLOWED_STATUSES = new Set(['pending', 'verified', 'failed']);
+const ALLOWED_CREDENTIAL_TYPES = new Set(['micro-credential', 'course-certificate', 'degree', 'license', 'other']);
+
+const buildCredentialResponse = (credentialDoc) => {
+  const credential = credentialDoc.toObject ? credentialDoc.toObject() : credentialDoc;
+  const issuerName = credential?.issuerId?.name || '';
+  const keywords = Array.from(
+    new Set([...(credential.skills || []), ...(credential.tags || [])].map((k) => String(k).trim()).filter(Boolean))
+  );
+  const lifecycleStatus = credential.revoked ? 'revoked' : credential.verificationStatus;
+
+  return {
+    id: credential._id,
+    _id: credential._id,
+    userId: credential.userId,
+    issuerId: credential.issuerId,
+    issuerIdRef: credential.issuerId?._id || credential.issuerId,
+    issuerName,
+    title: credential.title,
+    description: credential.description || '',
+    credentialType: credential.credentialType || 'micro-credential',
+    category: credential.category || '',
+    skills: credential.skills || [],
+    tags: credential.tags || [],
+    keywords,
+    learningOutcomes: credential.learningOutcomes || [],
+    credits: credential.credits,
+    nsqfLevel: credential.nsqfLevel,
+    issueDate: toIsoOrNull(credential.issueDate),
+    expiryDate: toIsoOrNull(credential.expiryDate),
+    assessmentType: credential.assessmentType || '',
+    grade: credential.grade || '',
+    score: credential.score || { value: null, max: null },
+    durationHours: credential.durationHours ?? null,
+    certificateUrl: credential.certificateUrl,
+    evidenceUrls: credential.evidenceUrls || [],
+    source: credential.source || { platform: '', externalId: '', uploadMethod: 'manual' },
+    verificationStatus: credential.verificationStatus,
+    lifecycleStatus,
+    verificationNotes: credential.verificationNotes || '',
+    revoked: Boolean(credential.revoked),
+    revokeReason: credential.revokeReason || '',
+    aiInsights: credential.aiInsights || {},
+    aiSummary: credential?.aiInsights?.summary || '',
+    createdAt: toIsoOrNull(credential.createdAt),
+    updatedAt: toIsoOrNull(credential.updatedAt),
+  };
+};
+
+const runCredentialAIEnrichment = async (credentialId) => {
+  try {
+    const credential = await Credential.findById(credentialId).lean();
+    if (!credential) return;
+
+    const aiInsights = await analyzeCredentialMetadata({
+      title: credential.title,
+      description: credential.description,
+      providedSkills: credential.skills || [],
+      learningOutcomes: credential.learningOutcomes || [],
+      credentialType: credential.credentialType || 'micro-credential',
+      category: credential.category || '',
+    });
+
+    const mergedSkills = Array.from(
+      new Set([...(credential.skills || []), ...(aiInsights.extractedSkills || [])].map((skill) => String(skill).trim()).filter(Boolean))
+    );
+
+    await Credential.findByIdAndUpdate(credentialId, {
+      $set: {
+        aiInsights,
+        skills: mergedSkills,
+      },
+    });
+  } catch (error) {
+    logger.error('Async credential AI enrichment failed:', { credentialId, error: error.message });
+  }
+};
 
 // POST /credentials/upload-file (Upload file to Cloudinary only)
 export const uploadFile = async (req, res, next) => {
@@ -66,7 +163,25 @@ export const uploadCredential = async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid metadata format' });
     }
 
-    const { title, issuer, issueDate, skills, credits } = metadata;
+    const {
+      title,
+      issuer,
+      issueDate,
+      expiryDate,
+      skills,
+      credits,
+      description,
+      credentialType,
+      category,
+      tags,
+      learningOutcomes,
+      assessmentType,
+      grade,
+      score,
+      durationHours,
+      evidenceUrls,
+      source,
+    } = metadata;
 
     // Validate required fields are not empty
     if (!title || typeof title !== 'string' || !title.trim()) {
@@ -78,16 +193,35 @@ export const uploadCredential = async (req, res, next) => {
     if (!issueDate) {
       return res.status(400).json({ error: 'Issue date is required' });
     }
+    if (Number.isNaN(new Date(issueDate).getTime())) {
+      return res.status(400).json({ error: 'Issue date must be a valid date' });
+    }
+    if (expiryDate && Number.isNaN(new Date(expiryDate).getTime())) {
+      return res.status(400).json({ error: 'Expiry date must be a valid date' });
+    }
+    if (expiryDate && new Date(expiryDate) < new Date(issueDate)) {
+      return res.status(400).json({ error: 'Expiry date cannot be earlier than issue date' });
+    }
 
     // Validate credits (mandatory field, range 1-40)
     if (!credits) {
       return res.status(400).json({ error: 'Credits field is required' });
     }
 
-    if (!validateCredits(credits)) {
+    const normalizedCredits = Number(credits);
+    if (!validateCredits(normalizedCredits)) {
       return res.status(400).json({ 
         error: 'Invalid credits value. Must be an integer between 1 and 40' 
       });
+    }
+    if (score && score.max !== undefined && Number(score.max) <= 0) {
+      return res.status(400).json({ error: 'Score max must be greater than 0' });
+    }
+    if (score && score.value !== undefined && score.max !== undefined && Number(score.value) > Number(score.max)) {
+      return res.status(400).json({ error: 'Score value cannot be greater than score max' });
+    }
+    if (credentialType && !ALLOWED_CREDENTIAL_TYPES.has(String(credentialType).trim())) {
+      return res.status(400).json({ error: 'Invalid credentialType' });
     }
 
     // Find or create issuer
@@ -129,34 +263,58 @@ export const uploadCredential = async (req, res, next) => {
 
     // DO NOT update credits/NSQF level yet - wait for verification
     // Just calculate what the NSQF level would be for display purposes
-    const potentialTotalCredits = (learnerProfile.totalCredits || 0) + credits;
+    const potentialTotalCredits = (learnerProfile.totalCredits || 0) + normalizedCredits;
     const potentialNsqfInfo = calculateNSQFLevel(potentialTotalCredits);
+
+    // Keep upload fast: persist first, run AI enrichment asynchronously.
+    const normalizedSkills = sanitizeStringArray(skills, 25, 80);
 
     // Create credential with calculated NSQF level (for reference, but not counted yet)
     const credential = await Credential.create({
       userId: req.user.userId,
       issuerId: issuerDoc._id,
-      title,
-      skills: skills || [],
-      credits,
+      title: title.trim(),
+      description: typeof description === 'string' ? description.trim() : '',
+      credentialType: typeof credentialType === 'string' && credentialType.trim() ? credentialType.trim() : 'micro-credential',
+      category: typeof category === 'string' ? category.trim() : '',
+      skills: normalizedSkills,
+      tags: sanitizeStringArray(tags, 20, 50),
+      learningOutcomes: sanitizeStringArray(learningOutcomes, 20, 200),
+      credits: normalizedCredits,
       nsqfLevel: potentialNsqfInfo.level, // Stored for reference
       issueDate: new Date(issueDate),
+      expiryDate: expiryDate ? new Date(expiryDate) : null,
+      assessmentType: typeof assessmentType === 'string' ? assessmentType.trim() : '',
+      grade: typeof grade === 'string' ? grade.trim() : '',
+      score: {
+        value: score && Number.isFinite(Number(score.value)) ? Number(score.value) : null,
+        max: score && Number.isFinite(Number(score.max)) ? Number(score.max) : null,
+      },
+      durationHours: Number.isFinite(Number(durationHours)) ? Number(durationHours) : null,
       certificateUrl,
+      evidenceUrls: sanitizeStringArray(evidenceUrls, 10, 300),
+      source: {
+        platform: typeof source?.platform === 'string' ? source.platform.trim() : '',
+        externalId: typeof source?.externalId === 'string' ? source.externalId.trim() : '',
+        uploadMethod: typeof source?.uploadMethod === 'string' && source.uploadMethod.trim() ? source.uploadMethod.trim() : 'manual',
+      },
       certificateHash,
       verificationStatus: 'pending',
+      aiInsights: {
+        summary: '',
+        extractedSkills: normalizedSkills,
+        suggestedCareerPaths: [],
+        confidence: null,
+        provider: '',
+        model: '',
+        status: 'not-run',
+        reason: '',
+        analyzedAt: null,
+      },
     });
 
-    // DO NOT update learner profile credits/level until verification
-    // Only update skills if provided
-    if (skills && skills.length > 0) {
-      const updatedSkills = [...new Set([...learnerProfile.skills, ...skills])];
-      learnerProfile.skills = updatedSkills;
-      try {
-        await learnerProfile.save();
-      } catch (profileError) {
-        logger.error('Failed to update learner profile skills:', profileError);
-      }
-    }
+    // Skills are derived only from verified credentials.
+    // Do not mutate learner profile skills for pending uploads.
 
     // Send notification to learner
     try {
@@ -174,12 +332,10 @@ export const uploadCredential = async (req, res, next) => {
 
     // Send notification to issuer about new credential upload
     try {
-      // Find issuer users (users with Issuer role and matching email domain or all issuers)
-      const issuerUsers = await Issuer.findById(issuerDoc._id);
-      if (issuerUsers && issuerUsers.contactEmail) {
+      if (issuerDoc && issuerDoc.contactEmail) {
         // Find user account for this issuer
         const issuerUser = await User.findOne({ 
-          email: issuerUsers.contactEmail,
+          email: issuerDoc.contactEmail,
           role: 'Issuer'
         });
         
@@ -197,16 +353,19 @@ export const uploadCredential = async (req, res, next) => {
       // If issuer notification fails, log it but don't fail the upload
       logger.error('Failed to send issuer notification:', issuerNotificationError);
     }
-    
+
+    // Fire-and-forget AI enrichment for better upload performance.
+    runCredentialAIEnrichment(credential._id);
 
     // Return info - credits will be added after verification
     res.status(201).json({
       credentialId: credential._id,
       verificationStatus: credential.verificationStatus,
-      creditsToBeEarned: credits,
+      creditsToBeEarned: normalizedCredits,
       currentTotalCredits: learnerProfile.totalCredits,
       currentNsqfLevel: learnerProfile.nsqfLevel,
       potentialNsqfLevel: potentialNsqfInfo.level,
+      credential: buildCredentialResponse({ ...credential.toObject(), issuerId: { _id: issuerDoc._id, name: issuerDoc.name } }),
       message: `Credential uploaded successfully! After verification, you will earn ${credits} credits and reach NSQF Level ${potentialNsqfInfo.level} (${potentialNsqfInfo.levelName})`,
     });
   } catch (error) {
@@ -217,11 +376,18 @@ export const uploadCredential = async (req, res, next) => {
 // GET /credentials
 export const getMyCredentials = async (req, res, next) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
+    const page = clamp(parseInt(req.query.page) || 1, 1, 100000);
+    const limit = clamp(parseInt(req.query.limit) || 10, 1, 100);
     const skip = (page - 1) * limit;
-    const search = req.query.search || '';
-    const status = req.query.status; // verified, pending, failed
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim(); // verified, pending, failed
+    const credentialType = String(req.query.credentialType || '').trim();
+    const category = String(req.query.category || '').trim();
+    const issueDateFrom = req.query.issueDateFrom ? new Date(req.query.issueDateFrom) : null;
+    const issueDateTo = req.query.issueDateTo ? new Date(req.query.issueDateTo) : null;
+    const sortBy = String(req.query.sortBy || 'createdAt').trim();
+    const sortOrder = String(req.query.sortOrder || 'desc').trim().toLowerCase();
+    const includeAiInsights = req.query.includeAiInsights === 'true';
 
     // Build query
     const query = { userId: req.user.userId };
@@ -234,18 +400,80 @@ export const getMyCredentials = async (req, res, next) => {
     }
     
     if (status) {
+      if (!ALLOWED_STATUSES.has(status)) {
+        return res.status(400).json({ error: 'Invalid status filter' });
+      }
       query.verificationStatus = status;
     }
+    if (credentialType) {
+      if (!ALLOWED_CREDENTIAL_TYPES.has(credentialType)) {
+        return res.status(400).json({ error: 'Invalid credentialType filter' });
+      }
+      query.credentialType = credentialType;
+    }
+    if (category) {
+      query.category = { $regex: `^${category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' };
+    }
+    if (issueDateFrom || issueDateTo) {
+      query.issueDate = {};
+      if (issueDateFrom && !Number.isNaN(issueDateFrom.getTime())) {
+        query.issueDate.$gte = issueDateFrom;
+      }
+      if (issueDateTo && !Number.isNaN(issueDateTo.getTime())) {
+        query.issueDate.$lte = issueDateTo;
+      }
+    }
+    const resolvedSortBy = ALLOWED_SORT_FIELDS.has(sortBy) ? sortBy : 'createdAt';
+    const resolvedSortOrder = sortOrder === 'asc' ? 1 : -1;
 
-    const total = await Credential.countDocuments(query);
-    const credentials = await Credential.find(query)
-      .populate('issuerId', 'name')
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const selectFields = [
+      'userId', 'issuerId', 'title', 'description', 'credentialType', 'category',
+      'skills', 'tags', 'learningOutcomes', 'credits', 'nsqfLevel', 'issueDate',
+      'expiryDate', 'assessmentType', 'grade', 'score', 'durationHours', 'certificateUrl',
+      'evidenceUrls', 'source', 'verificationStatus', 'verificationNotes', 'revoked',
+      'revokeReason', 'createdAt', 'updatedAt',
+    ];
+    if (includeAiInsights) {
+      selectFields.push('aiInsights');
+    }
+
+    const [total, credentials, statusCounts] = await Promise.all([
+      Credential.countDocuments(query),
+      Credential.find(query)
+        .select(selectFields.join(' '))
+        .populate('issuerId', 'name')
+        .sort({ [resolvedSortBy]: resolvedSortOrder })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Credential.aggregate([
+        { $match: query },
+        { $group: { _id: '$verificationStatus', count: { $sum: 1 } } },
+      ]),
+    ]);
+
+    const counts = { pending: 0, verified: 0, failed: 0 };
+    for (const row of statusCounts) {
+      if (row?._id && Object.prototype.hasOwnProperty.call(counts, row._id)) {
+        counts[row._id] = row.count;
+      }
+    }
 
     res.json({
-      credentials,
+      credentials: credentials.map(buildCredentialResponse),
+      summary: {
+        total,
+        counts,
+      },
+      filtersApplied: {
+        status: status || null,
+        credentialType: credentialType || null,
+        category: category || null,
+        issueDateFrom: toIsoOrNull(issueDateFrom),
+        issueDateTo: toIsoOrNull(issueDateTo),
+        sortBy: resolvedSortBy,
+        sortOrder: resolvedSortOrder === 1 ? 'asc' : 'desc',
+      },
       pagination: {
         page,
         limit,
@@ -277,7 +505,7 @@ export const getCredentialById = async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    res.json(credential);
+    res.json(buildCredentialResponse(credential));
   } catch (error) {
     next(error);
   }
@@ -288,7 +516,25 @@ export const updateCredential = async (req, res, next) => {
   try {
     validateObjectId(req.params.id, 'Credential ID');
     
-    const { skills, title, credits, certificateUrl, issueDate } = req.body;
+    const {
+      skills,
+      title,
+      credits,
+      certificateUrl,
+      issueDate,
+      expiryDate,
+      description,
+      credentialType,
+      category,
+      tags,
+      learningOutcomes,
+      assessmentType,
+      grade,
+      score,
+      durationHours,
+      evidenceUrls,
+      source,
+    } = req.body;
     const credential = await Credential.findById(req.params.id);
 
     if (!credential) {
@@ -308,54 +554,98 @@ export const updateCredential = async (req, res, next) => {
       return res.status(400).json({ error: 'Cannot edit verified credentials' });
     }
 
-    // Store old credits for recalculation
-    const oldCredits = credential.credits;
-
     // Update allowed fields
-    if (skills) credential.skills = skills;
-    if (title) credential.title = title;
+    if (skills) credential.skills = sanitizeStringArray(skills, 30, 80);
+    if (title) credential.title = String(title).trim();
+    if (description !== undefined) credential.description = String(description || '').trim();
+    if (credentialType !== undefined) {
+      const normalizedCredentialType = String(credentialType || 'micro-credential').trim() || 'micro-credential';
+      if (!ALLOWED_CREDENTIAL_TYPES.has(normalizedCredentialType)) {
+        return res.status(400).json({ error: 'Invalid credentialType' });
+      }
+      credential.credentialType = normalizedCredentialType;
+    }
+    if (category !== undefined) credential.category = String(category || '').trim();
+    if (tags !== undefined) credential.tags = sanitizeStringArray(tags, 20, 50);
+    if (learningOutcomes !== undefined) credential.learningOutcomes = sanitizeStringArray(learningOutcomes, 20, 200);
+    if (assessmentType !== undefined) credential.assessmentType = String(assessmentType || '').trim();
+    if (grade !== undefined) credential.grade = String(grade || '').trim();
     if (certificateUrl) credential.certificateUrl = certificateUrl;
-    if (issueDate) credential.issueDate = new Date(issueDate);
+    if (issueDate) {
+      const parsedIssueDate = new Date(issueDate);
+      if (Number.isNaN(parsedIssueDate.getTime())) {
+        return res.status(400).json({ error: 'Issue date must be a valid date' });
+      }
+      credential.issueDate = parsedIssueDate;
+    }
+    if (expiryDate !== undefined) {
+      const parsedExpiryDate = expiryDate ? new Date(expiryDate) : null;
+      if (parsedExpiryDate && Number.isNaN(parsedExpiryDate.getTime())) {
+        return res.status(400).json({ error: 'Expiry date must be a valid date' });
+      }
+      credential.expiryDate = parsedExpiryDate;
+    }
+    if (durationHours !== undefined) credential.durationHours = Number.isFinite(Number(durationHours)) ? Number(durationHours) : null;
+    if (evidenceUrls !== undefined) credential.evidenceUrls = sanitizeStringArray(evidenceUrls, 10, 300);
+    if (score !== undefined) {
+      if (score && score.max !== undefined && Number(score.max) <= 0) {
+        return res.status(400).json({ error: 'Score max must be greater than 0' });
+      }
+      if (score && score.value !== undefined && score.max !== undefined && Number(score.value) > Number(score.max)) {
+        return res.status(400).json({ error: 'Score value cannot be greater than score max' });
+      }
+      credential.score = {
+        value: score && Number.isFinite(Number(score.value)) ? Number(score.value) : null,
+        max: score && Number.isFinite(Number(score.max)) ? Number(score.max) : null,
+      };
+    }
+    if (source !== undefined) {
+      credential.source = {
+        platform: String(source?.platform || '').trim(),
+        externalId: String(source?.externalId || '').trim(),
+        uploadMethod: String(source?.uploadMethod || 'manual').trim() || 'manual',
+      };
+    }
     
     // Validate and update credits if changed
-    if (credits !== undefined && credits !== oldCredits) {
-      if (!validateCredits(credits)) {
+    if (credits !== undefined) {
+      const normalizedCredits = Number(credits);
+      if (!validateCredits(normalizedCredits)) {
         return res.status(400).json({ 
           error: 'Invalid credits value. Must be an integer between 1 and 40' 
         });
       }
-      
-      // Recalculate total credits and NSQF level
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId });
-      if (learnerProfile) {
-        const creditDifference = credits - oldCredits;
-        const newTotalCredits = learnerProfile.totalCredits + creditDifference;
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        // Update credential NSQF level (backend-controlled)
-        credential.nsqfLevel = nsqfInfo.level;
-      }
-      
-      credential.credits = credits;
+
+      credential.credits = normalizedCredits;
+    }
+
+    if (credential.expiryDate && credential.issueDate && credential.expiryDate < credential.issueDate) {
+      return res.status(400).json({ error: 'Expiry date cannot be earlier than issue date' });
     }
 
     // IMPORTANT: nsqfLevel is NEVER taken from user input - always calculated
     // Remove any nsqfLevel from request body to prevent manipulation
 
+    // Refresh AI insights on update
+    const aiInsights = await analyzeCredentialMetadata({
+      title: credential.title,
+      description: credential.description,
+      providedSkills: credential.skills || [],
+      learningOutcomes: credential.learningOutcomes || [],
+      credentialType: credential.credentialType || 'micro-credential',
+      category: credential.category || '',
+    });
+    credential.aiInsights = aiInsights;
+
     await credential.save();
+
+    // Always recompute learner profile from verified credentials only.
+    await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
 
     // Populate issuer before returning
     await credential.populate('issuerId', 'name');
 
-    res.json(credential);
+    res.json(buildCredentialResponse(credential));
   } catch (error) {
     next(error);
   }
@@ -380,22 +670,10 @@ export const deleteCredential = async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Recalculate total credits after deletion
-    const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId });
-    if (learnerProfile && credential.credits) {
-      const newTotalCredits = Math.max(0, learnerProfile.totalCredits - credential.credits);
-      
-      // Recalculate NSQF level
-      const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-      
-      // Update learner profile
-      learnerProfile.totalCredits = newTotalCredits;
-      learnerProfile.nsqfLevel = nsqfInfo.level;
-      learnerProfile.levelName = nsqfInfo.levelName;
-      await learnerProfile.save();
-    }
-
     await Credential.findByIdAndDelete(req.params.id);
+
+    // Remove associated skills/credits immediately by recomputing from remaining verified credentials.
+    await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
 
     res.status(204).send();
   } catch (error) {
@@ -448,4 +726,3 @@ export const triggerVerification = async (req, res, next) => {
     next(error);
   }
 };
-

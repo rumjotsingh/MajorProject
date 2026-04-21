@@ -1,20 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Eye, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload, Image as ImageIcon, FileText, Calendar, Tag } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface BlogPost {
   _id: string;
   title: string;
+  slug: string;
   excerpt: string;
   content: string;
   category: string;
   coverImage: string;
+  author: string;
+  readTime: string;
   tags: string[];
   published: boolean;
   views: number;
+  publishedAt: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 const categories = ['Technology', 'Career', 'Education', 'Trends', 'Business', 'Inspiration'];
@@ -205,97 +212,197 @@ export default function AdminBlogPage() {
   };
 
   return (
-    <div className="p-6 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">Blog Management</h1>
-            <p className="text-gray-600">Create and manage blog posts</p>
-          </div>
-          <button
-            onClick={handleCreate}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700 flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            New Post
-          </button>
+    <div className="space-y-6 animate-fade-in max-w-7xl p-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Blog Management</h1>
+          <p className="text-muted-foreground">Create and manage blog posts</p>
         </div>
+        <Button onClick={handleCreate} className="gap-2">
+          <Plus className="h-4 w-4" />
+          New Post
+        </Button>
+      </div>
 
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-100">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Title
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Category
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Views
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {posts.map((post) => (
-                <tr key={post._id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 font-medium text-gray-900">{post.title}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                      {post.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleTogglePublish(post)}
-                      className={`px-3 py-1 text-xs rounded cursor-pointer ${
-                        post.published
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {post.published ? 'Published' : 'Draft'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-1 text-gray-600">
-                      <Eye className="h-3 w-3" />
-                      {post.views}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-gray-600">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => handleEdit(post)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(post._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="rounded-xl border-[rgba(0,0,0,0.1)] bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{posts.length}</p>
+              <p className="text-xs text-muted-foreground">Total Posts</p>
+            </div>
+          </div>
         </div>
+        <div className="rounded-xl border-[rgba(0,0,0,0.1)] bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <Eye className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{posts.filter(p => p.published).length}</p>
+              <p className="text-xs text-muted-foreground">Published</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border-[rgba(0,0,0,0.1)] bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{posts.filter(p => !p.published).length}</p>
+              <p className="text-xs text-muted-foreground">Drafts</p>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border-[rgba(0,0,0,0.1)] bg-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <Eye className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">{posts.reduce((sum, p) => sum + p.views, 0)}</p>
+              <p className="text-xs text-muted-foreground">Total Views</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Blog Posts Table */}
+      <div className="rounded-xl border-[rgba(0,0,0,0.1)] bg-card overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading blog posts...</p>
+            </div>
+          </div>
+        ) : posts.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-center px-6">
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-4">
+              <FileText className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="font-medium mb-2">No blog posts yet</p>
+            <p className="text-sm text-muted-foreground mb-4">Create your first blog post to get started</p>
+            <Button onClick={handleCreate} size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Post
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-muted/30">
+                  <tr className="border-b border-[rgba(0,0,0,0.06)]">
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Post
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Category
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Views
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[rgba(0,0,0,0.06)]">
+                  {posts.map((post) => (
+                    <tr key={post._id} className="hover:bg-muted/30 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <FileText className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-sm truncate">{post.title}</p>
+                            <p className="text-xs text-muted-foreground truncate">{post.excerpt}</p>
+                            {post.tags && post.tags.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {post.tags.slice(0, 2).map((tag, i) => (
+                                  <span key={i} className="text-[10px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <Badge variant="secondary" className="text-xs">
+                          {post.category}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4">
+                        <button
+                          onClick={() => handleTogglePublish(post)}
+                          className={`text-[10px] font-medium px-2 py-1 rounded-full transition-colors ${
+                            post.published
+                              ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200'
+                              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200'
+                          }`}
+                        >
+                          {post.published ? 'Published' : 'Draft'}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Eye className="h-3.5 w-3.5" />
+                          <span>{post.views || 0}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-3.5 w-3.5" />
+                            {new Date(post.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleEdit(post)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(post._id)}
+                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Create/Edit Dialog */}

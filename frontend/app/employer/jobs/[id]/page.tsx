@@ -20,23 +20,32 @@ interface Job {
   };
   status: string;
   createdAt: string;
+  applicationStats?: {
+    total: number;
+    applied: number;
+    shortlisted: number;
+    interviewing: number;
+    rejected: number;
+    hired: number;
+  };
 }
 
 interface Application {
   _id: string;
   learnerId: {
     _id: string;
-    userId: {
-      _id: string;
-      name: string;
-      email: string;
-    };
+    name: string;
+    email: string;
+  };
+  learnerProfile?: {
+    _id: string;
     nsqfLevel: number;
     totalCredits: number;
     skills: string[];
   };
   status: string;
   appliedAt: string;
+  credentials?: any[];
 }
 
 export default function EmployerJobDetailPage() {
@@ -46,6 +55,9 @@ export default function EmployerJobDetailPage() {
 
   const [job, setJob] = useState<Job | null>(null);
   const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationFilter, setApplicationFilter] = useState('all');
+  const [applicationPage, setApplicationPage] = useState(1);
+  const [applicationPages, setApplicationPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
@@ -57,7 +69,11 @@ export default function EmployerJobDetailPage() {
 
   useEffect(() => {
     fetchJobDetails();
-    fetchApplications();
+  }, [jobId]);
+
+  useEffect(() => {
+    setApplicationPage(1);
+    setApplicationFilter('all');
   }, [jobId]);
 
   const fetchJobDetails = async () => {
@@ -74,12 +90,24 @@ export default function EmployerJobDetailPage() {
 
   const fetchApplications = async () => {
     try {
-      const data = await employerApi.getJobApplications(jobId);
+      const params = new URLSearchParams();
+      params.append('page', String(applicationPage));
+      params.append('limit', '10');
+      if (applicationFilter !== 'all') {
+        params.append('status', applicationFilter);
+      }
+
+      const data = await employerApi.getJobApplications(jobId, params);
       setApplications(data.applications || []);
+      setApplicationPages(data.pagination?.pages || 1);
     } catch (error) {
       console.error('Error fetching applications:', error);
     }
   };
+
+  useEffect(() => {
+    fetchApplications();
+  }, [jobId, applicationFilter, applicationPage]);
 
   const handleUpdateApplicationStatus = async (applicationId: string, status: string) => {
     try {
@@ -247,12 +275,43 @@ export default function EmployerJobDetailPage() {
             </div>
           </div>
 
+          {job.applicationStats && (
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 mb-6">
+              <div className="px-3 py-2 rounded bg-gray-100 text-xs text-gray-700">Total: {job.applicationStats.total || 0}</div>
+              <div className="px-3 py-2 rounded bg-yellow-100 text-xs text-yellow-800">Applied: {job.applicationStats.applied || 0}</div>
+              <div className="px-3 py-2 rounded bg-blue-100 text-xs text-blue-800">Shortlisted: {job.applicationStats.shortlisted || 0}</div>
+              <div className="px-3 py-2 rounded bg-indigo-100 text-xs text-indigo-800">Interviewing: {job.applicationStats.interviewing || 0}</div>
+              <div className="px-3 py-2 rounded bg-red-100 text-xs text-red-800">Rejected: {job.applicationStats.rejected || 0}</div>
+              <div className="px-3 py-2 rounded bg-green-100 text-xs text-green-800">Hired: {job.applicationStats.hired || 0}</div>
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-2 mb-6">
+            {['all', 'applied', 'shortlisted', 'interviewing', 'hired', 'rejected', 'withdrawn'].map((status) => (
+              <button
+                key={status}
+                onClick={() => {
+                  setApplicationFilter(status);
+                  setApplicationPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+                  applicationFilter === status
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </button>
+            ))}
+          </div>
+
           {applications.length > 0 ? (
             <div className="space-y-4">
               {applications.map((application) => {
                 const learner = application.learnerId;
-                const learnerName = learner?.userId?.name || 'Unknown';
-                const learnerEmail = learner?.userId?.email || '';
+                const profile = application.learnerProfile;
+                const learnerName = learner?.name || 'Unknown';
+                const learnerEmail = learner?.email || '';
                 
                 return (
                   <div key={application._id} className="p-4 bg-gray-50 rounded-lg">
@@ -267,23 +326,23 @@ export default function EmployerJobDetailPage() {
                         <p className="text-sm text-gray-600 mb-2">{learnerEmail}</p>
                         
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span>NSQF Level {learner?.nsqfLevel || 0}</span>
+                          <span>NSQF Level {profile?.nsqfLevel || 0}</span>
                           <span>•</span>
-                          <span>{learner?.totalCredits || 0} credits</span>
+                          <span>{profile?.totalCredits || 0} credits</span>
                           <span>•</span>
                           <span>Applied {new Date(application.appliedAt).toLocaleDateString()}</span>
                         </div>
 
-                        {learner?.skills && learner.skills.length > 0 && (
+                        {profile?.skills && profile.skills.length > 0 && (
                           <div className="flex flex-wrap gap-2">
-                            {learner.skills.slice(0, 5).map((skill, index) => (
+                            {profile.skills.slice(0, 5).map((skill, index) => (
                               <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                                 {skill}
                               </span>
                             ))}
-                            {learner.skills.length > 5 && (
+                            {profile.skills.length > 5 && (
                               <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs">
-                                +{learner.skills.length - 5} more
+                                +{profile.skills.length - 5} more
                               </span>
                             )}
                           </div>
@@ -324,7 +383,7 @@ export default function EmployerJobDetailPage() {
                           </>
                         )}
                         <button
-                          onClick={() => router.push(`/employer/learners/${learner?.userId?._id}`)}
+                          onClick={() => router.push(`/employer/learners/${learner?._id}`)}
                           className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
                         >
                           View Profile
@@ -334,6 +393,28 @@ export default function EmployerJobDetailPage() {
                   </div>
                 );
               })}
+
+              <div className="flex items-center justify-between pt-2 border-t">
+                <p className="text-sm text-gray-600">
+                  Page {applicationPage} of {Math.max(1, applicationPages)}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                    disabled={applicationPage <= 1}
+                    onClick={() => setApplicationPage((prev) => Math.max(1, prev - 1))}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    className="px-3 py-1.5 border rounded-lg text-sm disabled:opacity-50"
+                    disabled={applicationPage >= applicationPages}
+                    onClick={() => setApplicationPage((prev) => Math.min(applicationPages, prev + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center py-12">

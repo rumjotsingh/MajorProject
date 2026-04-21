@@ -30,6 +30,7 @@ router.put('/jobs/:id', employerAuth, employerController.updateJob);
 router.delete('/jobs/:id', employerAuth, employerController.deleteJob);
 
 // ==================== JOB APPLICATIONS ====================
+router.get('/applications', employerAuth, employerController.getAllApplications);
 router.get('/jobs/:id/applications', employerAuth, employerController.getJobApplications);
 router.patch('/applications/:id/status', employerAuth, employerController.updateApplicationStatus);
 

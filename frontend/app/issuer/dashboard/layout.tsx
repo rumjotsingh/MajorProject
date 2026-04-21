@@ -8,7 +8,7 @@ export default function IssuerDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden bg-muted/30">
       <CollapsibleSidebar role="issuer" />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header />

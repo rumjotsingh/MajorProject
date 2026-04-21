@@ -118,6 +118,8 @@ export const adminApi = {
   getNSQFMappings: (params?: URLSearchParams) => 
     adminRequest(`/nsqf/mappings${params ? `?${params}` : ''}`),
   createNSQFMapping: (data: any) => adminRequest('/nsqf/map', { method: 'POST', body: data }),
+  updateNSQFMapping: (id: string, data: any) => 
+    adminRequest(`/nsqf/mappings/${id}`, { method: 'PUT', body: data }),
   deleteNSQFMapping: (id: string) => adminRequest(`/nsqf/mappings/${id}`, { method: 'DELETE' }),
 };
 

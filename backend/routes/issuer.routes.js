@@ -15,6 +15,8 @@ router.get('/profile', authenticate, authorize('Issuer'), issuerController.getIs
 router.put('/profile', authenticate, authorize('Issuer'), issuerController.updateIssuerProfile);
 router.get('/learners', authenticate, authorize('Issuer'), issuerController.getIssuerLearners);
 router.get('/learners/:id', authenticate, authorize('Issuer'), issuerController.getLearnerDetails);
+router.post('/learners/:id/block', authenticate, authorize('Issuer'), issuerController.blockLearner);
+router.post('/learners/:id/unblock', authenticate, authorize('Issuer'), issuerController.unblockLearner);
 router.get('/pending-verifications', authenticate, authorize('Issuer'), issuerController.getPendingVerifications);
 router.put('/verify/:credentialId', authenticate, authorize('Issuer'), issuerController.verifyCredential);
 

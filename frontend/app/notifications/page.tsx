@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bell, CheckCircle, Award, Briefcase, AlertCircle, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import api from "@/lib/api";
 import { initializeSocket, disconnectSocket } from "@/lib/socket";
 import { authService } from "@/lib/auth";
@@ -207,7 +207,7 @@ export default function NotificationsPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.03 }}
                   onClick={() => !notification.read && markAsRead(notification._id)}
-                  className={`flex items-start gap-4 p-4 rounded-lg border transition-all cursor-pointer ${
+                  className={`flex items-start gap-4 p-4 rounded-xl border transition-all cursor-pointer ${
                     notification.read
                       ? "bg-background hover:bg-accent/50"
                       : "bg-primary/5 hover:bg-primary/10 border-primary/20"

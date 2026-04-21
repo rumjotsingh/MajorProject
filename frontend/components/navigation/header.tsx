@@ -1,7 +1,6 @@
 "use client";
 
-import { Bell, Search, Moon, Sun, Globe, Command } from "lucide-react";
-import { useTheme } from "next-themes";
+import { Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,75 +14,72 @@ import {
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
 import Link from "next/link";
+import { NotificationPanel } from "@/components/ui/notification-panel";
+import { RoleBasedSearch } from "@/components/ui/role-based-search";
 
-interface UserData {
-  name: string;
-  email: string;
+interface UserData { 
+  name: string; 
+  email: string; 
+  role: "Learner" | "Employer" | "Issuer" | "Admin";
 }
 
 export function Header() {
-  const { theme, setTheme } = useTheme();
-  const [userData, setUserData] = useState<UserData>({ name: "User", email: "" });
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [userData, setUserData] = useState<UserData>({ 
+    name: "User", 
+    email: "", 
+    role: "Learner" 
+  });
 
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const response = await api.get("/auth/me");
-        setUserData({
-          name: response.data.name || "User",
-          email: response.data.email || "",
-        });
-      } catch (error) {
-        // silent fail
-      }
-    };
-    loadUserData();
-  }, []);
-
-  useEffect(() => {
-    const loadUnreadCount = async () => {
-      try {
-        const response = await api.get("/notifications");
-        const notifications = response.data || [];
-        setUnreadCount(notifications.filter((n: any) => !n.read).length);
-      } catch (error) {
-        // silent fail
-      }
-    };
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000);
-    return () => clearInterval(interval);
+    api.get("/auth/me")
+      .then(r => setUserData({ 
+        name: r.data.name || "User", 
+        email: r.data.email || "",
+        role: r.data.role || "Learner"
+      }))
+      .catch(() => {});
   }, []);
 
   const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
+    name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+
+  const getProfileLink = (role: string) => {
+    switch (role) {
+      case "Employer": return "/employer/profile";
+      case "Issuer": return "/issuer/profile";
+      case "Admin": return "/admin/profile";
+      default: return "/profile";
+    }
+  };
+
+  const getSettingsLink = (role: string) => {
+    switch (role) {
+      case "Employer": return "/employer/settings";
+      case "Issuer": return "/issuer/settings";
+      case "Admin": return "/admin/settings";
+      default: return "/settings";
+    }
+  };
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur-2xl">
+    <header className="sticky top-0 z-40 border-b border-whisper bg-white/80 backdrop-blur-xl">
       <div className="flex h-14 items-center gap-4 px-6">
-        {/* Search */}
-        <div className="flex-1 flex items-center gap-3">
-          <button className="flex items-center gap-3 h-9 w-full max-w-sm px-3 rounded-xl bg-muted/50 border border-transparent hover:border-border text-muted-foreground text-sm transition-all duration-200 cursor-pointer">
-            <Search className="h-4 w-4 flex-shrink-0" />
-            <span className="flex-1 text-left">Search credentials, skills...</span>
-            <kbd className="hidden sm:inline-flex h-5 items-center gap-1 rounded-md border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
-              <Command className="h-3 w-3" />K
-            </kbd>
-          </button>
+        {/* Role-Based Global Search */}
+        <div className="flex-1">
+          <RoleBasedSearch role={userData.role.toLowerCase() as "learner" | "employer" | "issuer" | "admin"} />
         </div>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1">
           {/* Language */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-micro hover:bg-warm-white">
                 <Globe className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel className="text-xs">Language</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-caption">Language</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>English</DropdownMenuItem>
               <DropdownMenuItem>हिंदी</DropdownMenuItem>
@@ -92,64 +88,39 @@ export function Header() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-9 w-9 rounded-xl"
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          </Button>
-
           {/* Notifications */}
-          <Link href="/notifications">
-            <Button variant="ghost" size="icon" className="relative h-9 w-9 rounded-xl">
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-background" />
-              )}
-            </Button>
-          </Link>
+          <NotificationPanel />
 
-          {/* Divider */}
-          <div className="h-6 w-px bg-border mx-1" />
+          <div className="h-6 w-px bg-border/60 mx-1" />
 
           {/* Profile */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                <Avatar className="h-8 w-8 ring-2 ring-primary/10">
+              <Button variant="ghost" className="h-9 w-9 rounded-full p-0 hover:ring-2 hover:ring-notion-blue/20">
+                <Avatar className="h-8 w-8 border-whisper">
                   <AvatarImage src="" alt={userData.name} />
-                  <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xs font-semibold">
+                  <AvatarFallback className="bg-notion-blue text-white text-badge font-semibold">
                     {getInitials(userData.name)}
                   </AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 mt-1">
+            <DropdownMenuContent align="end" className="w-52 mt-1">
               <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-semibold">{userData.name}</p>
-                  <p className="text-xs text-muted-foreground">{userData.email}</p>
-                </div>
+                <p className="text-body-semibold">{userData.name}</p>
+                <p className="text-caption text-warm-gray-500">{userData.email}</p>
+                <p className="text-caption text-notion-blue font-medium">{userData.role}</p>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="cursor-pointer">Profile</Link>
+                <Link href={getProfileLink(userData.role)}>Profile</Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/settings" className="cursor-pointer">Settings</Link>
+                <Link href={getSettingsLink(userData.role)}>Settings</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive cursor-pointer"
-                onClick={() => {
-                  localStorage.clear();
-                  window.location.href = "/login";
-                }}
-              >
+              <DropdownMenuItem className="text-orange focus:text-orange"
+                onClick={() => { localStorage.clear(); window.location.href = "/login"; }}>
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -6,7 +6,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-import { createClient } from 'redis';
 import logger from './utils/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import { configureCloudinary } from './config/cloudinary.js';
@@ -28,6 +27,7 @@ import recommendationRoutes from './routes/recommendation.routes.js';
 import paymentRoutes from './routes/payment.routes.js';
 import blogRoutes from './routes/blog.routes.js';
 import contactRoutes from './routes/contact.routes.js';
+import searchRoutes from './routes/search.routes.js';
 
 dotenv.config();
 
@@ -76,24 +76,6 @@ io.on('connection', (socket) => {
 app.locals.io = io;
 app.locals.connectedUsers = connectedUsers;
 
-// Redis client setup (optional)
-let redisClient;
-if (process.env.REDIS_URL) {
-  (async () => {
-    try {
-      redisClient = createClient({ url: process.env.REDIS_URL });
-      redisClient.on('error', (err) => logger.warn('Redis Client Error (continuing without Redis):', err.message));
-      await redisClient.connect();
-      logger.info('Redis connected successfully');
-      app.locals.redis = redisClient;
-    } catch (error) {
-      logger.warn('Redis connection failed, continuing without cache:', error.message);
-    }
-  })();
-} else {
-  logger.info('Redis URL not configured, skipping Redis connection');
-}
-
 // Middleware
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || 'https://major-project-rho-vert.vercel.app', credentials: true }));
@@ -124,6 +106,7 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/blog', blogRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/search', searchRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -154,7 +137,6 @@ mongoose
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM received, shutting down gracefully');
-  if (redisClient) await redisClient.quit();
   await mongoose.connection.close();
   process.exit(0);
 });

@@ -1,6 +1,4 @@
 import rateLimit from 'express-rate-limit';
-import RedisStore from 'rate-limit-redis';
-import { createClient } from 'redis';
 
 export const createRateLimiter = (options = {}) => {
   const config = {
@@ -11,17 +9,6 @@ export const createRateLimiter = (options = {}) => {
     legacyHeaders: false,
     ...options,
   };
-
-  // Use Redis store if available
-  if (process.env.REDIS_URL) {
-    const client = createClient({ url: process.env.REDIS_URL });
-    client.connect().catch(console.error);
-
-    config.store = new RedisStore({
-      client,
-      prefix: 'rl:',
-    });
-  }
 
   return rateLimit(config);
 };

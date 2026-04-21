@@ -1,6 +1,7 @@
 import Credential from '../models/Credential.model.js';
 import Verification from '../models/Verification.model.js';
 import logger from '../utils/logger.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from './profile-sync.service.js';
 
 class VerificationService {
   /**
@@ -32,6 +33,8 @@ class VerificationService {
       credential.verificationNotes = resultDetails;
       await credential.save();
 
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId);
+
       logger.info(`Credential ${credentialId} verified successfully`);
 
       return verification;
@@ -47,10 +50,14 @@ class VerificationService {
       });
 
       // Update credential
-      await Credential.findByIdAndUpdate(credentialId, {
+      const updatedCredential = await Credential.findByIdAndUpdate(credentialId, {
         verificationStatus: 'failed',
         verificationNotes: error.message,
-      });
+      }, { new: true });
+
+      if (updatedCredential?.userId) {
+        await recomputeLearnerProfileFromVerifiedCredentials(updatedCredential.userId);
+      }
 
       throw error;
     }

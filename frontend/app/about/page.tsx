@@ -2,7 +2,6 @@
 
 import { LandingNav } from "@/components/landing/landing-nav";
 import { LandingFooter } from "@/components/landing/landing-footer";
-import { BackToHome } from "@/components/back-to-home";
 import { motion } from "framer-motion";
 import { Award, Target, Users, Zap } from "lucide-react";
 
@@ -31,34 +30,40 @@ const values = [
 
 export default function AboutPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-warm-white">
       <LandingNav />
-      <BackToHome />
 
       <main className="flex-1">
         {/* Hero */}
-        <section className="container py-16 md:py-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mx-auto max-w-3xl text-center space-y-4 md:space-y-6 mb-12 md:mb-16 px-4"
-          >
-            <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold tracking-tighter">
-              About <span className="text-primary">CredMatrix</span>
-            </h1>
-            <p className="text-base md:text-lg lg:text-xl text-muted-foreground">
-              We're building the future of credential management and skill verification,
-              empowering learners to showcase their true potential.
-            </p>
-          </motion.div>
+        <section className="relative border-b border-whisper">
+          <div className="container py-20 md:py-28">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mx-auto max-w-3xl text-center space-y-6 px-4"
+            >
+              <h1 className="text-display-large md:text-display-xlarge font-bold text-near-black">
+                About CredMatrix
+              </h1>
+              <p className="text-body-large text-warm-gray-500 leading-relaxed">
+                We're building the future of credential management and skill verification,
+                empowering learners to showcase their true potential.
+              </p>
+            </motion.div>
+          </div>
         </section>
 
         {/* Story */}
-        <section className="bg-muted/30 py-24">
+        <section className="border-b border-whisper py-20 md:py-28">
           <div className="container">
-            <div className="mx-auto max-w-3xl space-y-8">
-              <h2 className="text-3xl font-bold">Our Story</h2>
-              <div className="space-y-4 text-lg text-muted-foreground">
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mx-auto max-w-3xl space-y-8"
+            >
+              <h2 className="text-display-medium font-bold text-near-black">Our Story</h2>
+              <div className="space-y-6 text-body-large text-warm-gray-500 leading-relaxed">
                 <p>
                   CredMatrix was founded with a simple yet powerful vision: to create a world where
                   every skill, every achievement, and every learning milestone can be easily verified
@@ -74,19 +79,24 @@ export default function AboutPage() {
                   a unified ecosystem that values lifelong learning and skill development.
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </section>
 
         {/* Values */}
-        <section className="container py-24">
-          <div className="text-center space-y-4 mb-16">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl">Our Values</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+        <section className="container py-20 md:py-28">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-4 mb-16"
+          >
+            <h2 className="text-display-medium font-bold text-near-black">Our Values</h2>
+            <p className="text-body-large text-warm-gray-500 max-w-2xl mx-auto">
               The principles that guide everything we do
             </p>
-          </div>
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          </motion.div>
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
             {values.map((value, i) => (
               <motion.div
                 key={i}
@@ -94,34 +104,39 @@ export default function AboutPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.1 }}
                 viewport={{ once: true }}
-                className="text-center space-y-4"
+                className="text-center space-y-4 p-6 rounded-standard bg-white border border-whisper hover:shadow-notion transition-all duration-200"
               >
-                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                  <value.icon className="h-8 w-8 text-primary" />
+                <div className="mx-auto w-14 h-14 rounded-standard bg-notion-blue/10 flex items-center justify-center">
+                  <value.icon className="h-7 w-7 text-notion-blue" />
                 </div>
-                <h3 className="text-xl font-semibold">{value.title}</h3>
-                <p className="text-muted-foreground">{value.description}</p>
+                <h3 className="text-body-large font-semibold text-near-black">{value.title}</h3>
+                <p className="text-body text-warm-gray-500">{value.description}</p>
               </motion.div>
             ))}
           </div>
         </section>
 
         {/* Stats */}
-        <section className="bg-muted/30 py-24">
+        <section className="border-t border-whisper bg-white py-20 md:py-28">
           <div className="container">
-            <div className="grid gap-8 md:grid-cols-3 text-center">
-              <div>
-                <div className="text-4xl font-bold text-primary mb-2">2024</div>
-                <div className="text-muted-foreground">Founded</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-primary mb-2">50K+</div>
-                <div className="text-muted-foreground">Active Users</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-primary mb-2">500+</div>
-                <div className="text-muted-foreground">Partner Institutions</div>
-              </div>
+            <div className="grid gap-12 md:grid-cols-3 text-center max-w-4xl mx-auto">
+              {[
+                { value: "2024", label: "Founded" },
+                { value: "50K+", label: "Active Users" },
+                { value: "500+", label: "Partner Institutions" },
+              ].map((stat, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 }}
+                  viewport={{ once: true }}
+                  className="space-y-2"
+                >
+                  <div className="text-display-large font-bold text-notion-blue">{stat.value}</div>
+                  <div className="text-body text-warm-gray-500">{stat.label}</div>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>

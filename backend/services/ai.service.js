@@ -1,79 +1,86 @@
 import axios from 'axios';
 import logger from '../utils/logger.js';
-import dotenv from "dotenv"
+import dotenv from 'dotenv';
 dotenv.config();
-// Hugging Face Router API (2026 migration)
-// NOTE: Many models are not available on serverless HF Inference provider
-// The system uses comprehensive fallback recommendations when AI is unavailable
-const HF_MODEL = "google/flan-t5-base";
 
-const HF_API = `https://api-inference.huggingface.co/models/${HF_MODEL}`;
-// Flag to disable AI attempts if model is not available
-const AI_AVAILABLE = false; // Set to true when a working model is confirmed
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://127.0.0.1:11434';
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen3.5:2b';
+
+const safeJsonParse = (text) => {
+  try {
+    return JSON.parse(text);
+  } catch {
+    const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    if (!match) {
+      return null;
+    }
+    try {
+      return JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
+  }
+};
+
+const sanitizeStringList = (items, maxItems = 5) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean)
+    .slice(0, maxItems);
+};
+
+const requestOllamaText = async (prompt) => {
+  const response = await axios.post(
+    `${OLLAMA_BASE_URL}/api/generate`,
+    {
+      model: OLLAMA_MODEL,
+      prompt,
+      stream: false,
+    },
+    {
+      timeout: Number(process.env.OLLAMA_TIMEOUT_MS || 120000),
+    }
+  );
+
+  return {
+    text: response?.data?.response || '',
+    usageMetadata: null,
+    modelVersion: response?.data?.model || OLLAMA_MODEL,
+    responseId: null,
+  };
+};
+
+const requestAIText = async (prompt) => {
+  const result = await requestOllamaText(prompt);
+
+  return {
+    ...result,
+    provider: 'ollama',
+  };
+};
 
 /**
- * Generate AI response using Hugging Face API
+ * Generate AI response using Ollama
  * @param {string} prompt - The prompt to send to the AI
  * @returns {Promise<string>} - Generated text response
  */
 export const generateAIResponse = async (prompt) => {
-  // Skip AI if not available (model not deployed on serverless provider)
-  if (!AI_AVAILABLE) {
-    throw new Error('AI model not available on serverless provider');
-  }
-
   try {
-    if (!HF_API_KEY) {
-      throw new Error('HF_API_KEY not configured');
+    const result = await requestAIText(prompt);
+    if (!result.text) {
+      throw new Error('Empty response from AI provider');
     }
-
-    const response = await axios.post(
-      HF_API,
-      { 
-        inputs: prompt,
-        parameters: {
-          max_new_tokens: 150,
-          temperature: 0.7,
-          do_sample: true,
-        },
-        options: {
-          wait_for_model: true,
-        }
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${HF_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 30000,
-      }
-    );
-
-    // Handle response format from router API
-    if (Array.isArray(response.data)) {
-      if (response.data[0]?.generated_text) {
-        return response.data[0].generated_text;
-      }
-    } else if (response.data?.generated_text) {
-      return response.data.generated_text;
-    } else if (typeof response.data === 'string') {
-      return response.data;
-    }
-
-    throw new Error('Invalid response format from AI service');
+    return result.text;
   } catch (error) {
-    if (error.response) {
-      logger.error('AI Service Error:', {
-        status: error.response.status,
-        data: error.response.data,
-        timestamp: new Date().toISOString(),
-      });
-    } else if (error.message !== 'AI model not available on serverless provider') {
-      logger.error('AI Service Error:', {
-        message: error.message,
-        timestamp: new Date().toISOString(),
-      });
-    }
+    logger.error('AI Service Error:', {
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      provider: 'ollama',
+    });
     throw error;
   }
 };
@@ -83,24 +90,294 @@ export const generateAIResponse = async (prompt) => {
  * @param {string} credentialText - Text describing the credential
  * @returns {Promise<string[]>} - Array of extracted skills
  */
-export const extractSkills = async (credentialText) => {
-  const prompt = `Extract technical skills from this credential description. Return only skill names separated by commas:
-  
-Credential: ${credentialText}
+export const extractSkillsVerified = async (certificateText) => {
+  if (!certificateText || typeof certificateText !== 'string' || certificateText.trim().length === 0) {
+    return {
+      skills: [],
+      valid: false,
+      reason: 'No certificate or insufficient data',
+    };
+  }
 
-Skills:`;
+  const prompt = `You are a strict verification-based skill extraction system.
+
+Rules:
+1. Only extract skills if they are clearly mentioned in the certificate.
+2. If no certificate or no valid content is provided, return an empty skills array.
+3. Do NOT guess or assume skills.
+4. Do NOT add generic skills.
+
+Input:
+${certificateText}
+
+Output JSON:
+{
+  "skills": [],
+  "valid": true/false,
+  "reason": "No certificate or insufficient data" (if empty)
+}`;
 
   try {
     const response = await generateAIResponse(prompt);
-    const skills = response
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => s.length > 0 && s.length < 50);
-    
-    return skills;
+    const parsed = safeJsonParse(response);
+
+    const extractedSkills = sanitizeStringList(parsed?.skills, 25)
+      .filter((skill) => skill.length < 60);
+
+    const hasSkills = extractedSkills.length > 0;
+
+    return {
+      skills: extractedSkills,
+      valid: hasSkills ? true : Boolean(parsed?.valid) && false,
+      reason: hasSkills
+        ? undefined
+        : (typeof parsed?.reason === 'string' && parsed.reason.trim())
+          ? parsed.reason.trim()
+          : 'No certificate or insufficient data',
+    };
   } catch (error) {
-    // Silent fail for optional AI feature
-    return [];
+    return {
+      skills: [],
+      valid: false,
+      reason: 'No certificate or insufficient data',
+    };
+  }
+};
+
+export const extractSkills = async (credentialText) => {
+  const result = await extractSkillsVerified(credentialText);
+  return result.skills;
+};
+
+export const analyzeCredentialMetadata = async ({
+  title,
+  description,
+  providedSkills = [],
+  learningOutcomes = [],
+  credentialType = 'micro-credential',
+  category = '',
+}) => {
+  const normalizedSkills = sanitizeStringList(providedSkills, 30);
+  const normalizedOutcomes = sanitizeStringList(learningOutcomes, 12);
+  const inputText = [
+    `Title: ${title || ''}`,
+    `Type: ${credentialType || ''}`,
+    `Category: ${category || ''}`,
+    `Description: ${description || ''}`,
+    `Provided skills: ${normalizedSkills.join(', ')}`,
+    `Learning outcomes: ${normalizedOutcomes.join('; ')}`,
+  ].join('\n');
+
+  if (!String(title || description || '').trim()) {
+    return {
+      summary: '',
+      extractedSkills: normalizedSkills,
+      suggestedCareerPaths: [],
+      confidence: null,
+      provider: 'ollama',
+      model: OLLAMA_MODEL,
+      status: 'failed',
+      reason: 'Insufficient credential content for AI analysis',
+      analyzedAt: new Date(),
+    };
+  }
+
+  const prompt = `You are an AI assistant for a micro-credential platform.
+Analyze this credential metadata and return strict JSON only:
+{
+  "summary": "1-2 sentence summary",
+  "extractedSkills": ["skill1", "skill2"],
+  "suggestedCareerPaths": ["role1", "role2"],
+  "confidence": 0.0
+}
+
+Rules:
+- Keep extractedSkills max 20
+- Keep suggestedCareerPaths max 5
+- confidence must be between 0 and 1
+- Do not include markdown
+
+Input:
+${inputText}`;
+
+  try {
+    const result = await requestAIText(prompt);
+    const parsed = safeJsonParse(result.text) || {};
+    const confidenceValue = Number(parsed?.confidence);
+
+    return {
+      summary: typeof parsed?.summary === 'string' ? parsed.summary.trim().slice(0, 500) : '',
+      extractedSkills: sanitizeStringList(parsed?.extractedSkills, 20),
+      suggestedCareerPaths: sanitizeStringList(parsed?.suggestedCareerPaths, 5),
+      confidence: Number.isFinite(confidenceValue)
+        ? Math.max(0, Math.min(1, confidenceValue))
+        : null,
+      provider: result.provider,
+      model: result.modelVersion,
+      status: 'success',
+      reason: '',
+      analyzedAt: new Date(),
+    };
+  } catch (error) {
+    return {
+      summary: '',
+      extractedSkills: normalizedSkills,
+      suggestedCareerPaths: [],
+      confidence: null,
+      provider: 'ollama',
+      model: OLLAMA_MODEL,
+      status: 'failed',
+      reason: error?.message || 'AI analysis failed',
+      analyzedAt: new Date(),
+    };
+  }
+};
+
+export const isAIConfigured = () => {
+  return true;
+};
+
+export const generateUnifiedRecommendations = async ({
+  careerPath,
+  userSkills,
+  skillGaps,
+  nsqfLevel,
+  totalCredentials,
+  totalCredits,
+}) => {
+  const skillSummary = userSkills
+    .slice(0, 12)
+    .map((skill) => `${skill.name} (Level ${skill.level})`)
+    .join(', ');
+
+  const gapsSummary = skillGaps
+    .slice(0, 8)
+    .map((gap) => `${gap.name}: current ${gap.current}, target ${gap.required}`)
+    .join('; ');
+
+  const prompt = `You are an AI career advisor for a credential platform.
+Generate concise and practical recommendations.
+
+User context:
+- Target career path: ${careerPath || 'Not specified'}
+- NSQF level: ${nsqfLevel}
+- Total credentials: ${totalCredentials}
+- Total credits: ${totalCredits}
+- Current skills: ${skillSummary || 'None'}
+- Skill gaps: ${gapsSummary || 'No major gaps'}
+
+Return ONLY JSON with this exact shape:
+{
+  "careerRoles": ["..."],
+  "courses": [{"title": "...", "platform": "...", "targetSkill": "...", "duration": "..."}],
+  "projects": [{"title": "...", "difficulty": "Beginner|Intermediate|Advanced", "skills": ["..."], "estimatedTime": "..."}],
+  "recommendedJobs": [{"title": "...", "matchScore": 0, "salaryRange": "...", "whyMatch": "..."}],
+  "recommendedCertifications": [{"name": "...", "provider": "...", "level": "...", "reason": "..."}],
+  "portfolioSuggestions": ["..."],
+  "skillMapInsights": ["..."],
+  "summary": "..."
+}
+
+Rules:
+- careerRoles: max 5
+- courses: max 5
+- projects: max 5
+- recommendedJobs: max 6
+- recommendedCertifications: max 6
+- portfolioSuggestions: max 6
+- skillMapInsights: max 6
+- Keep text short and actionable.`;
+  try {
+    const result = await requestAIText(prompt);
+    console.log('Raw AI response:', result.text); 
+    const parsed = safeJsonParse(result.text) || {};
+
+    const courses = Array.isArray(parsed.courses)
+      ? parsed.courses
+          .map((course) => ({
+            title: String(course?.title || '').trim(),
+            platform: String(course?.platform || 'Online Platform').trim(),
+            targetSkill: String(course?.targetSkill || '').trim(),
+            duration: String(course?.duration || '').trim(),
+          }))
+          .filter((course) => course.title)
+          .slice(0, 5)
+      : [];
+
+    const projects = Array.isArray(parsed.projects)
+      ? parsed.projects
+          .map((project) => ({
+            title: String(project?.title || '').trim(),
+            difficulty: ['Beginner', 'Intermediate', 'Advanced'].includes(project?.difficulty)
+              ? project.difficulty
+              : 'Intermediate',
+            skills: sanitizeStringList(project?.skills, 6),
+            estimatedTime: String(project?.estimatedTime || '').trim(),
+          }))
+          .filter((project) => project.title)
+          .slice(0, 5)
+      : [];
+
+    const recommendedJobs = Array.isArray(parsed.recommendedJobs)
+      ? parsed.recommendedJobs
+          .map((job) => ({
+            title: String(job?.title || '').trim(),
+            matchScore: Number(job?.matchScore) || 0,
+            salaryRange: String(job?.salaryRange || '').trim(),
+            whyMatch: String(job?.whyMatch || '').trim(),
+          }))
+          .filter((job) => job.title)
+          .slice(0, 6)
+      : [];
+
+    const recommendedCertifications = Array.isArray(parsed.recommendedCertifications)
+      ? parsed.recommendedCertifications
+          .map((cert) => ({
+            name: String(cert?.name || '').trim(),
+            provider: String(cert?.provider || '').trim(),
+            level: String(cert?.level || '').trim(),
+            reason: String(cert?.reason || '').trim(),
+          }))
+          .filter((cert) => cert.name)
+          .slice(0, 6)
+      : [];
+
+    return {
+      careerRoles: sanitizeStringList(parsed.careerRoles, 5),
+      courses,
+      projects,
+      recommendedJobs,
+      recommendedCertifications,
+      portfolioSuggestions: sanitizeStringList(parsed.portfolioSuggestions, 6),
+      skillMapInsights: sanitizeStringList(parsed.skillMapInsights, 6),
+      summary: typeof parsed.summary === 'string' ? parsed.summary.trim() : '',
+      aiMetadata: {
+        provider: result.provider,
+        model: result.modelVersion,
+        responseId: result.responseId,
+        usageMetadata: result.usageMetadata,
+      },
+    };
+  } catch (error) {
+    return {
+      careerRoles: [],
+      courses: [],
+      projects: [],
+      recommendedJobs: [],
+      recommendedCertifications: [],
+      portfolioSuggestions: [],
+      skillMapInsights: [],
+      summary: '',
+      aiMetadata: {
+        provider: 'ollama',
+        model: OLLAMA_MODEL,
+        responseId: null,
+        usageMetadata: null,
+        status: 'failed',
+        reason: error?.message || 'AI recommendation generation failed',
+        analyzedAt: new Date(),
+      },
+    };
   }
 };
 
@@ -232,6 +509,8 @@ export default {
   generateAIResponse,
   extractSkills,
   analyzeSkillLevel,
+  isAIConfigured,
+  generateUnifiedRecommendations,
   generateCareerRecommendations,
   generateCourseRecommendations,
   generateProjectRecommendations,

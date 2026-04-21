@@ -63,7 +63,9 @@ export const employerApi = {
   deleteJob: (id: string) => employerRequest(`/jobs/${id}`, { method: 'DELETE' }),
 
   // Applications
-  getJobApplications: (jobId: string) => employerRequest(`/jobs/${jobId}/applications`),
+  getApplications: (params?: URLSearchParams) => employerRequest(`/applications${params ? `?${params}` : ''}`),
+  getJobApplications: (jobId: string, params?: URLSearchParams) =>
+    employerRequest(`/jobs/${jobId}/applications${params ? `?${params}` : ''}`),
   updateApplicationStatus: (applicationId: string, status: string) => 
     employerRequest(`/applications/${applicationId}/status`, { method: 'PATCH', body: { status } }),
 

@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Mail, Award, Briefcase, GraduationCap, Edit, Save, X, Plus, Trash2 } from "lucide-react";
+import { 
+  User, Mail, Award, GraduationCap, Briefcase, Edit, Save, X, 
+  Plus, Trash2, MapPin, Calendar, Building2 
+} from "lucide-react";
 import { dashboardAPI, type LearnerProfile } from "@/lib/dashboard-api";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -18,7 +21,6 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState<LearnerProfile | null>(null);
   const [formData, setFormData] = useState({
     bio: "",
-    skills: [] as string[],
     education: [] as Array<{ degree: string; institution: string; year: string; fieldOfStudy: string }>,
     experience: [] as Array<{ role: string; company: string; duration: string; description: string }>,
   });
@@ -28,29 +30,32 @@ export default function ProfilePage() {
     loadProfile();
   }, []);
 
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      const data = await dashboardAPI.getProfile();
-      setProfile(data);
-      
-      // Ensure education and experience are arrays of objects, not strings
-      let education = Array.isArray(data.education) ? data.education : [];
+  // Prefill form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      let education = Array.isArray(profile.education) ? profile.education : [];
       education = education.filter(item => 
         item && typeof item === 'object' && !Array.isArray(item) && typeof item !== 'string'
       );
       
-      let experience = Array.isArray(data.experience) ? data.experience : [];
+      let experience = Array.isArray(profile.experience) ? profile.experience : [];
       experience = experience.filter(item => 
         item && typeof item === 'object' && !Array.isArray(item) && typeof item !== 'string'
       );
       
       setFormData({
-        bio: data.bio || "",
-        skills: data.skills || [],
+        bio: profile.bio || "",
         education,
         experience,
       });
+    }
+  }, [profile]);
+
+  const loadProfile = async () => {
+    try {
+      setLoading(true);
+      const data = await dashboardAPI.getProfile();
+      setProfile(data);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -66,9 +71,8 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       
-      // Filter out empty education/experience entries
       const cleanedData = {
-        ...formData,
+        bio: formData.bio,
         education: formData.education.filter(
           (edu) => edu.degree || edu.institution || edu.year || edu.fieldOfStudy
         ),
@@ -76,8 +80,6 @@ export default function ProfilePage() {
           (exp) => exp.role || exp.company || exp.duration || exp.description
         ),
       };
-      
-      console.log('Sending data:', cleanedData); // Debug log
       
       await api.put("/profile/me", cleanedData);
       toast({
@@ -87,7 +89,6 @@ export default function ProfilePage() {
       setEditing(false);
       loadProfile();
     } catch (error: any) {
-      console.error('Save error:', error.response?.data); // Debug log
       toast({
         title: "Error",
         description: error.response?.data?.error || "Failed to update profile",
@@ -105,183 +106,163 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">Profile not found</p>
-          </CardContent>
-        </Card>
+        <div className="text-center">
+          <p className="text-muted-foreground">Profile not found</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 pb-8 max-w-4xl mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-          <p className="text-muted-foreground">Manage your personal information</p>
+          <h1 className="text-2xl font-bold">My Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Manage your personal information and credentials
+          </p>
         </div>
         {!editing ? (
-          <Button onClick={() => setEditing(true)} className="gap-2">
+          <Button onClick={() => setEditing(true)} size="sm" className="gap-2">
             <Edit className="h-4 w-4" />
             Edit Profile
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setEditing(false)} disabled={saving}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
+            <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={saving}>
+              <X className="h-4 w-4" />
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4" />
               {saving ? "Saving..." : "Save"}
             </Button>
           </div>
         )}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Profile Info Card */}
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-10 w-10 text-primary" />
+      {/* Profile Card */}
+      <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-card p-6">
+        <div className="flex items-start gap-4">
+          <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <User className="h-8 w-8 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl font-semibold">{profile.userId.name}</h2>
+            <div className="flex items-center gap-2 text-muted-foreground mt-1">
+              <Mail className="h-4 w-4" />
+              <span className="text-sm">{profile.userId.email}</span>
+            </div>
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-1.5">
+                <Award className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">Level {profile.nsqfLevel}</span>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold">{profile.userId.name}</h2>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Mail className="h-4 w-4" />
-                  <span>{profile.userId.email}</span>
-                </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-sm text-muted-foreground">{profile.skills.length} Skills</span>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Bio</label>
-                {editing ? (
-                  <textarea
-                    className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    value={formData.bio}
-                    onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                    placeholder="Tell us about yourself..."
-                  />
-                ) : (
-                  <p className="text-muted-foreground">
-                    {profile.bio || "No bio added yet"}
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">NSQF Level</label>
-                <div className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-primary" />
-                  <span className="text-lg font-semibold">Level {profile.nsqfLevel}</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Stats</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Skills</span>
-              <Badge variant="secondary">{profile.skills.length}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">NSQF Level</span>
-              <Badge>{profile.nsqfLevel}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Education</span>
-              <Badge variant="secondary">{profile.education?.length || 0}</Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Experience</span>
-              <Badge variant="secondary">{profile.experience?.length || 0}</Badge>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Bio Section */}
+        <div className="mt-6">
+          <label className="text-sm font-medium mb-2 block">About</label>
+          {editing ? (
+            <textarea
+              className="w-full min-h-[80px] rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none"
+              value={formData.bio}
+              onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+              placeholder="Tell us about yourself..."
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {profile.bio || "No bio added yet"}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Skills Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            Skills
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {profile.skills.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.map((skill, i) => (
-                <Badge key={i} variant="secondary" className="text-sm">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No skills added yet</p>
-          )}
-        </CardContent>
-      </Card>
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Award className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Skills</h3>
+          </div>
+          <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-1 rounded-full">
+            Auto-computed
+          </span>
+        </div>
+        
+        {profile.skills.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {profile.skills.map((skill, i) => (
+              <span key={i} className="px-3 py-1 rounded-full bg-muted text-sm font-medium">
+                {skill}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Award className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground mb-3">No skills yet</p>
+            <Link href="/credentials/upload">
+              <Button size="sm" variant="outline">Upload Credential</Button>
+            </Link>
+          </div>
+        )}
+        
+        <div className="mt-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-xs text-muted-foreground">
+            💡 Skills are automatically extracted from your verified credentials. Upload more credentials to expand your skill set.
+          </p>
+        </div>
+      </div>
 
       {/* Education Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <GraduationCap className="h-5 w-5" />
-              Education
-            </CardTitle>
-            {editing && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    education: [...formData.education, { degree: "", institution: "", year: "", fieldOfStudy: "" }],
-                  });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Education
-              </Button>
-            )}
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Education</h3>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {editing ? (
-            formData.education.length > 0 ? (
-              formData.education.map((edu, i) => (
-                <div key={i} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium">Education {i + 1}</h4>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        const newEducation = formData.education.filter((_, idx) => idx !== i);
-                        setFormData({ ...formData, education: newEducation });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+          {editing && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setFormData({
+                  ...formData,
+                  education: [...formData.education, { degree: "", institution: "", year: "", fieldOfStudy: "" }],
+                });
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {editing ? (
+          <div className="space-y-4">
+            {formData.education.map((edu, i) => (
+              <div key={i} className="rounded-xl border border-border/30 p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Education {i + 1}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const newEducation = formData.education.filter((_, idx) => idx !== i);
+                      setFormData({ ...formData, education: newEducation });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
-                    placeholder="Degree (e.g., Bachelor of Science)"
+                    placeholder="Degree"
                     value={edu.degree}
                     onChange={(e) => {
                       const newEducation = [...formData.education];
@@ -298,95 +279,108 @@ export default function ProfilePage() {
                       setFormData({ ...formData, education: newEducation });
                     }}
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      placeholder="Year (e.g., 2020-2024)"
-                      value={edu.year}
-                      onChange={(e) => {
-                        const newEducation = [...formData.education];
-                        newEducation[i].year = e.target.value;
-                        setFormData({ ...formData, education: newEducation });
-                      }}
-                    />
-                    <Input
-                      placeholder="Field of Study"
-                      value={edu.fieldOfStudy}
-                      onChange={(e) => {
-                        const newEducation = [...formData.education];
-                        newEducation[i].fieldOfStudy = e.target.value;
-                        setFormData({ ...formData, education: newEducation });
-                      }}
-                    />
-                  </div>
+                  <Input
+                    placeholder="Year (e.g., 2020-2024)"
+                    value={edu.year}
+                    onChange={(e) => {
+                      const newEducation = [...formData.education];
+                      newEducation[i].year = e.target.value;
+                      setFormData({ ...formData, education: newEducation });
+                    }}
+                  />
+                  <Input
+                    placeholder="Field of Study"
+                    value={edu.fieldOfStudy}
+                    onChange={(e) => {
+                      const newEducation = [...formData.education];
+                      newEducation[i].fieldOfStudy = e.target.value;
+                      setFormData({ ...formData, education: newEducation });
+                    }}
+                  />
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No education added. Click "Add Education" to get started.
-              </p>
-            )
-          ) : profile.education && profile.education.length > 0 ? (
-            profile.education.map((edu, i) => (
-              <div key={i} className="border-l-2 border-primary pl-4">
-                <h3 className="font-semibold">{edu.degree}</h3>
-                <p className="text-sm text-muted-foreground">{edu.institution}</p>
-                {edu.fieldOfStudy && (
-                  <p className="text-sm text-muted-foreground">{edu.fieldOfStudy}</p>
-                )}
-                <p className="text-xs text-muted-foreground">{edu.year}</p>
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No education added yet</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Experience Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <Briefcase className="h-5 w-5" />
-              Experience
-            </CardTitle>
-            {editing && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setFormData({
-                    ...formData,
-                    experience: [...formData.experience, { role: "", company: "", duration: "", description: "" }],
-                  });
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Experience
-              </Button>
+            ))}
+            {formData.education.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No education added. Click the + button to add your education.
+              </p>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {editing ? (
-            formData.experience.length > 0 ? (
-              formData.experience.map((exp, i) => (
-                <div key={i} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <h4 className="font-medium">Experience {i + 1}</h4>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        const newExperience = formData.experience.filter((_, idx) => idx !== i);
-                        setFormData({ ...formData, experience: newExperience });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+        ) : profile.education && profile.education.length > 0 ? (
+          <div className="space-y-4">
+            {profile.education.map((edu, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium">{edu.degree}</h4>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Building2 className="h-3 w-3" />
+                    <span>{edu.institution}</span>
+                    {edu.year && (
+                      <>
+                        <span>•</span>
+                        <Calendar className="h-3 w-3" />
+                        <span>{edu.year}</span>
+                      </>
+                    )}
                   </div>
+                  {edu.fieldOfStudy && (
+                    <p className="text-sm text-muted-foreground mt-1">{edu.fieldOfStudy}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">No education added yet</p>
+        )}
+      </div>
+
+      {/* Experience Section */}
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-primary" />
+            <h3 className="font-semibold">Experience</h3>
+          </div>
+          {editing && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setFormData({
+                  ...formData,
+                  experience: [...formData.experience, { role: "", company: "", duration: "", description: "" }],
+                });
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {editing ? (
+          <div className="space-y-4">
+            {formData.experience.map((exp, i) => (
+              <div key={i} className="rounded-xl border border-border/30 p-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-muted-foreground">Experience {i + 1}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const newExperience = formData.experience.filter((_, idx) => idx !== i);
+                      setFormData({ ...formData, experience: newExperience });
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <Input
-                    placeholder="Role (e.g., Software Engineer)"
+                    placeholder="Role"
                     value={exp.role}
                     onChange={(e) => {
                       const newExperience = [...formData.experience];
@@ -403,91 +397,98 @@ export default function ProfilePage() {
                       setFormData({ ...formData, experience: newExperience });
                     }}
                   />
-                  <Input
-                    placeholder="Duration (e.g., Jan 2020 - Dec 2022)"
-                    value={exp.duration}
-                    onChange={(e) => {
-                      const newExperience = [...formData.experience];
-                      newExperience[i].duration = e.target.value;
-                      setFormData({ ...formData, experience: newExperience });
-                    }}
-                  />
-                  <textarea
-                    className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    placeholder="Description"
-                    value={exp.description}
-                    onChange={(e) => {
-                      const newExperience = [...formData.experience];
-                      newExperience[i].description = e.target.value;
-                      setFormData({ ...formData, experience: newExperience });
-                    }}
-                  />
                 </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No experience added. Click "Add Experience" to get started.
-              </p>
-            )
-          ) : profile.experience && profile.experience.length > 0 ? (
-            profile.experience.map((exp, i) => (
-              <div key={i} className="border-l-2 border-primary pl-4">
-                <h3 className="font-semibold">{exp.role}</h3>
-                <p className="text-sm text-muted-foreground">{exp.company}</p>
-                <p className="text-xs text-muted-foreground mb-2">{exp.duration}</p>
-                {exp.description && (
-                  <p className="text-sm text-muted-foreground">{exp.description}</p>
-                )}
+                <Input
+                  placeholder="Duration (e.g., Jan 2020 - Dec 2022)"
+                  value={exp.duration}
+                  onChange={(e) => {
+                    const newExperience = [...formData.experience];
+                    newExperience[i].duration = e.target.value;
+                    setFormData({ ...formData, experience: newExperience });
+                  }}
+                />
+                <textarea
+                  className="w-full min-h-[60px] rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none"
+                  placeholder="Description"
+                  value={exp.description}
+                  onChange={(e) => {
+                    const newExperience = [...formData.experience];
+                    newExperience[i].description = e.target.value;
+                    setFormData({ ...formData, experience: newExperience });
+                  }}
+                />
               </div>
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">No experience added yet</p>
-          )}
-        </CardContent>
-      </Card>
+            ))}
+            {formData.experience.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                No experience added. Click the + button to add your work experience.
+              </p>
+            )}
+          </div>
+        ) : profile.experience && profile.experience.length > 0 ? (
+          <div className="space-y-4">
+            {profile.experience.map((exp, i) => (
+              <div key={i} className="flex gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Briefcase className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-medium">{exp.role}</h4>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                    <Building2 className="h-3 w-3" />
+                    <span>{exp.company}</span>
+                    {exp.duration && (
+                      <>
+                        <span>•</span>
+                        <Calendar className="h-3 w-3" />
+                        <span>{exp.duration}</span>
+                      </>
+                    )}
+                  </div>
+                  {exp.description && (
+                    <p className="text-sm text-muted-foreground mt-2">{exp.description}</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground text-center py-4">No experience added yet</p>
+        )}
+      </div>
     </div>
   );
 }
 
 function ProfileSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-8 max-w-4xl">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-48" />
         </div>
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-9 w-24" />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card className="md:col-span-2">
-          <CardHeader>
+      <div className="rounded-xl border border-border/50 bg-card p-6">
+        <div className="flex items-start gap-4">
+          <Skeleton className="h-16 w-16 rounded-xl" />
+          <div className="flex-1 space-y-2">
             <Skeleton className="h-6 w-48" />
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-20 w-20 rounded-full" />
-              <div className="space-y-2">
-                <Skeleton className="h-6 w-48" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <Skeleton className="h-24 w-full" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-32" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-6 w-full" />
-            ))}
-          </CardContent>
-        </Card>
+            <Skeleton className="h-4 w-64" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <Skeleton className="h-20 w-full mt-6" />
       </div>
+
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="rounded-xl border border-border/50 bg-card p-6">
+          <Skeleton className="h-6 w-32 mb-4" />
+          <Skeleton className="h-16 w-full" />
+        </div>
+      ))}
     </div>
   );
 }

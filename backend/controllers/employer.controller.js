@@ -6,6 +6,7 @@ import Job from '../models/Job.model.js';
 import Application from '../models/Application.model.js';
 import Bookmark from '../models/Bookmark.model.js';
 import logger from '../utils/logger.js';
+import { sendNotification } from '../utils/notification.util.js';
 
 // ==================== EMPLOYER PROFILE ====================
 
@@ -732,6 +733,65 @@ export const getJobApplications = async (req, res, next) => {
   }
 };
 
+export const getAllApplications = async (req, res, next) => {
+  try {
+    const { status, page = 1, limit = 20, search, jobId } = req.query;
+    const pageNumber = Math.max(1, parseInt(page, 10) || 1);
+    const limitNumber = Math.max(1, Math.min(50, parseInt(limit, 10) || 20));
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const employer = await Employer.findOne({ userId: req.user.userId });
+    if (!employer) {
+      return res.status(404).json({ error: 'Employer profile not found' });
+    }
+
+    const filter = { employerId: employer._id };
+    if (status) {
+      filter.status = status;
+    }
+    if (jobId) {
+      filter.jobId = jobId;
+    }
+
+    let applications = await Application.find(filter)
+      .populate('learnerId', 'name email')
+      .populate('jobId', 'title location status')
+      .sort({ appliedAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .lean();
+
+    if (search) {
+      const searchText = search.toLowerCase();
+      applications = applications.filter((application) => {
+        const learnerName = application.learnerId?.name?.toLowerCase() || '';
+        const learnerEmail = application.learnerId?.email?.toLowerCase() || '';
+        const jobTitle = application.jobId?.title?.toLowerCase() || '';
+        return (
+          learnerName.includes(searchText) ||
+          learnerEmail.includes(searchText) ||
+          jobTitle.includes(searchText)
+        );
+      });
+    }
+
+    const total = await Application.countDocuments(filter);
+
+    res.json({
+      applications,
+      pagination: {
+        total,
+        page: pageNumber,
+        pages: Math.ceil(total / limitNumber),
+        limit: limitNumber,
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching all applications:', error);
+    next(error);
+  }
+};
+
 export const updateApplicationStatus = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -760,6 +820,8 @@ export const updateApplicationStatus = async (req, res, next) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
+    const previousStatus = application.status;
+
     // Update status
     application.status = status;
     if (notes) {
@@ -775,6 +837,41 @@ export const updateApplicationStatus = async (req, res, next) => {
     });
 
     await application.save();
+
+    // Notify learner for status changes (best-effort)
+    if (previousStatus !== status) {
+      const jobTitle = application.jobId?.title || 'your application';
+      const companyName = employer.companyName || 'the employer';
+
+      let statusLabel = status;
+      if (status === 'shortlisted') statusLabel = 'shortlisted';
+      if (status === 'interviewing') statusLabel = 'moved to interviewing';
+      if (status === 'hired') statusLabel = 'marked as hired';
+      if (status === 'rejected') statusLabel = 'marked as rejected';
+      if (status === 'withdrawn') statusLabel = 'marked as withdrawn';
+
+      const message = `Update: ${companyName} has ${statusLabel} for ${jobTitle}.`;
+
+      try {
+        await sendNotification(
+          req.app,
+          application.learnerId,
+          'JobMatch',
+          message,
+          {
+            applicationId: application._id,
+            jobId: application.jobId?._id,
+            jobTitle,
+            previousStatus,
+            newStatus: status,
+            employerId: employer._id,
+            companyName,
+          }
+        );
+      } catch (notificationError) {
+        logger.warn('Failed to notify learner on application status update:', notificationError.message);
+      }
+    }
 
     logger.info(`Application status updated: ${application._id} -> ${status}`);
     res.json({ 

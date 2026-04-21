@@ -12,6 +12,7 @@ import { Check, X, Zap, Crown, Building2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import api from "@/lib/api";
 import { authService } from "@/lib/auth";
+import { motion } from "framer-motion";
 
 declare global {
   interface Window {
@@ -181,7 +182,7 @@ export default function PricingPage() {
           email: authService.getCurrentUser()?.email || "",
         },
         theme: {
-          color: "#3b82f6",
+          color: "#6366f1",
         },
       };
 
@@ -203,167 +204,183 @@ export default function PricingPage() {
       <LandingNav />
       <BackToHome />
       
-      <main className="flex-1 bg-gradient-to-b from-background to-muted/20">
-        <div className="container py-12 md:py-20">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Choose Your Plan
-          </h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Select the perfect plan for your credential management needs
-          </p>
+      <main className="flex-1">
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 gradient-mesh-hero" />
+          <div className="absolute top-20 right-[20%] w-64 h-64 rounded-full bg-primary/10 blur-3xl animate-orb-1" />
+          <div className="absolute bottom-20 left-[15%] w-72 h-72 rounded-full bg-primary/[0.07] blur-3xl animate-orb-2" />
           
-          {/* Current Usage - Show only if logged in */}
-          {authService.isAuthenticated() && usage && (
-            <Card className="max-w-md mx-auto mt-8 bg-primary/5 border-primary/20">
-              <CardContent className="pt-6">
-                <div className="text-center space-y-2">
-                  <p className="text-sm font-medium">Your Current Usage</p>
-                  <div className="flex items-center justify-center gap-6">
-                    <div>
-                      <p className="text-2xl font-bold text-primary">
-                        {usage.credentials}
-                        <span className="text-sm text-muted-foreground">
-                          /{usage.maxCredentials === -1 ? "∞" : usage.maxCredentials}
-                        </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground">Credentials</p>
+          <div className="container relative py-12 md:py-20">
+            {/* Header */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center mb-12"
+            >
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                Choose Your <span className="text-gradient-brand">Plan</span>
+              </h1>
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+                Select the perfect plan for your credential management needs
+              </p>
+              
+              {/* Current Usage - Show only if logged in */}
+              {authService.isAuthenticated() && usage && (
+                <Card className="max-w-md mx-auto mt-8 border-primary/20 bg-primary/[0.03]">
+                  <CardContent className="pt-6">
+                    <div className="text-center space-y-2">
+                      <p className="text-sm font-medium">Your Current Usage</p>
+                      <div className="flex items-center justify-center gap-6">
+                        <div>
+                          <p className="text-2xl font-bold text-primary">
+                            {usage.credentials}
+                            <span className="text-sm text-muted-foreground">
+                              /{usage.maxCredentials === -1 ? "∞" : usage.maxCredentials}
+                            </span>
+                          </p>
+                          <p className="text-xs text-muted-foreground">Credentials</p>
+                        </div>
+                      </div>
+                      {usage.maxCredentials !== -1 && usage.credentials >= usage.maxCredentials * 0.8 && (
+                        <p className="text-xs text-amber-500 mt-2">
+                          ⚠️ You&apos;re approaching your credential limit. Consider upgrading!
+                        </p>
+                      )}
                     </div>
-                  </div>
-                  {usage.maxCredentials !== -1 && usage.credentials >= usage.maxCredentials * 0.8 && (
-                    <p className="text-xs text-orange-500 mt-2">
-                      ⚠️ You're approaching your credential limit. Consider upgrading!
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+                  </CardContent>
+                </Card>
+              )}
+            </motion.div>
 
-        {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan) => {
-            const Icon = plan.icon;
-            const isCurrentPlan = currentPlan === plan.id;
+            {/* Pricing Cards */}
+            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {plans.map((plan, index) => {
+                const Icon = plan.icon;
+                const isCurrentPlan = currentPlan === plan.id;
 
-            return (
-              <Card
-                key={plan.id}
-                className={`relative ${
-                  plan.popular
-                    ? "border-primary shadow-lg scale-105"
-                    : ""
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <Badge className="px-4 py-1">Most Popular</Badge>
-                  </div>
-                )}
-
-                <CardHeader className="text-center pb-8">
-                  <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit">
-                    <Icon className="h-8 w-8 text-primary" />
-                  </div>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                  <div className="mt-4">
-                    <span className="text-4xl font-bold">
-                      ₹{plan.price}
-                    </span>
-                    {plan.price > 0 && (
-                      <span className="text-muted-foreground">/month</span>
-                    )}
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-6">
-                  {/* Features */}
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, i) => (
-                      <li key={i} className="flex items-center gap-2">
-                        {feature.included ? (
-                          <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        ) : (
-                          <X className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                        )}
-                        <span
-                          className={
-                            feature.included
-                              ? "text-foreground"
-                              : "text-muted-foreground"
-                          }
-                        >
-                          {feature.name}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* CTA Button */}
-                  <Button
-                    className="w-full"
-                    variant={plan.popular ? "default" : "outline"}
-                    size="lg"
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={loading === plan.id || isCurrentPlan}
+                return (
+                  <motion.div
+                    key={plan.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.5 }}
                   >
-                    {loading === plan.id
-                      ? "Processing..."
-                      : isCurrentPlan
-                      ? "Current Plan"
-                      : plan.price === 0
-                      ? "Get Started"
-                      : "Subscribe Now"}
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+                    <Card
+                      className={`relative h-full transition-all duration-300 ${
+                        plan.popular
+                          ? "border-primary/40 shadow-xl shadow-primary/10 scale-105"
+                          : "border-border/50 hover:border-primary/20 hover:shadow-lg hover:shadow-primary/[0.04]"
+                      }`}
+                    >
+                      {plan.popular && (
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                          <Badge className="px-4 py-1 bg-gradient-to-r from-primary to-primary/80 border-0 shadow-md shadow-primary/20">Most Popular</Badge>
+                        </div>
+                      )}
 
-        {/* FAQ Section */}
-        <div className="mt-20 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            Frequently Asked Questions
-          </h2>
-          <div className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Can I change plans later?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected immediately.
-                </p>
-              </CardContent>
-            </Card>
+                      <CardHeader className="text-center pb-8">
+                        <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-2xl w-fit">
+                          <Icon className="h-8 w-8 text-primary" />
+                        </div>
+                        <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                        <CardDescription>{plan.description}</CardDescription>
+                        <div className="mt-4">
+                          <span className="text-4xl font-bold">
+                            ₹{plan.price}
+                          </span>
+                          {plan.price > 0 && (
+                            <span className="text-muted-foreground">/month</span>
+                          )}
+                        </div>
+                      </CardHeader>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">What payment methods do you accept?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  We accept all major credit/debit cards, UPI, net banking, and wallets through Razorpay.
-                </p>
-              </CardContent>
-            </Card>
+                      <CardContent className="space-y-6">
+                        {/* Features */}
+                        <ul className="space-y-3">
+                          {plan.features.map((feature, i) => (
+                            <li key={i} className="flex items-center gap-3">
+                              {feature.included ? (
+                                <div className="h-5 w-5 rounded-full bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                                  <Check className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                </div>
+                              ) : (
+                                <div className="h-5 w-5 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                  <X className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                              )}
+                              <span
+                                className={
+                                  feature.included
+                                    ? "text-foreground text-sm"
+                                    : "text-muted-foreground text-sm"
+                                }
+                              >
+                                {feature.name}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Is there a refund policy?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Yes, we offer a 7-day money-back guarantee for all paid plans. No questions asked.
-                </p>
-              </CardContent>
-            </Card>
+                        {/* CTA Button */}
+                        <Button
+                          className={`w-full rounded-xl ${plan.popular ? "" : ""}`}
+                          variant={plan.popular ? "default" : "outline"}
+                          size="lg"
+                          onClick={() => handleSubscribe(plan.id)}
+                          disabled={loading === plan.id || isCurrentPlan}
+                        >
+                          {loading === plan.id
+                            ? "Processing..."
+                            : isCurrentPlan
+                            ? "Current Plan"
+                            : plan.price === 0
+                            ? "Get Started"
+                            : "Subscribe Now"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* FAQ Section */}
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-20 max-w-3xl mx-auto"
+            >
+              <h2 className="text-3xl font-bold text-center mb-8">
+                Frequently Asked Questions
+              </h2>
+              <div className="space-y-4">
+                {[
+                  {
+                    q: "Can I change plans later?",
+                    a: "Yes, you can upgrade or downgrade your plan at any time. Changes will be reflected immediately.",
+                  },
+                  {
+                    q: "What payment methods do you accept?",
+                    a: "We accept all major credit/debit cards, UPI, net banking, and wallets through Razorpay.",
+                  },
+                  {
+                    q: "Is there a refund policy?",
+                    a: "Yes, we offer a 7-day money-back guarantee for all paid plans. No questions asked.",
+                  },
+                ].map((faq, i) => (
+                  <Card key={i} className="border-border/50">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{faq.q}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{faq.a}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </motion.div>
           </div>
-        </div>
         </div>
       </main>
       

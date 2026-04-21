@@ -21,8 +21,7 @@ const learnerNav = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
   { icon: Award, label: "Credentials", href: "/credentials" },
   { icon: Upload, label: "Upload", href: "/credentials/upload" },
-  { icon: Map, label: "Skill Map", href: "/skill-map" },
-  { icon: Briefcase, label: "Career Path", href: "/career" },
+  { icon: Map, label: "Career Studio", href: "/career-path" },
   { icon: Bell, label: "Notifications", href: "/notifications" },
   { icon: Settings, label: "Settings", href: "/settings" },
 ];
@@ -73,7 +72,7 @@ export function Sidebar({ role = "learner" }: SidebarProps) {
     <aside className="hidden md:flex w-64 flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center border-b px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Award className="h-6 w-6 text-primary" />
+          <Award className="h-6 w-6 text-foreground" />
           <span className="text-lg">CredMatrix</span>
         </Link>
       </div>
@@ -87,7 +86,7 @@ export function Sidebar({ role = "learner" }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all hover:bg-accent",
+                "flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all hover:bg-accent",
                 isActive
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground"

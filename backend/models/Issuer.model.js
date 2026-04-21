@@ -31,6 +31,11 @@ const issuerSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    blockedLearners: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'User',
+      default: [],
+    },
   },
   {
     timestamps: true,

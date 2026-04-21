@@ -150,9 +150,23 @@ export default function AdminNSQFPage() {
     setShowMappingModal(true);
   };
 
+  const handleEditMapping = (mapping: NSQFMapping) => {
+    setEditingMapping(mapping);
+    setMappingForm({
+      credentialType: mapping.credentialType,
+      nsqfLevel: mapping.nsqfLevel,
+      description: mapping.description,
+    });
+    setShowMappingModal(true);
+  };
+
   const handleSubmitMapping = async () => {
     try {
-      await adminApi.createNSQFMapping(mappingForm);
+      if (editingMapping) {
+        await adminApi.updateNSQFMapping(editingMapping._id, mappingForm);
+      } else {
+        await adminApi.createNSQFMapping(mappingForm);
+      }
       setShowMappingModal(false);
       fetchMappings();
     } catch (error) {
@@ -301,12 +315,20 @@ export default function AdminNSQFPage() {
                       </td>
                       <td className="px-6 py-4 text-gray-600">{mapping.description}</td>
                       <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => handleDeleteMapping(mapping._id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleEditMapping(mapping)}
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteMapping(mapping._id)}
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -397,7 +419,9 @@ export default function AdminNSQFPage() {
       {showMappingModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Add Credential Mapping</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {editingMapping ? 'Edit' : 'Add'} Credential Mapping
+            </h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Credential Type</label>
@@ -444,7 +468,7 @@ export default function AdminNSQFPage() {
                 onClick={handleSubmitMapping}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-700 hover:to-indigo-700"
               >
-                Create
+                {editingMapping ? 'Update' : 'Create'}
               </button>
             </div>
           </div>

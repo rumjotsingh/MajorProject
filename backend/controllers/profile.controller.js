@@ -1,10 +1,13 @@
 import LearnerProfile from '../models/LearnerProfile.model.js';
 import Credential from '../models/Credential.model.js';
 import User from '../models/User.model.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 
 // GET /profile/me
 export const getMyProfile = async (req, res, next) => {
   try {
+    await recomputeLearnerProfileFromVerifiedCredentials(req.user.userId);
+
     const profile = await LearnerProfile.findOne({ userId: req.user.userId }).populate(
       'userId',
       'name email'
@@ -44,14 +47,16 @@ export const updateMyProfile = async (req, res, next) => {
   try {
     const { bio, skills, education, experience, preferences } = req.body;
 
+    if (skills !== undefined) {
+      return res.status(400).json({
+        error: 'Manual skill updates are not allowed. Skills are derived from verified credentials only.',
+      });
+    }
+
     // Ensure arrays are properly formatted and filter out invalid entries
     const updateData = {};
     
     if (bio !== undefined) updateData.bio = bio;
-    
-    if (skills !== undefined) {
-      updateData.skills = Array.isArray(skills) ? skills : [];
-    }
     
     if (education !== undefined) {
       // Ensure it's an array and contains only valid objects
@@ -143,6 +148,8 @@ export const getProfileCredentials = async (req, res, next) => {
 export const getProfileSkills = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    await recomputeLearnerProfileFromVerifiedCredentials(id);
 
     const profile = await LearnerProfile.findOne({ userId: id }).select('skills');
 

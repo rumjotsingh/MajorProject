@@ -2,112 +2,148 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { ArrowLeft, Award, Briefcase, GraduationCap, Mail, MapPin, Bookmark, BookmarkCheck, Shield } from 'lucide-react';
+import { ArrowLeft, Award, Briefcase, GraduationCap, Mail, MapPin, Bookmark, BookmarkCheck, Shield, Calendar, Building2, ExternalLink } from 'lucide-react';
 import { employerApi } from '@/lib/employer-api';
+import { useToast } from '@/hooks/use-toast';
 
-interface LearnerProfile {
-  _id: string;
-  userId: {
+interface LearnerData {
+  learner: {
     _id: string;
     name: string;
     email: string;
+    bio: string;
+    education: Array<{
+      institution?: string;
+      degree?: string;
+      fieldOfStudy?: string;
+      year?: string;
+    }>;
+    experience: Array<{
+      company?: string;
+      role?: string;
+      duration?: string;
+      description?: string;
+    }>;
+    skills: string[];
+    totalCredits: number;
+    nsqfLevel: number;
+    joinedAt: string;
   };
-  bio: string;
-  skills: string[];
-  education: Array<{
-    institution: string;
-    degree: string;
-    field: string;
-    startDate: string;
-    endDate: string;
-    current: boolean;
-  }>;
-  experience: Array<{
-    company: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    current: boolean;
+  credentials: Array<{
+    _id: string;
+    title: string;
     description: string;
+    skills: string[];
+    credits: number;
+    verificationStatus: string;
+    issuerId: {
+      _id: string;
+      name: string;
+      contactEmail: string;
+    };
+    issueDate: string;
+    certificateUrl?: string;
+    credentialType: string;
+    nsqfLevel: number;
   }>;
-  totalCredits: number;
-  nsqfLevel: number;
-  location?: string;
-}
-
-interface Credential {
-  _id: string;
-  title: string;
-  description: string;
-  skills: string[];
-  credits: number;
-  verificationStatus: string;
-  issuerId: {
-    name: string;
+  stats: {
+    totalCredentials: number;
+    totalCredits: number;
+    nsqfLevel: number;
   };
-  issueDate: string;
-  credentialUrl?: string;
+  isBookmarked: boolean;
 }
 
 export default function EmployerLearnerDetailPage() {
   const router = useRouter();
   const params = useParams();
   const learnerId = params.id as string;
+  const { toast } = useToast();
 
-  const [learner, setLearner] = useState<LearnerProfile | null>(null);
-  const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [learnerData, setLearnerData] = useState<LearnerData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   useEffect(() => {
     fetchLearnerDetails();
-    checkBookmarkStatus();
   }, [learnerId]);
 
   const fetchLearnerDetails = async () => {
     try {
       setLoading(true);
       const data = await employerApi.getLearnerDetails(learnerId);
-      setLearner(data.profile);
-      setCredentials(data.credentials || []);
+      setLearnerData(data);
     } catch (error) {
       console.error('Error fetching learner details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load learner details",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const checkBookmarkStatus = async () => {
-    try {
-      const data = await employerApi.getBookmarks();
-      const bookmarked = data.bookmarks.some((b: any) => b.learnerId.userId._id === learnerId);
-      setIsBookmarked(bookmarked);
-    } catch (error) {
-      console.error('Error checking bookmark status:', error);
-    }
-  };
-
   const handleBookmark = async () => {
+    if (!learnerData) return;
+    
     try {
-      if (isBookmarked) {
+      setBookmarkLoading(true);
+      if (learnerData.isBookmarked) {
         await employerApi.removeBookmark(learnerId);
-        setIsBookmarked(false);
+        setLearnerData(prev => prev ? { ...prev, isBookmarked: false } : null);
+        toast({
+          title: "Success",
+          description: "Learner removed from bookmarks",
+        });
       } else {
         await employerApi.addBookmark(learnerId);
-        setIsBookmarked(true);
+        setLearnerData(prev => prev ? { ...prev, isBookmarked: true } : null);
+        toast({
+          title: "Success", 
+          description: "Learner added to bookmarks",
+        });
       }
     } catch (error) {
       console.error('Error toggling bookmark:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update bookmark",
+        variant: "destructive",
+      });
+    } finally {
+      setBookmarkLoading(false);
     }
   };
 
   const handleVerifyCredential = async (credentialId: string) => {
     try {
       await employerApi.verifyCredential(credentialId);
-      alert('Credential verification requested');
+      toast({
+        title: "Success",
+        description: "Credential verification requested",
+      });
     } catch (error) {
       console.error('Error verifying credential:', error);
-      alert('Failed to verify credential');
+      toast({
+        title: "Error",
+        description: "Failed to verify credential",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'verified':
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400';
+      case 'pending':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+      case 'failed':
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
+      default:
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400';
     }
   };
 
@@ -115,21 +151,21 @@ export default function EmployerLearnerDetailPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading learner profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading learner profile...</p>
         </div>
       </div>
     );
   }
 
-  if (!learner) {
+  if (!learnerData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600">Learner not found</p>
+          <p className="text-muted-foreground">Learner not found</p>
           <button
             onClick={() => router.push('/employer/search')}
-            className="mt-4 text-blue-600 hover:text-blue-700"
+            className="mt-4 text-primary hover:text-primary/80"
           >
             Back to Search
           </button>
@@ -138,212 +174,263 @@ export default function EmployerLearnerDetailPage() {
     );
   }
 
+  const { learner, credentials, stats, isBookmarked } = learnerData;
+
   return (
-    <div className="p-6 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.back()}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{learner.userId.name}</h1>
-              <p className="text-gray-600">{learner.userId.email}</p>
-            </div>
-          </div>
+    <div className="space-y-6 pb-8 max-w-6xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
           <button
-            onClick={handleBookmark}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-              isBookmarked
-                ? 'bg-blue-50 text-blue-600 border border-blue-200'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            onClick={() => router.back()}
+            className="p-2 hover:bg-muted rounded-xl transition-colors"
           >
-            {isBookmarked ? (
-              <>
-                <BookmarkCheck className="w-5 h-5" />
-                Bookmarked
-              </>
-            ) : (
-              <>
-                <Bookmark className="w-5 h-5" />
-                Bookmark
-              </>
-            )}
+            <ArrowLeft className="w-5 h-5" />
           </button>
-        </div>
-
-        {/* Overview Card */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="flex items-center gap-3">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Award className="w-6 h-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">NSQF Level</p>
-                <p className="text-xl font-bold text-gray-900">Level {learner.nsqfLevel}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Shield className="w-6 h-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Total Credits</p>
-                <p className="text-xl font-bold text-gray-900">{learner.totalCredits}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Award className="w-6 h-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Credentials</p>
-                <p className="text-xl font-bold text-gray-900">{credentials.length}</p>
-              </div>
+          <div>
+            <h1 className="text-3xl font-bold">{learner.name}</h1>
+            <div className="flex items-center gap-2 text-muted-foreground mt-1">
+              <Mail className="h-4 w-4" />
+              <span>{learner.email}</span>
             </div>
           </div>
         </div>
+        <button
+          onClick={handleBookmark}
+          disabled={bookmarkLoading}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+            isBookmarked
+              ? 'bg-primary/10 text-primary border border-primary/20'
+              : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }`}
+        >
+          {isBookmarked ? (
+            <>
+              <BookmarkCheck className="w-5 h-5" />
+              Bookmarked
+            </>
+          ) : (
+            <>
+              <Bookmark className="w-5 h-5" />
+              Bookmark
+            </>
+          )}
+        </button>
+      </div>
 
-        {/* Bio */}
-        {learner.bio && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">About</h2>
-            <p className="text-gray-700 leading-relaxed">{learner.bio}</p>
-          </div>
-        )}
-
-        {/* Skills */}
-        {learner.skills && learner.skills.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {learner.skills.map((skill, index) => (
-                <span
-                  key={index}
-                  className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
-                >
-                  {skill}
-                </span>
-              ))}
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="rounded-xl border  bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Award className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">NSQF Level</p>
+              <p className="text-2xl font-bold">Level {stats.nsqfLevel}</p>
             </div>
           </div>
-        )}
+        </div>
+        
+        <div className="rounded-xl border  bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Credits</p>
+              <p className="text-2xl font-bold">{stats.totalCredits}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="rounded-xl border  bg-card p-6">
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+              <Award className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Credentials</p>
+              <p className="text-2xl font-bold">{stats.totalCredentials}</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Experience */}
-        {learner.experience && learner.experience.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Experience</h2>
-            <div className="space-y-4">
-              {learner.experience.map((exp, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-purple-100 p-2 rounded-lg">
-                      <Briefcase className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{exp.position}</h3>
-                      <p className="text-gray-700">{exp.company}</p>
-                      {exp.description && (
-                        <p className="text-sm text-gray-600 mt-2">{exp.description}</p>
+      {/* Bio */}
+      {learner.bio && (
+        <div className="rounded-xl border  bg-card p-6">
+          <h2 className="text-xl font-semibold mb-4">About</h2>
+          <p className="text-muted-foreground leading-relaxed">{learner.bio}</p>
+        </div>
+      )}
+
+      {/* Skills */}
+      {learner.skills && learner.skills.length > 0 && (
+        <div className="rounded-xl border  bg-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Skills</h2>
+          <div className="flex flex-wrap gap-2">
+            {learner.skills.map((skill, index) => (
+              <span
+                key={index}
+                className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Experience */}
+      {learner.experience && learner.experience.length > 0 && (
+        <div className="rounded-xl border  bg-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Experience</h2>
+          <div className="space-y-4">
+            {learner.experience.map((exp, index) => (
+              <div key={index} className="rounded-xl border  p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+                    <Briefcase className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{exp.role}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                      <Building2 className="h-3 w-3" />
+                      <span>{exp.company}</span>
+                      {exp.duration && (
+                        <>
+                          <span>•</span>
+                          <Calendar className="h-3 w-3" />
+                          <span>{exp.duration}</span>
+                        </>
                       )}
-                      <p className="text-sm text-gray-500 mt-2">
-                        {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
-                      </p>
                     </div>
+                    {exp.description && (
+                      <p className="text-sm text-muted-foreground mt-2">{exp.description}</p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Education */}
-        {learner.education && learner.education.length > 0 && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Education</h2>
-            <div className="space-y-4">
-              {learner.education.map((edu, index) => (
-                <div key={index} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="bg-blue-100 p-2 rounded-lg">
-                      <GraduationCap className="w-5 h-5 text-blue-600" />
+      {/* Education */}
+      {learner.education && learner.education.length > 0 && (
+        <div className="rounded-xl border  bg-card p-6">
+          <h2 className="text-xl font-semibold mb-4">Education</h2>
+          <div className="space-y-4">
+            {learner.education.map((edu, index) => (
+              <div key={index} className="rounded-xl border  p-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                    <GraduationCap className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold">{edu.degree}</h3>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                      <Building2 className="h-3 w-3" />
+                      <span>{edu.institution}</span>
+                      {edu.year && (
+                        <>
+                          <span>•</span>
+                          <Calendar className="h-3 w-3" />
+                          <span>{edu.year}</span>
+                        </>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">{edu.degree}</h3>
-                      <p className="text-gray-700">{edu.institution}</p>
-                      {edu.field && <p className="text-sm text-gray-600">{edu.field}</p>}
-                      <p className="text-sm text-gray-500 mt-2">
-                        {edu.startDate} - {edu.current ? 'Present' : edu.endDate}
-                      </p>
-                    </div>
+                    {edu.fieldOfStudy && (
+                      <p className="text-sm text-muted-foreground mt-1">{edu.fieldOfStudy}</p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Credentials */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Credentials</h2>
-          {credentials.length > 0 ? (
-            <div className="space-y-4">
-              {credentials.map((credential) => (
-                <div key={credential._id} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <Award className="w-5 h-5 text-green-600" />
-                        <h3 className="font-semibold text-gray-900">{credential.title}</h3>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          credential.verificationStatus === 'verified'
-                            ? 'bg-green-100 text-green-800'
-                            : credential.verificationStatus === 'pending'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {credential.verificationStatus}
-                        </span>
-                      </div>
-                      {credential.description && (
-                        <p className="text-sm text-gray-700 mb-2">{credential.description}</p>
-                      )}
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>Issued by {credential.issuerId?.name || 'Unknown'}</span>
-                        <span>•</span>
-                        <span>{credential.credits} credits</span>
-                        <span>•</span>
-                        <span>{new Date(credential.issueDate).toLocaleDateString()}</span>
-                      </div>
-                      {credential.skills && credential.skills.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {credential.skills.map((skill, index) => (
-                            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                              {skill}
-                            </span>
-                          ))}
-                        </div>
-                      )}
+      {/* Credentials */}
+      <div className="rounded-xl border  bg-card p-6">
+        <h2 className="text-xl font-semibold mb-4">Credentials</h2>
+        {credentials.length > 0 ? (
+          <div className="space-y-4">
+            {credentials.map((credential) => (
+              <div key={credential._id} className="rounded-xl border  p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Award className="h-5 w-5 text-emerald-600" />
+                      <h3 className="font-semibold">{credential.title}</h3>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(credential.verificationStatus)}`}>
+                        {credential.verificationStatus}
+                      </span>
                     </div>
-                    <button
+                    {credential.description && (
+                      <p className="text-sm text-muted-foreground mb-2">{credential.description}</p>
+                    )}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span>Issued by {credential.issuerId?.name || 'Unknown'}</span>
+                      <span>•</span>
+                      <span>{credential.credits} credits</span>
+                      <span>•</span>
+                      <span>NSQF Level {credential.nsqfLevel}</span>
+                      <span>•</span>
+                      <span>{new Date(credential.issueDate).toLocaleDateString()}</span>
+                    </div>
+                    {credential.skills && credential.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {credential.skills.map((skill, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded text-xs">
+                            {skill}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2 ml-4">
+                    {credential.certificateUrl && (
+                      <a
+                        href={credential.certificateUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2 bg-muted text-muted-foreground rounded-xl hover:bg-muted/80 text-sm flex items-center gap-2"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        View
+                      </a>
+                    )}
+                    {/* <button
                       onClick={() => handleVerifyCredential(credential._id)}
-                      className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 text-sm"
                     >
                       Verify
-                    </button>
+                    </button> */}
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-gray-600 text-center py-8">No credentials available</p>
-          )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Award className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">No credentials available</p>
+          </div>
+        )}
+      </div>
+
+      {/* Member Since */}
+      <div className="rounded-xl border  bg-card p-6">
+        <div className="flex items-center gap-3">
+          <Calendar className="h-5 w-5 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
+            Member since {new Date(learner.joinedAt).toLocaleDateString('en-US', { 
+              month: 'long', 
+              year: 'numeric' 
+            })}
+          </span>
         </div>
       </div>
     </div>

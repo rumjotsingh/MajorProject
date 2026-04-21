@@ -7,6 +7,7 @@ import { validateObjectId } from '../utils/validation.util.js';
 import VerificationService from '../services/verification.service.js';
 import { sendNotification } from '../utils/notification.util.js';
 import { calculateNSQFLevel, validateCredits } from '../utils/nsqf.util.js';
+import { recomputeLearnerProfileFromVerifiedCredentials } from '../services/profile-sync.service.js';
 import logger from '../utils/logger.js';
 
 // POST /issuer/register (Admin only)
@@ -149,6 +150,18 @@ export const issueCredential = async (req, res, next) => {
         return res.status(404).json({ error: 'Issuer profile not found' });
       }
       issuerId = issuer._id;
+      
+      // Check if learner is blocked
+      const userEmail = req.body.userEmail;
+      if (userEmail) {
+        const learner = await User.findOne({ email: userEmail });
+        if (learner && issuer.blockedLearners.includes(learner._id)) {
+          return res.status(403).json({ 
+            error: 'Cannot issue credential to blocked learner',
+            message: 'This learner has been blocked. Unblock them first to issue credentials.'
+          });
+        }
+      }
     } else {
       return res.status(401).json({ error: 'Issuer authentication required' });
     }
@@ -278,16 +291,8 @@ export const issueCredential = async (req, res, next) => {
       verificationStatus: 'verified', // Auto-verify credentials issued by issuers
     });
 
-    // Update learner profile with new credits and NSQF level
-    const updatedSkills = skills && skills.length > 0 
-      ? [...new Set([...learnerProfile.skills, ...skills])]
-      : learnerProfile.skills;
-
-    learnerProfile.totalCredits = newTotalCredits;
-    learnerProfile.nsqfLevel = nsqfInfo.level;
-    learnerProfile.levelName = nsqfInfo.levelName;
-    learnerProfile.skills = updatedSkills;
-    await learnerProfile.save();
+    // Enforce verified-skill integrity by recomputing from verified credentials only.
+    const syncedProfile = await recomputeLearnerProfileFromVerifiedCredentials(user._id);
 
     // No need to trigger verification - credentials issued by issuers are auto-verified
     // VerificationService.verifyCredential(credential._id).catch(console.error);
@@ -333,10 +338,10 @@ export const issueCredential = async (req, res, next) => {
       credentialId: credential._id,
       status: 'verified', // Auto-verified
       creditsEarned: credits,
-      totalCredits: newTotalCredits,
-      nsqfLevel: nsqfInfo.level,
-      levelName: nsqfInfo.levelName,
-      message: `Credential issued and verified successfully! Learner earned ${credits} credits and is now at NSQF Level ${nsqfInfo.level} (${nsqfInfo.levelName})`,
+      totalCredits: syncedProfile.totalCredits,
+      nsqfLevel: syncedProfile.nsqfLevel,
+      levelName: syncedProfile.levelName,
+      message: `Credential issued and verified successfully! Learner earned ${credits} credits and is now at NSQF Level ${syncedProfile.nsqfLevel} (${syncedProfile.levelName})`,
     });
   } catch (error) {
     next(error);
@@ -782,42 +787,14 @@ export const verifyCredential = async (req, res, next) => {
 
     // If credential is being verified for the first time, update learner profile
     if (status === 'verified' && previousStatus !== 'verified') {
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
-      if (learnerProfile && credential.credits) {
-        // Add credits to total
-        const newTotalCredits = (learnerProfile.totalCredits || 0) + credential.credits;
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        logger.info(`Updated learner ${credential.userId._id} credits to ${newTotalCredits}, NSQF level to ${nsqfInfo.level}`);
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId._id);
+      logger.info(`Recomputed learner profile for ${credential.userId._id} after verification`);
     }
 
     // If credential is being rejected after being verified, remove credits
     if (status === 'failed' && previousStatus === 'verified') {
-      const learnerProfile = await LearnerProfile.findOne({ userId: credential.userId._id });
-      if (learnerProfile && credential.credits) {
-        // Remove credits from total
-        const newTotalCredits = Math.max(0, (learnerProfile.totalCredits || 0) - credential.credits);
-        
-        // Recalculate NSQF level
-        const nsqfInfo = calculateNSQFLevel(newTotalCredits);
-        
-        // Update learner profile
-        learnerProfile.totalCredits = newTotalCredits;
-        learnerProfile.nsqfLevel = nsqfInfo.level;
-        learnerProfile.levelName = nsqfInfo.levelName;
-        await learnerProfile.save();
-        
-        logger.info(`Removed credits from learner ${credential.userId._id}, new total: ${newTotalCredits}, NSQF level: ${nsqfInfo.level}`);
-      }
+      await recomputeLearnerProfileFromVerifiedCredentials(credential.userId._id);
+      logger.info(`Recomputed learner profile for ${credential.userId._id} after rejection`);
     }
 
     // Send real-time notification to learner
@@ -860,3 +837,118 @@ export const verifyCredential = async (req, res, next) => {
   }
 };
 
+
+
+// POST /issuer/learners/:id/block - Block a learner
+export const blockLearner = async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, 'User ID');
+    
+    let issuer;
+    
+    if (req.issuer) {
+      issuer = req.issuer;
+    } else if (req.user && req.user.role === 'Issuer') {
+      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      if (!issuer) {
+        return res.status(404).json({ error: 'Issuer not found' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not authorized as issuer' });
+    }
+
+    const learnerId = req.params.id;
+
+    // Check if learner exists
+    const learner = await User.findById(learnerId);
+    if (!learner || learner.role !== 'Learner') {
+      return res.status(404).json({ error: 'Learner not found' });
+    }
+
+    // Check if already blocked
+    if (issuer.blockedLearners.includes(learnerId)) {
+      return res.status(400).json({ error: 'Learner is already blocked' });
+    }
+
+    // Add to blocked list
+    issuer.blockedLearners.push(learnerId);
+    await issuer.save();
+
+    logger.info(`Issuer ${issuer._id} blocked learner ${learnerId}`);
+
+    // Send notification to learner
+    try {
+      await sendNotification(
+        req.app,
+        learnerId,
+        'System',
+        `You have been blocked by ${issuer.name}. You will no longer receive credentials from this issuer.`,
+        { issuerId: issuer._id }
+      );
+    } catch (notificationError) {
+      logger.error('Failed to send block notification:', notificationError);
+    }
+
+    res.json({ 
+      message: 'Learner blocked successfully',
+      blockedLearners: issuer.blockedLearners 
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// POST /issuer/learners/:id/unblock - Unblock a learner
+export const unblockLearner = async (req, res, next) => {
+  try {
+    validateObjectId(req.params.id, 'User ID');
+    
+    let issuer;
+    
+    if (req.issuer) {
+      issuer = req.issuer;
+    } else if (req.user && req.user.role === 'Issuer') {
+      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      if (!issuer) {
+        return res.status(404).json({ error: 'Issuer not found' });
+      }
+    } else {
+      return res.status(403).json({ error: 'Not authorized as issuer' });
+    }
+
+    const learnerId = req.params.id;
+
+    // Check if learner is blocked
+    if (!issuer.blockedLearners.includes(learnerId)) {
+      return res.status(400).json({ error: 'Learner is not blocked' });
+    }
+
+    // Remove from blocked list
+    issuer.blockedLearners = issuer.blockedLearners.filter(
+      id => id.toString() !== learnerId
+    );
+    await issuer.save();
+
+    logger.info(`Issuer ${issuer._id} unblocked learner ${learnerId}`);
+
+    // Send notification to learner
+    try {
+      await sendNotification(
+        req.app,
+        learnerId,
+        'System',
+        `You have been unblocked by ${issuer.name}. You can now receive credentials from this issuer again.`,
+        { issuerId: issuer._id }
+      );
+    } catch (notificationError) {
+      logger.error('Failed to send unblock notification:', notificationError);
+    }
+
+    res.json({ 
+      message: 'Learner unblocked successfully',
+      blockedLearners: issuer.blockedLearners 
+    });
+  } catch (error) {
+    next(error);
+  }
+};

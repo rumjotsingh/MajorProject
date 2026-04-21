@@ -40,10 +40,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Don't retry refresh endpoint itself
-    if (originalRequest.url?.includes('/auth/refresh')) {
-      localStorage.clear();
-      window.location.href = "/login";
+    // Don't retry refresh endpoint itself or login/register endpoints
+    if (originalRequest.url?.includes('/auth/refresh') || 
+        originalRequest.url?.includes('/auth/login') || 
+        originalRequest.url?.includes('/auth/register')) {
+      // For login/register, don't clear storage or redirect - let the form handle the error
+      if (originalRequest.url?.includes('/auth/refresh')) {
+        localStorage.clear();
+        window.location.href = "/login";
+      }
       return Promise.reject(error);
     }
 

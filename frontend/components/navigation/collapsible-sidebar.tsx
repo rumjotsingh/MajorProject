@@ -1,339 +1,257 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Home,
-  Award,
-  Upload,
-  Map,
-  Briefcase,
-  Settings,
-  Bell,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
-  User,
-  Sparkles,
-  FileCheck,
-  CheckSquare,
-  Crown,
-  Mail,
-  Layers,
-  Search,
-  Bookmark,
+  Award, ChevronLeft, ChevronRight, FileCheck, Home, LogOut,
+  Map, Sparkles, Upload, User, Briefcase, CheckSquare,
+  Search, Bookmark, Users, Crown, Mail, Layers,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import api from "@/lib/api";
 
-const learnerNav = [
-  { icon: Home, label: "Dashboard", href: "/dashboard" },
-  { icon: Award, label: "Credentials", href: "/credentials" },
-  { icon: Upload, label: "Upload", href: "/credentials/upload" },
-  { icon: Map, label: "Skill Map", href: "/skill-map" },
-  { icon: Briefcase, label: "Career Path", href: "/career-path" },
-  { icon: Sparkles, label: "Jobs", href: "/jobs/recommended" },
-  { icon: FileCheck, label: "Applied", href: "/jobs/applied" },
+interface NavItem  { label: string; href: string; icon: React.ComponentType<{ className?: string }>; }
+interface NavSection { title: string; items: NavItem[]; }
+interface UserData  { name: string; email: string; role: string; }
+interface CollapsibleSidebarProps { role?: "learner" | "employer" | "issuer" | "admin"; }
+
+const learnerSections: NavSection[] = [
+  { title: "Main",        items: [{ label: "Dashboard",          href: "/user/dashboard",          icon: Home }] },
+  { title: "Credentials", items: [
+    { label: "Upload",       href: "/user/credentials/upload", icon: Upload },
+    { label: "My Credentials", href: "/user/credentials",       icon: Award },
+  ]},
+  { title: "Career", items: [
+    { label: "Career Studio",       href: "/user/career-path",      icon: Map },
+    { label: "Job Recommendations", href: "/user/jobs/recommended", icon: Sparkles },
+    { label: "Applied Jobs",        href: "/user/jobs/applied",     icon: FileCheck },
+  ]},
 ];
 
-const issuerNav = [
-  { icon: Home, label: "Dashboard", href: "/issuer/dashboard" },
-  { icon: CheckSquare, label: "Verifications", href: "/issuer/verifications" },
-  { icon: User, label: "Profile", href: "/issuer/profile" },
-  { icon: Award, label: "Learners", href: "/issuer/learners" },
-  { icon: Upload, label: "Issue", href: "/issuer/issue" },
+const issuerSections: NavSection[] = [
+  { title: "Main",        items: [{ label: "Dashboard",   href: "/issuer/dashboard",    icon: Home }] },
+  { title: "Work",        items: [
+    { label: "Issue",        href: "/issuer/issue",        icon: Upload },
+    { label: "Learners",     href: "/issuer/learners",     icon: Users },
+    { label: "Verifications",href: "/issuer/verifications",icon: CheckSquare },
+  ]},
+  { title: "Account",     items: [
+    { label: "Profile",  href: "/issuer/profile",  icon: User },
+  ]},
 ];
 
-const employerNav = [
-  { icon: Home, label: "Dashboard", href: "/employer/dashboard" },
-  { icon: Search, label: "Search Talent", href: "/employer/search" },
-  { icon: Briefcase, label: "Jobs", href: "/employer/jobs" },
-  { icon: Bookmark, label: "Bookmarks", href: "/employer/bookmarks" },
-  { icon: User, label: "Profile", href: "/employer/profile" },
+const employerSections: NavSection[] = [
+  { title: "Main",    items: [{ label: "Dashboard",     href: "/employer/dashboard", icon: Home }] },
+  { title: "Hiring",  items: [
+    { label: "Search Talent", href: "/employer/search",    icon: Search },
+    { label: "Jobs",          href: "/employer/jobs",      icon: Briefcase },
+    { label: "Applications",  href: "/employer/applications", icon: FileCheck },
+    { label: "Bookmarks",     href: "/employer/bookmarks", icon: Bookmark },
+  ]},
+  { title: "Account", items: [{ label: "Profile", href: "/employer/profile", icon: User }] },
 ];
 
-const adminNav = [
-  { icon: Home, label: "Dashboard", href: "/admin/dashboard" },
-  { icon: User, label: "Users", href: "/admin/users" },
-  { icon: CheckSquare, label: "Issuers", href: "/admin/issuers" },
-  { icon: Briefcase, label: "Employers", href: "/admin/employers" },
-  { icon: Award, label: "Credentials", href: "/admin/credentials" },
-  { icon: Crown, label: "Subscriptions", href: "/admin/subscriptions" },
-  { icon: FileCheck, label: "Blog", href: "/admin/blog" },
-  { icon: Mail, label: "Contacts", href: "/admin/contacts" },
-  { icon: Layers, label: "NSQF", href: "/admin/nsqf" },
+const adminSections: NavSection[] = [
+  { title: "Main",       items: [{ label: "Dashboard", href: "/admin/dashboard", icon: Home }] },
+  { title: "Management", items: [
+    { label: "Users",         href: "/admin/users",         icon: User },
+    { label: "Issuers",       href: "/admin/issuers",       icon: CheckSquare },
+    { label: "Employers",     href: "/admin/employers",     icon: Briefcase },
+    { label: "Credentials",   href: "/admin/credentials",   icon: Award },
+    { label: "Subscriptions", href: "/admin/subscriptions", icon: Crown },
+    { label: "Blog",          href: "/admin/blog",          icon: FileCheck },
+    { label: "Contacts",      href: "/admin/contacts",      icon: Mail },
+    { label: "NSQF",          href: "/admin/nsqf",          icon: Layers },
+  ]},
 ];
-
-const bottomNavConfig = {
-  learner: [
-    { icon: User, label: "Profile", href: "/profile" },
-    { icon: Bell, label: "Notifications", href: "/notifications" },
-    { icon: Settings, label: "Settings", href: "/settings" },
-  ],
-  issuer: [
-    { icon: Bell, label: "Notifications", href: "/issuer/notifications" },
-    { icon: Settings, label: "Settings", href: "/issuer/settings" },
-  ],
-  employer: [
-    { icon: Bell, label: "Notifications", href: "/notifications" },
-    { icon: Settings, label: "Settings", href: "/settings" },
-  ],
-  admin: [
-    { icon: Bell, label: "Notifications", href: "/notifications" },
-    { icon: Settings, label: "Settings", href: "/settings" },
-  ],
-};
-
-interface CollapsibleSidebarProps {
-  role?: "learner" | "employer" | "issuer" | "admin";
-}
-
-interface UserData {
-  name: string;
-  email: string;
-}
 
 export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps) {
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [userData, setUserData] = useState<UserData>({ name: "User", email: "user@example.com" });
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [userData, setUserData] = useState<UserData>({ name: "User", email: "", role: "Learner" });
 
+  // Handle hydration
   useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const response = await api.get("/auth/me");
-        setUserData({
-          name: response.data.name || "User",
-          email: response.data.email || "user@example.com",
-        });
-      } catch (error) {
-        console.error("Failed to load user data:", error);
-      }
-    };
-    loadUserData();
+    setMounted(true);
   }, []);
 
   useEffect(() => {
-    const loadUnreadCount = async () => {
-      try {
-        const response = await api.get("/notifications");
-        const notifications = response.data || [];
-        setUnreadCount(notifications.filter((n: any) => !n.read).length);
-      } catch (error) {
-        console.error("Failed to load notifications:", error);
-      }
-    };
-    loadUnreadCount();
-    const interval = setInterval(loadUnreadCount, 30000);
-    return () => clearInterval(interval);
+    api.get("/auth/me")
+      .then(r => setUserData({ 
+        name: r.data.name || "User", 
+        email: r.data.email || "",
+        role: r.data.role || "Learner"
+      }))
+      .catch(() => {});
   }, []);
 
-  const navItems = role === "issuer" ? issuerNav : role === "employer" ? employerNav : role === "admin" ? adminNav : learnerNav;
-  const bottomNav = bottomNavConfig[role] || bottomNavConfig.learner;
+  // Load collapsed state from localStorage on mount (client-side only)
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const savedCollapsed = localStorage.getItem('sidebar-collapsed');
+    if (savedCollapsed !== null) {
+      setCollapsed(JSON.parse(savedCollapsed));
+    } else {
+      // Auto-collapse on smaller screens initially
+      setCollapsed(window.innerWidth < 1200);
+    }
+  }, [mounted]);
 
-  const getInitials = (name: string) =>
-    name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
+  // Save collapsed state to localStorage when it changes (client-side only)
+  useEffect(() => {
+    if (!mounted) return;
+    localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
+  }, [collapsed, mounted]);
+
+  // Handle window resize (but don't auto-collapse if user manually expanded)
+  useEffect(() => {
+    if (!mounted) return;
+    
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setCollapsed(true);
+      }
+    };
+    
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [mounted]);
+
+  const sections = useMemo(() => {
+    if (role === "issuer")   return issuerSections;
+    if (role === "employer") return employerSections;
+    if (role === "admin")    return adminSections;
+    return learnerSections;
+  }, [role]);
+
+  const isActive = (href: string) => {
+    // Exact match
+    if (pathname === href) return true;
+    
+    // Special case for credentials base route - only exact match
+    if (href === "/credentials" || href === "/user/credentials") {
+      return pathname === href;
+    }
+    
+    // For child routes, only mark parent as active if no exact match exists
+    // This prevents both "Upload" and "My Credentials" from being active
+    return false;
+  };
+
+  const initials = (name: string) =>
+    name.split(" ").map(n => n[0]).join("").toUpperCase().substring(0, 2);
+
+  const getProfileLink = () => {
+    switch (role) {
+      case "issuer": return "/issuer/profile";
+      case "employer": return "/employer/profile";
+      case "admin": return "/admin/profile";
+      default: return "/profile";
+    }
+  };
+
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+  };
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: isCollapsed ? 72 : 260 }}
-      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="hidden md:flex flex-col border-r bg-card/50 backdrop-blur-sm relative"
+    <aside
+      style={{ width: collapsed ? 64 : 240 }}
+      className="relative hidden h-full shrink-0 flex-col bg-background transition-[width] duration-200 ease-in-out md:flex"
     >
       {/* Logo */}
-      <div className="flex h-16 items-center border-b px-4">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold overflow-hidden">
-          <div className="flex-shrink-0 p-1.5 rounded-lg bg-gradient-to-br from-primary to-purple-600">
-            <Award className="h-4 w-4 text-white" />
-          </div>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="text-base whitespace-nowrap tracking-tight"
-              >
-                Cred<span className="text-primary">Matrix</span>
-              </motion.span>
-            )}
-          </AnimatePresence>
+      <div className={cn("flex h-14 items-center px-4", collapsed ? "justify-center" : "justify-between")}>
+        <Link href="/" className="flex items-center gap-2.5 min-w-0">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <Award className="h-4 w-4" />
+          </span>
+          {!collapsed && <span className="text-sm font-semibold tracking-tight truncate">CredMatrix</span>}
         </Link>
+        {!collapsed && (
+          <button 
+            onClick={toggleCollapsed}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors shrink-0"
+            title="Collapse sidebar"
+            aria-label="Collapse sidebar"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
-      {/* User Profile Card */}
-      <div className="p-3">
-        <div
-          className={cn(
-            "flex items-center gap-3 p-2.5 rounded-xl bg-muted/50 hover:bg-muted/80 transition-colors cursor-pointer",
-            isCollapsed && "justify-center"
-          )}
+      {/* Expand button when collapsed */}
+      {collapsed && (
+        <button 
+          onClick={toggleCollapsed}
+          className="mx-auto mt-2 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          title="Expand sidebar"
+          aria-label="Expand sidebar"
         >
-          <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-primary/10">
-            <AvatarFallback className="bg-gradient-to-br from-primary to-purple-600 text-white text-xs font-semibold">
-              {getInitials(userData.name)}
-            </AvatarFallback>
-          </Avatar>
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="flex-1 overflow-hidden"
-              >
-                <p className="text-sm font-semibold truncate">{userData.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{userData.email}</p>
-              </motion.div>
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      )}
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+        {sections.map((section) => (
+          <div key={section.title}>
+            {!collapsed && (
+              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                {section.title}
+              </p>
             )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="px-4">
-        <div className="h-px bg-border/60" />
-      </div>
-
-      {/* Main Navigation */}
-      <nav className="flex-1 space-y-0.5 px-3 py-3 overflow-y-auto">
-        {navItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-
-          return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  isCollapsed && "justify-center px-2"
-                )}
-              >
-                <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-                <AnimatePresence>
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      className="whitespace-nowrap overflow-hidden"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            </Link>
-          );
-        })}
+            <div className="space-y-0.5">
+              {section.items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link key={item.href} href={item.href}
+                    title={collapsed ? item.label : undefined}
+                    className={cn(
+                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors",
+                      collapsed && "justify-center px-2",
+                      active
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <Icon className={cn("h-4 w-4 shrink-0", active && "text-primary")} />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
-      {/* Divider */}
-      <div className="px-4">
-        <div className="h-px bg-border/60" />
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="space-y-0.5 px-3 py-3">
-        {bottomNav.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
-          const isNotifications = item.label === "Notifications";
-
-          return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileTap={{ scale: 0.98 }}
-                className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 relative",
-                  isActive
-                    ? "bg-muted text-foreground"
-                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  isCollapsed && "justify-center px-2"
-                )}
-              >
-                <div className="relative">
-                  <Icon className="h-[18px] w-[18px] flex-shrink-0" />
-                  {isNotifications && unreadCount > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                      {unreadCount > 9 ? "9+" : unreadCount}
-                    </span>
-                  )}
-                </div>
-                <AnimatePresence>
-                  {!isCollapsed && (
-                    <motion.span
-                      initial={{ opacity: 0, width: 0 }}
-                      animate={{ opacity: 1, width: "auto" }}
-                      exit={{ opacity: 0, width: 0 }}
-                      className="whitespace-nowrap overflow-hidden"
-                    >
-                      {item.label}
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-                {isNotifications && unreadCount > 0 && !isCollapsed && (
-                  <span className="ml-auto h-5 px-2 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </motion.div>
+      {/* Bottom user row */}
+      <div className={cn(
+        "px-3 py-3 flex items-center gap-2.5",
+        collapsed && "justify-center"
+      )}>
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+          {initials(userData.name)}
+        </div>
+        {!collapsed && (
+          <>
+            <Link className="flex-1 min-w-0" href={getProfileLink()}>
+              <p className="text-xs font-medium truncate">{userData.name}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{userData.email}</p>
             </Link>
-          );
-        })}
-
-        {/* Logout */}
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          className={cn(
-            "w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-            "text-muted-foreground hover:bg-destructive/5 hover:text-destructive",
-            isCollapsed && "justify-center px-2"
-          )}
-          onClick={() => {
-            localStorage.clear();
-            window.location.href = "/";
-          }}
-        >
-          <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.span
-                initial={{ opacity: 0, width: 0 }}
-                animate={{ opacity: 1, width: "auto" }}
-                exit={{ opacity: 0, width: 0 }}
-                className="whitespace-nowrap overflow-hidden"
-              >
-                Logout
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
-      </div>
-
-      {/* Collapse Toggle */}
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute -right-3.5 top-20 h-7 w-7 rounded-full border bg-background shadow-md hover:shadow-lg transition-all z-10"
-        onClick={() => setIsCollapsed(!isCollapsed)}
-      >
-        {isCollapsed ? (
-          <ChevronRight className="h-3.5 w-3.5" />
-        ) : (
-          <ChevronLeft className="h-3.5 w-3.5" />
+            <button
+              onClick={() => { localStorage.clear(); window.location.href = "/"; }}
+              className="flex h-6 w-6 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+            </button>
+          </>
         )}
-      </Button>
-    </motion.aside>
+      </div>
+    </aside>
   );
 }

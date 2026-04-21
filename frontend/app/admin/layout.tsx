@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CollapsibleSidebar } from '@/components/navigation/collapsible-sidebar';
 import { MobileAdminSidebar } from '@/components/navigation/mobile-admin-sidebar';
+import { Header } from '@/components/navigation/header';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,20 +40,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-muted/30">
       {/* Desktop Sidebar - Hidden on mobile */}
       <CollapsibleSidebar role="admin" />
       
       {/* Mobile Sidebar - Only visible on mobile */}
       <MobileAdminSidebar userName={user.name} userEmail={user.email} />
       
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        {/* Add top padding on mobile to account for hamburger button */}
-        <div className="md:pt-0 pt-0">
-          {children}
-        </div>
-      </main>
+      {/* Main Content with Header */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header />
+        <main className="flex-1 overflow-y-auto">
+          <div className="container py-6 md:py-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

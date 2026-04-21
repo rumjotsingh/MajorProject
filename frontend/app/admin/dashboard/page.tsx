@@ -1,23 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import adminApi from '@/lib/admin-api';
+import { motion } from 'framer-motion';
 import {
   Users,
   Building2,
   Award,
   FileText,
   CreditCard,
-  TrendingUp,
-  Activity,
-  CheckCircle,
-  XCircle,
-  Clock,
   ArrowUpRight,
+  CheckCircle,
+  Clock,
+  RefreshCcw,
   Shield,
+  Sparkles,
+  Activity,
 } from 'lucide-react';
+import adminApi from '@/lib/admin-api';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DashboardStats {
   users: {
@@ -41,324 +45,365 @@ interface DashboardStats {
   };
 }
 
-interface RecentActivity {
-  id: string;
-  type: 'user' | 'credential' | 'issuer' | 'blog' | 'subscription';
-  action: string;
-  user: string;
-  timestamp: string;
+const emptyStats: DashboardStats = {
+  users: { total: 0, learners: 0, employers: 0, issuers: 0 },
+  credentials: { total: 0, verified: 0, pending: 0 },
+  blogs: { total: 0, published: 0 },
+  issuers: { pending: 0, approved: 0 },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+  }),
+};
+
+function formatCount(value: number) {
+  return new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+function percent(part: number, total: number) {
+  if (!total) return 0;
+  return Math.round((part / total) * 100);
 }
 
 export default function AdminDashboardPage() {
-  const router = useRouter();
-  const [stats, setStats] = useState<DashboardStats>({
-    users: { total: 0, learners: 0, employers: 0, issuers: 0 },
-    credentials: { total: 0, verified: 0, pending: 0 },
-    blogs: { total: 0, published: 0 },
-    issuers: { pending: 0, approved: 0 },
-  });
+  const [stats, setStats] = useState<DashboardStats>(emptyStats);
   const [loading, setLoading] = useState(true);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const loadStats = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      const data = await adminApi.getStats();
+      setStats(data);
+      setLastUpdated(new Date());
+    } catch (loadError) {
+      console.error('Error fetching admin dashboard stats:', loadError);
+      setError('Unable to load dashboard statistics right now.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    fetchStats();
-    fetchRecentActivity();
-    
-    // Refresh stats every 30 seconds
+    loadStats();
     const interval = setInterval(() => {
-      fetchStats();
-      fetchRecentActivity();
-    }, 30000);
-
+      loadStats(true);
+    }, 45000);
     return () => clearInterval(interval);
   }, []);
 
-  const fetchStats = async () => {
-    try {
-      const data = await adminApi.getStats();
-      setStats(data);
-    } catch (error) {
-      console.error('Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const health = useMemo(() => {
+    const verifiedRate = percent(stats.credentials.verified, stats.credentials.total);
+    const issuerApprovalRate = percent(stats.issuers.approved, stats.issuers.approved + stats.issuers.pending);
+    const blogPublishRate = percent(stats.blogs.published, stats.blogs.total);
 
-  const fetchRecentActivity = async () => {
-    // Mock recent activity - you can implement this endpoint
-    setRecentActivity([
+    return [
       {
-        id: '1',
-        type: 'user',
-        action: 'New user registered',
-        user: 'John Doe',
-        timestamp: new Date().toISOString(),
+        label: 'Credential Verification',
+        value: verifiedRate,
+        detail: `${stats.credentials.verified} of ${stats.credentials.total} verified`,
       },
       {
-        id: '2',
-        type: 'credential',
-        action: 'Credential verified',
-        user: 'Jane Smith',
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        label: 'Issuer Approval',
+        value: issuerApprovalRate,
+        detail: `${stats.issuers.approved} approved, ${stats.issuers.pending} pending`,
       },
       {
-        id: '3',
-        type: 'issuer',
-        action: 'Issuer approved',
-        user: 'ABC Institute',
-        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        label: 'Blog Publishing',
+        value: blogPublishRate,
+        detail: `${stats.blogs.published} of ${stats.blogs.total} published`,
       },
-    ]);
-  };
-
-  const getActivityIcon = (type: string) => {
-    switch (type) {
-      case 'user':
-        return <Users className="w-4 h-4 text-blue-600" />;
-      case 'credential':
-        return <Award className="w-4 h-4 text-green-600" />;
-      case 'issuer':
-        return <Building2 className="w-4 h-4 text-purple-600" />;
-      case 'blog':
-        return <FileText className="w-4 h-4 text-orange-600" />;
-      case 'subscription':
-        return <CreditCard className="w-4 h-4 text-pink-600" />;
-      default:
-        return <Activity className="w-4 h-4 text-gray-600" />;
-    }
-  };
+    ];
+  }, [stats]);
 
   const quickActions = [
     {
-      title: 'Manage Users',
-      description: 'View and manage all users',
+      title: 'Users',
+      description: 'Manage learners and role distribution',
       icon: Users,
-      color: 'blue',
       href: '/admin/users',
+      iconClass: 'text-sky-500',
+      bgClass: 'bg-sky-500/10',
     },
     {
-      title: 'Manage Issuers',
-      description: 'Approve and manage issuers',
+      title: 'Issuers',
+      description: 'Approve and review institutions',
       icon: Building2,
-      color: 'purple',
       href: '/admin/issuers',
+      iconClass: 'text-indigo-500',
+      bgClass: 'bg-indigo-500/10',
     },
     {
-      title: 'Manage Credentials',
-      description: 'Review and verify credentials',
+      title: 'Credentials',
+      description: 'Review pending verification requests',
       icon: Award,
-      color: 'green',
       href: '/admin/credentials',
+      iconClass: 'text-emerald-500',
+      bgClass: 'bg-emerald-500/10',
     },
     {
-      title: 'Manage Blogs',
-      description: 'Create and edit blog posts',
-      icon: FileText,
-      color: 'orange',
-      href: '/admin/blog',
-    },
-    {
-      title: 'Manage Employers',
-      description: 'View and verify employers',
+      title: 'Employers',
+      description: 'Verify and maintain employer records',
       icon: Shield,
-      color: 'indigo',
       href: '/admin/employers',
+      iconClass: 'text-amber-500',
+      bgClass: 'bg-amber-500/10',
     },
     {
-      title: 'Manage Subscriptions',
-      description: 'Handle user subscriptions',
+      title: 'Subscriptions',
+      description: 'Track plans and revenue operations',
       icon: CreditCard,
-      color: 'pink',
       href: '/admin/subscriptions',
+      iconClass: 'text-pink-500',
+      bgClass: 'bg-pink-500/10',
+    },
+    {
+      title: 'Blog CMS',
+      description: 'Publish and manage platform content',
+      icon: FileText,
+      href: '/admin/blog',
+      iconClass: 'text-orange-500',
+      bgClass: 'bg-orange-500/10',
+    },
+  ];
+
+  const topCards = [
+    {
+      title: 'Total Users',
+      value: formatCount(stats.users.total),
+      subtitle: `${stats.users.learners} learners • ${stats.users.employers} employers`,
+      icon: Users,
+      iconClass: 'text-sky-500',
+      bgClass: 'bg-sky-500/10',
+    },
+    {
+      title: 'Credentials',
+      value: formatCount(stats.credentials.total),
+      subtitle: `${stats.credentials.pending} pending review`,
+      icon: Award,
+      iconClass: 'text-emerald-500',
+      bgClass: 'bg-emerald-500/10',
+    },
+    {
+      title: 'Approved Issuers',
+      value: formatCount(stats.issuers.approved),
+      subtitle: `${stats.issuers.pending} waiting approval`,
+      icon: Building2,
+      iconClass: 'text-indigo-500',
+      bgClass: 'bg-indigo-500/10',
+    },
+    {
+      title: 'Published Blogs',
+      value: formatCount(stats.blogs.published),
+      subtitle: `${Math.max(stats.blogs.total - stats.blogs.published, 0)} drafts left`,
+      icon: FileText,
+      iconClass: 'text-orange-500',
+      bgClass: 'bg-orange-500/10',
     },
   ];
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading dashboard...</p>
+      <div className="space-y-6 p-5 md:p-8">
+        <Card className="overflow-hidden">
+          <CardContent className="p-6 md:p-8 space-y-4">
+            <Skeleton className="h-9 w-52 rounded-xl" />
+            <Skeleton className="h-4 w-72 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-full" />
+          </CardContent>
+        </Card>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index}>
+              <CardContent className="p-5 space-y-3">
+                <Skeleton className="h-10 w-10 rounded-xl" />
+                <Skeleton className="h-7 w-24 rounded-lg" />
+                <Skeleton className="h-4 w-36 rounded-lg" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-8 lg:p-10">
-      <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header */}
-        <div>
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-            <p className="text-gray-600">Welcome back! Here's what's happening today.</p>
-          </div>
-        </div>
-
-        {/* Main Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Total Users */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-blue-100 p-3 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600" />
+    <motion.div initial="hidden" animate="visible" className="space-y-6 p-5 md:p-8">
+      <motion.div custom={0} variants={fadeUp}>
+        <Card className="relative overflow-hidden border-primary/20 bg-gradient-to-r from-primary/10 via-cyan-500/10 to-emerald-500/10">
+          <div className="absolute -top-10 -right-10 h-44 w-44 rounded-full bg-primary/15 blur-3xl" />
+          <CardContent className="relative p-6 md:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <Badge variant="secondary" className="rounded-full border border-primary/20 bg-background/80">
+                  <Sparkles className="mr-1.5 h-3.5 w-3.5" />
+                  System Overview
+                </Badge>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Admin Command Center</h1>
+                <p className="text-sm text-muted-foreground max-w-xl">
+                  Real-time status of users, credentials, issuers, and content. Keep operations healthy with one view.
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Last updated: {lastUpdated ? lastUpdated.toLocaleTimeString() : 'Not available'}
+                </p>
               </div>
-              <span className="text-xs font-medium text-green-600 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
-                +12%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.users.total}</h3>
-            <p className="text-sm text-gray-600">Total Users</p>
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>Learners: {stats.users.learners}</span>
-                <span>Employers: {stats.users.employers}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Credentials */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-green-100 p-3 rounded-lg">
-                <Award className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="text-xs font-medium text-green-600 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
-                +8%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.credentials.total}</h3>
-            <p className="text-sm text-gray-600">Total Credentials</p>
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span className="flex items-center gap-1">
-                  <CheckCircle className="w-3 h-3 text-green-600" />
-                  {stats.credentials.verified}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-yellow-600" />
-                  {stats.credentials.pending}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Issuers */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-purple-100 p-3 rounded-lg">
-                <Building2 className="w-6 h-6 text-purple-600" />
-              </div>
-              <span className="text-xs font-medium text-yellow-600 flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {stats.issuers.pending} pending
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.issuers.approved}</h3>
-            <p className="text-sm text-gray-600">Approved Issuers</p>
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <Link
-                href="/admin/issuers"
-                className="text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+              <Button
+                onClick={() => loadStats(true)}
+                variant="outline"
+                className="rounded-full bg-background/80"
+                disabled={refreshing}
               >
-                Review pending
-                <ArrowUpRight className="w-3 h-3" />
-              </Link>
+                <RefreshCcw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
             </div>
-          </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-          {/* Blog Posts */}
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className="bg-orange-100 p-3 rounded-lg">
-                <FileText className="w-6 h-6 text-orange-600" />
-              </div>
-              <span className="text-xs font-medium text-green-600 flex items-center gap-1">
-                <TrendingUp className="w-3 h-3" />
-                +5%
-              </span>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stats.blogs.total}</h3>
-            <p className="text-sm text-gray-600">Blog Posts</p>
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <div className="flex justify-between text-xs text-gray-600">
-                <span>Published: {stats.blogs.published}</span>
-                <span>Drafts: {stats.blogs.total - stats.blogs.published}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      {error && (
+        <motion.div custom={1} variants={fadeUp}>
+          <Card className="border-destructive/30 bg-destructive/5">
+            <CardContent className="p-4 flex items-center justify-between gap-4">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button variant="destructive" size="sm" onClick={() => loadStats(true)}>
+                Retry
+              </Button>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickActions.map((action, index) => {
-              const Icon = action.icon;
-              const colorClasses = {
-                blue: 'bg-blue-100 text-blue-600 hover:bg-blue-200',
-                purple: 'bg-purple-100 text-purple-600 hover:bg-purple-200',
-                green: 'bg-green-100 text-green-600 hover:bg-green-200',
-                orange: 'bg-orange-100 text-orange-600 hover:bg-orange-200',
-                indigo: 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200',
-                pink: 'bg-pink-100 text-pink-600 hover:bg-pink-200',
-              };
-
-              return (
-                <Link
-                  key={index}
-                  href={action.href}
-                  className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className={`p-3 rounded-lg ${colorClasses[action.color as keyof typeof colorClasses]}`}>
-                      <Icon className="w-6 h-6" />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {topCards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <motion.div key={card.title} custom={index + 2} variants={fadeUp}>
+              <Card className="hover-lift">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`h-10 w-10 rounded-xl ${card.bgClass} flex items-center justify-center`}>
+                      <Icon className={`h-5 w-5 ${card.iconClass}`} />
                     </div>
-                    <ArrowUpRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{action.title}</h3>
-                  <p className="text-sm text-gray-600">{action.description}</p>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
+                  <p className="text-xs font-medium text-muted-foreground">{card.title}</p>
+                  <p className="text-2xl font-bold mt-1">{card.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">{card.subtitle}</p>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })}
+      </div>
 
-        {/* Recent Activity */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
-              <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                View All
-              </button>
-            </div>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {recentActivity.map((activity) => (
-              <div
-                key={activity.id}
-                className="p-6 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-start gap-4">
-                  <div className="bg-gray-100 p-2 rounded-lg">
-                    {getActivityIcon(activity.type)}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+        <motion.div custom={7} variants={fadeUp} className="xl:col-span-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                Platform Health
+              </CardTitle>
+              <CardDescription>Operational completion rates based on current data.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {health.map((item) => (
+                <div key={item.label} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-medium">{item.label}</span>
+                    <span className="text-muted-foreground">{item.value}%</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.action}</p>
-                    <p className="text-sm text-gray-600 mt-1">{activity.user}</p>
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-primary to-cyan-500" style={{ width: `${item.value}%` }} />
                   </div>
-                  <span className="text-xs text-gray-500 whitespace-nowrap">
-                    {new Date(activity.timestamp).toLocaleTimeString()}
-                  </span>
+                  <p className="text-xs text-muted-foreground">{item.detail}</p>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div custom={8} variants={fadeUp} className="xl:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Live Breakdown</CardTitle>
+              <CardDescription>Current distribution across critical admin queues.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-xl border p-3 bg-muted/30">
+                <p className="text-xs text-muted-foreground mb-1">Credential Queue</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-1.5"><CheckCircle className="h-4 w-4 text-emerald-500" /> Verified</span>
+                  <span className="font-semibold">{stats.credentials.verified}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm mt-1">
+                  <span className="flex items-center gap-1.5"><Clock className="h-4 w-4 text-amber-500" /> Pending</span>
+                  <span className="font-semibold">{stats.credentials.pending}</span>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="rounded-xl border p-3 bg-muted/30">
+                <p className="text-xs text-muted-foreground mb-1">User Roles</p>
+                <div className="text-sm space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span>Learners</span>
+                    <span className="font-semibold">{stats.users.learners}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Employers</span>
+                    <span className="font-semibold">{stats.users.employers}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Issuers</span>
+                    <span className="font-semibold">{stats.users.issuers}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
-    </div>
+
+      <motion.div custom={9} variants={fadeUp}>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Quick Actions</CardTitle>
+            <CardDescription>Open key admin workstreams.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {quickActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link key={action.href} href={action.href} className="group rounded-xl border p-4 transition-all hover:border-primary/20 hover:bg-muted/40">
+                    <div className="flex items-center justify-between">
+                      <div className={`h-9 w-9 rounded-lg ${action.bgClass} flex items-center justify-center`}>
+                        <Icon className={`h-5 w-5 ${action.iconClass}`} />
+                      </div>
+                      <ArrowUpRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                    </div>
+                    <p className="text-sm font-semibold mt-3">{action.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{action.description}</p>
+                  </Link>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </motion.div>
   );
 }

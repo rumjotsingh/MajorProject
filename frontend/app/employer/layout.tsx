@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CollapsibleSidebar } from '@/components/navigation/collapsible-sidebar';
 import { MobileEmployerSidebar } from '@/components/navigation/mobile-employer-sidebar';
+import { Header } from '@/components/navigation/header';
 
 export default function EmployerLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -29,29 +30,35 @@ export default function EmployerLayout({ children }: { children: React.ReactNode
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Desktop Sidebar - Hidden on mobile */}
+    <div className="flex h-screen bg-background">
+      {/* Desktop Sidebar */}
       <CollapsibleSidebar role="employer" />
       
-      {/* Mobile Sidebar - Only visible on mobile */}
+      {/* Mobile Sidebar */}
       <MobileEmployerSidebar userName={user.name} userEmail={user.email} />
       
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="md:pt-0 pt-0">
-          {children}
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header with Global Search & Notifications */}
+        <Header />
+        
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-6">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
