@@ -197,6 +197,7 @@ export default function CareerPathPage() {
   const skillDistribution = profile && credentials.length > 0
     ? dashboardAPI.getSkillDistribution(profile, credentials)
     : [];
+  const selectedCareerPath = careerPaths.find((path) => path.title === selectedPath);
 
   // Paywall
   if (!loading && subscription && !subscription.subscription.features.aiRecommendations) {
@@ -686,7 +687,7 @@ export default function CareerPathPage() {
               )}
 
               {/* Career Details */}
-              {careerPaths.find(p => p.title === selectedPath) && (
+              {selectedCareerPath && (
                 <Card className="bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -696,37 +697,37 @@ export default function CareerPathPage() {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {careerPaths.find(p => p.title === selectedPath)?.averageSalary && (
+                      {selectedCareerPath?.averageSalary && (
                         <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-black/20">
                           <p className="text-xs text-muted-foreground mb-1">💰 Salary</p>
-                          <p className="font-bold text-sm">{careerPaths.find(p => p.title === selectedPath)?.averageSalary}</p>
+                          <p className="font-bold text-sm">{selectedCareerPath?.averageSalary}</p>
                         </div>
                       )}
-                      {careerPaths.find(p => p.title === selectedPath)?.demand && (
+                      {selectedCareerPath?.demand && (
                         <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-black/20">
                           <p className="text-xs text-muted-foreground mb-1">📈 Demand</p>
-                          <Badge variant="default" className="text-xs">{careerPaths.find(p => p.title === selectedPath)?.demand}</Badge>
+                          <Badge variant="default" className="text-xs">{selectedCareerPath?.demand}</Badge>
                         </div>
                       )}
-                      {careerPaths.find(p => p.title === selectedPath)?.jobOpenings && (
+                      {selectedCareerPath?.jobOpenings && (
                         <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-black/20">
                           <p className="text-xs text-muted-foreground mb-1">💼 Jobs</p>
-                          <p className="font-bold text-sm">{careerPaths.find(p => p.title === selectedPath)?.jobOpenings.toLocaleString()}</p>
+                          <p className="font-bold text-sm">{selectedCareerPath?.jobOpenings?.toLocaleString()}</p>
                         </div>
                       )}
-                      {careerPaths.find(p => p.title === selectedPath)?.growthRate && (
+                      {selectedCareerPath?.growthRate && (
                         <div className="text-center p-3 rounded-lg bg-white/50 dark:bg-black/20">
                           <p className="text-xs text-muted-foreground mb-1">📊 Growth</p>
-                          <p className="font-bold text-sm">{careerPaths.find(p => p.title === selectedPath)?.growthRate}</p>
+                          <p className="font-bold text-sm">{selectedCareerPath?.growthRate}</p>
                         </div>
                       )}
                     </div>
                     
-                    {careerPaths.find(p => p.title === selectedPath)?.tools && careerPaths.find(p => p.title === selectedPath)?.tools.length > 0 && (
+                    {selectedCareerPath?.tools && selectedCareerPath.tools.length > 0 && (
                       <div className="p-3 rounded-lg bg-white/50 dark:bg-black/20">
                         <p className="text-xs font-semibold text-muted-foreground mb-2">🛠️ Tools You'll Use:</p>
                         <div className="flex flex-wrap gap-1.5">
-                          {careerPaths.find(p => p.title === selectedPath)?.tools.map((tool, i) => (
+                          {selectedCareerPath.tools.map((tool, i) => (
                             <Badge key={i} variant="secondary" className="text-xs">{tool}</Badge>
                           ))}
                         </div>
