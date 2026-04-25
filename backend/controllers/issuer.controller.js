@@ -34,35 +34,43 @@ export const registerIssuer = async (req, res, next) => {
 // GET /issuer/credentials or /issuer/dashboard/credentials - With pagination, search, and filters
 export const getIssuerCredentials = async (req, res, next) => {
   try {
-    let issuerId;
+    let issuerDoc;
+    let issuerIds = [];
     
     // Check if authenticated via API key (req.issuer) or JWT token (req.user)
     if (req.issuer) {
-      issuerId = req.issuer._id;
+      issuerDoc = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
       // Find issuer by user email or create one if doesn't exist
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         // Create issuer for this user
         const newIssuer = await Issuer.create({
           name: req.user.name || req.user.email.split('@')[0],
-          contactEmail: req.user.email,
+          contactEmail: req.user.email.trim().toLowerCase(),
           status: 'approved',
         });
-        issuerId = newIssuer._id;
+        issuerDoc = newIssuer;
       } else {
-        issuerId = issuer._id;
+        issuerDoc = issuer;
       }
     } else {
       return res.status(403).json({ error: 'Not authorized as issuer' });
     }
+
+    // Include credentials mapped to issuer records with the same organization name
+    const escapedIssuerName = String(issuerDoc.name || '').trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    const sameNameIssuers = await Issuer.find({
+      name: { $regex: new RegExp(`^${escapedIssuerName}$`, 'i') },
+    }).select('_id');
+    issuerIds = sameNameIssuers.length > 0 ? sameNameIssuers.map((i) => i._id) : [issuerDoc._id];
 
     // Check if this is a dashboard request (no pagination needed)
     const isDashboard = req.path.includes('/dashboard/');
     
     if (isDashboard) {
       // Return simple array for dashboard
-      const credentials = await Credential.find({ issuerId })
+      const credentials = await Credential.find({ issuerId: { $in: issuerIds } })
         .populate('userId', 'name email')
         .sort({ createdAt: -1 });
       
@@ -72,14 +80,14 @@ export const getIssuerCredentials = async (req, res, next) => {
     // Parse query parameters for paginated requests
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || '';
+    const search = String(req.query.search || '').trim();
     const status = req.query.status || ''; // verified, pending, rejected
     const nsqfLevel = req.query.nsqfLevel || '';
     const sortBy = req.query.sortBy || 'createdAt'; // createdAt, issueDate, title, nsqfLevel
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
     // Build query
-    const query = { issuerId };
+    const query = { issuerId: { $in: issuerIds } };
     
     // Apply status filter
     if (status) {
@@ -91,6 +99,25 @@ export const getIssuerCredentials = async (req, res, next) => {
       query.nsqfLevel = parseInt(nsqfLevel);
     }
 
+    // Apply search at DB level (title, skills, learner name/email)
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, 'i');
+
+      const matchedLearners = await User.find({
+        role: 'Learner',
+        $or: [{ name: searchRegex }, { email: searchRegex }],
+      }).select('_id');
+
+      const learnerIds = matchedLearners.map((learner) => learner._id);
+
+      query.$or = [
+        { title: searchRegex },
+        { skills: searchRegex },
+        { userId: { $in: learnerIds } },
+      ];
+    }
+
     // Get total count for pagination
     const total = await Credential.countDocuments(query);
 
@@ -99,22 +126,11 @@ export const getIssuerCredentials = async (req, res, next) => {
     sort[sortBy] = sortOrder;
 
     // Fetch credentials with pagination
-    let credentials = await Credential.find(query)
+    const credentials = await Credential.find(query)
       .populate('userId', 'name email')
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
-
-    // Apply search filter (post-query for populated fields)
-    if (search) {
-      const searchLower = search.toLowerCase();
-      credentials = credentials.filter(cred => 
-        cred.title.toLowerCase().includes(searchLower) ||
-        (cred.userId && cred.userId.name.toLowerCase().includes(searchLower)) ||
-        (cred.userId && cred.userId.email.toLowerCase().includes(searchLower)) ||
-        cred.skills.some(skill => skill.toLowerCase().includes(searchLower))
-      );
-    }
 
     // Calculate pagination
     const totalPages = Math.ceil(total / limit);
@@ -145,7 +161,7 @@ export const issueCredential = async (req, res, next) => {
       validateObjectId(issuerId, 'Issuer ID');
     } else if (req.user && req.user.role === 'Issuer') {
       // JWT authentication - find issuer by user email
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer profile not found' });
       }
@@ -315,8 +331,9 @@ export const issueCredential = async (req, res, next) => {
       // Find issuer user account
       const issuer = await Issuer.findById(issuerId);
       if (issuer) {
+        const escapedIssuerEmail = issuer.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const issuerUser = await User.findOne({ 
-          email: issuer.contactEmail,
+          email: { $regex: new RegExp(`^${escapedIssuerEmail}$`, 'i') },
           role: 'Issuer'
         });
         
@@ -381,11 +398,11 @@ export const getIssuerProfile = async (req, res, next) => {
     if (req.issuer) {
       issuer = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         issuer = await Issuer.create({
           name: req.user.name || req.user.email.split('@')[0],
-          contactEmail: req.user.email,
+          contactEmail: req.user.email.trim().toLowerCase(),
           status: 'approved',
         });
       }
@@ -409,7 +426,7 @@ export const updateIssuerProfile = async (req, res, next) => {
     if (req.issuer) {
       issuer = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer profile not found' });
       }
@@ -418,7 +435,7 @@ export const updateIssuerProfile = async (req, res, next) => {
     }
 
     if (name) issuer.name = name;
-    if (contactEmail) issuer.contactEmail = contactEmail;
+    if (contactEmail) issuer.contactEmail = contactEmail.trim().toLowerCase();
     if (allowedDomains) issuer.allowedDomains = allowedDomains;
 
     await issuer.save();
@@ -432,22 +449,29 @@ export const updateIssuerProfile = async (req, res, next) => {
 // GET /issuer/learners - Get all learners with pagination, search, and filters
 export const getIssuerLearners = async (req, res, next) => {
   try {
-    let issuerId;
+    let issuerDoc;
+    let issuerIds = [];
     
     if (req.issuer) {
-      issuerId = req.issuer._id;
+      issuerDoc = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.json({
           learners: [],
           pagination: { page: 1, limit: 10, total: 0, pages: 0 }
         });
       }
-      issuerId = issuer._id;
+      issuerDoc = issuer;
     } else {
       return res.status(403).json({ error: 'Not authorized as issuer' });
     }
+
+    const escapedIssuerName = String(issuerDoc.name || '').trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    const sameNameIssuers = await Issuer.find({
+      name: { $regex: new RegExp(`^${escapedIssuerName}$`, 'i') },
+    }).select('_id');
+    issuerIds = sameNameIssuers.length > 0 ? sameNameIssuers.map((i) => i._id) : [issuerDoc._id];
 
     // Parse query parameters
     const page = parseInt(req.query.page) || 1;
@@ -458,7 +482,7 @@ export const getIssuerLearners = async (req, res, next) => {
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
     // Get unique learners from credentials
-    const credentials = await Credential.find({ issuerId })
+    const credentials = await Credential.find({ issuerId: { $in: issuerIds } })
       .populate('userId', 'name email')
       .sort({ createdAt: -1 });
 
@@ -567,19 +591,26 @@ export const getLearnerDetails = async (req, res, next) => {
   try {
     validateObjectId(req.params.id, 'User ID');
     
-    let issuerId;
+    let issuerDoc;
+    let issuerIds = [];
     
     if (req.issuer) {
-      issuerId = req.issuer._id;
+      issuerDoc = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer not found' });
       }
-      issuerId = issuer._id;
+      issuerDoc = issuer;
     } else {
       return res.status(403).json({ error: 'Not authorized as issuer' });
     }
+
+    const escapedIssuerName = String(issuerDoc.name || '').trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    const sameNameIssuers = await Issuer.find({
+      name: { $regex: new RegExp(`^${escapedIssuerName}$`, 'i') },
+    }).select('_id');
+    issuerIds = sameNameIssuers.length > 0 ? sameNameIssuers.map((i) => i._id) : [issuerDoc._id];
 
     const user = await User.findById(req.params.id).select('-passwordHash');
     if (!user) {
@@ -589,7 +620,7 @@ export const getLearnerDetails = async (req, res, next) => {
     const profile = await LearnerProfile.findOne({ userId: user._id });
     const credentials = await Credential.find({ 
       userId: user._id, 
-      issuerId 
+      issuerId: { $in: issuerIds }
     }).sort({ createdAt: -1 });
 
     res.json({
@@ -605,35 +636,65 @@ export const getLearnerDetails = async (req, res, next) => {
 // GET /issuer/pending-verifications - With pagination and search
 export const getPendingVerifications = async (req, res, next) => {
   try {
-    let issuerId;
+    let issuerDoc;
+    let issuerIds = [];
+    
     
     if (req.issuer) {
-      issuerId = req.issuer._id;
+      issuerDoc = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const issuer = await Issuer.findOne({
+        contactEmail: { $regex: new RegExp(`^${escapedEmail}$`, 'i') },
+      });
       if (!issuer) {
         return res.json({
           credentials: [],
           pagination: { page: 1, limit: 10, total: 0, pages: 0 }
         });
       }
-      issuerId = issuer._id;
+      issuerDoc = issuer;
     } else {
       return res.status(403).json({ error: 'Not authorized as issuer' });
     }
 
+    const escapedIssuerName = String(issuerDoc.name || '').trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    const sameNameIssuers = await Issuer.find({
+      name: { $regex: new RegExp(`^${escapedIssuerName}$`, 'i') },
+    }).select('_id');
+    issuerIds = sameNameIssuers.length > 0 ? sameNameIssuers.map((i) => i._id) : [issuerDoc._id];
+
     // Parse query parameters
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
-    const search = req.query.search || '';
+    const search = String(req.query.search || '').trim();
     const sortBy = req.query.sortBy || 'createdAt';
     const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
 
     // Build query
     const query = { 
-      issuerId,
+      issuerId: { $in: issuerIds },
       verificationStatus: 'pending'
     };
+
+    // Apply search at DB level (title, skills, learner name/email)
+    if (search) {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const searchRegex = new RegExp(escapedSearch, 'i');
+
+      const matchedLearners = await User.find({
+        role: 'Learner',
+        $or: [{ name: searchRegex }, { email: searchRegex }],
+      }).select('_id');
+
+      const learnerIds = matchedLearners.map((learner) => learner._id);
+
+      query.$or = [
+        { title: searchRegex },
+        { skills: searchRegex },
+        { userId: { $in: learnerIds } },
+      ];
+    }
 
     // Get total count
     const total = await Credential.countDocuments(query);
@@ -643,21 +704,11 @@ export const getPendingVerifications = async (req, res, next) => {
     sort[sortBy] = sortOrder;
 
     // Fetch credentials
-    let credentials = await Credential.find(query)
+    const credentials = await Credential.find(query)
       .populate('userId', 'name email')
       .sort(sort)
       .skip((page - 1) * limit)
       .limit(limit);
-
-    // Apply search filter
-    if (search) {
-      const searchLower = search.toLowerCase();
-      credentials = credentials.filter(cred => 
-        cred.title.toLowerCase().includes(searchLower) ||
-        (cred.userId && cred.userId.name.toLowerCase().includes(searchLower)) ||
-        (cred.userId && cred.userId.email.toLowerCase().includes(searchLower))
-      );
-    }
 
     const totalPages = Math.ceil(total / limit);
 
@@ -753,23 +804,30 @@ export const verifyCredential = async (req, res, next) => {
       return res.status(400).json({ error: 'Status must be verified or failed' });
     }
 
-    let issuerId;
+    let issuerDoc;
+    let issuerIds = [];
     
     if (req.issuer) {
-      issuerId = req.issuer._id;
+      issuerDoc = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer not found' });
       }
-      issuerId = issuer._id;
+      issuerDoc = issuer;
     } else {
       return res.status(403).json({ error: 'Not authorized as issuer' });
     }
 
+    const escapedIssuerName = String(issuerDoc.name || '').trim().replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&');
+    const sameNameIssuers = await Issuer.find({
+      name: { $regex: new RegExp(`^${escapedIssuerName}$`, 'i') },
+    }).select('_id');
+    issuerIds = sameNameIssuers.length > 0 ? sameNameIssuers.map((i) => i._id) : [issuerDoc._id];
+
     const credential = await Credential.findOne({
       _id: req.params.credentialId,
-      issuerId
+      issuerId: { $in: issuerIds }
     }).populate('userId', 'name email');
 
     if (!credential) {
@@ -810,8 +868,10 @@ export const verifyCredential = async (req, res, next) => {
 
     // Send notification to issuer about verification action
     try {
+      const issuerEmail = (req.issuer?.contactEmail || req.user?.email || '').trim();
+      const escapedIssuerEmail = issuerEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const issuerUser = await User.findOne({ 
-        email: req.issuer?.contactEmail || req.user?.email,
+        email: { $regex: new RegExp(`^${escapedIssuerEmail}$`, 'i') },
         role: 'Issuer'
       });
       
@@ -849,7 +909,7 @@ export const blockLearner = async (req, res, next) => {
     if (req.issuer) {
       issuer = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer not found' });
       }
@@ -908,7 +968,7 @@ export const unblockLearner = async (req, res, next) => {
     if (req.issuer) {
       issuer = req.issuer;
     } else if (req.user && req.user.role === 'Issuer') {
-      issuer = await Issuer.findOne({ contactEmail: req.user.email });
+      issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${req.user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (!issuer) {
         return res.status(404).json({ error: 'Issuer not found' });
       }

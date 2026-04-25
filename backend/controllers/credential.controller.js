@@ -225,10 +225,12 @@ export const uploadCredential = async (req, res, next) => {
     }
 
     // Find or create issuer
-    let issuerDoc = await Issuer.findOne({ name: issuer });
+    const normalizedIssuerName = issuer.trim().replace(/\s+/g, ' ');
+    const escapedIssuer = normalizedIssuerName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape for regex
+    let issuerDoc = await Issuer.findOne({ name: { $regex: new RegExp(`^${escapedIssuer}$`, 'i') } });
     if (!issuerDoc) {
       issuerDoc = await Issuer.create({
-        name: issuer,
+        name: normalizedIssuerName,
         status: 'approved',
         contactEmail: 'unknown@example.com',
       });
@@ -333,9 +335,10 @@ export const uploadCredential = async (req, res, next) => {
     // Send notification to issuer about new credential upload
     try {
       if (issuerDoc && issuerDoc.contactEmail) {
-        // Find user account for this issuer
+        // Find user account for this issuer (User email is lowercase, so use regex for safety)
+        const escapedEmail = issuerDoc.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const issuerUser = await User.findOne({ 
-          email: issuerDoc.contactEmail,
+          email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') },
           role: 'Issuer'
         });
         

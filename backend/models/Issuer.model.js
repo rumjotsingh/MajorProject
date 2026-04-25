@@ -26,6 +26,8 @@ const issuerSchema = new mongoose.Schema(
     contactEmail: {
       type: String,
       required: true,
+      lowercase: true,
+      trim: true,
     },
     mobile: {
       type: String,
