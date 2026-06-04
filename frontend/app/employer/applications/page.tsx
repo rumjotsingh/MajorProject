@@ -92,7 +92,7 @@ export default function EmployerApplicationsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Applications</h1>
           <p className="text-muted-foreground">Track and manage all job applications in one place</p>
         </div>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
@@ -108,13 +108,13 @@ export default function EmployerApplicationsPage() {
           >
             <Search className="w-4 h-4" />
           </Button>
-        </div>
+        </div> */}
       </div>
 
       {/* Filters */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className=" text-[18px] flex items-center gap-2">
             <Filter className="h-5 w-5" />
             Filter by Status
           </CardTitle>
@@ -146,7 +146,7 @@ export default function EmployerApplicationsPage() {
           ) : applications.length === 0 ? (
             <div className="py-16 text-center">
               <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No applications found</h3>
+              <p className="text-lg font-semibold mb-2">No applications found</p>
               <p className="text-muted-foreground">No applications match your current filters</p>
             </div>
           ) : (
@@ -156,7 +156,7 @@ export default function EmployerApplicationsPage() {
                   <div className="space-y-2 flex-1">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</h3>
+                        <p className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</p>
                         <p className="text-sm text-muted-foreground">{app.learnerId?.email || 'No email'}</p>
                       </div>
                       <Badge variant={getStatusVariant(app.status)} className="rounded-xl">
