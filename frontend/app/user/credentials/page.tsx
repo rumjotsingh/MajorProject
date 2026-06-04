@@ -118,7 +118,7 @@ export default function CredentialsPage() {
           <h1 className="text-xl font-bold">My Credentials</h1>
           <p className="text-xs text-muted-foreground mt-0.5">{total} credential{total !== 1 ? "s" : ""} in your portfolio</p>
         </div>
-        <Link href="/credentials/upload">
+        <Link href="/user/credentials/upload">
           <Button size="sm" className="gap-2"><Plus className="h-4 w-4" />Add Credential</Button>
         </Link>
       </div>
@@ -180,7 +180,7 @@ export default function CredentialsPage() {
               {search || statusFilter !== "all" ? "Try adjusting your filters" : "Upload your first credential to get started"}
             </p>
             {!search && statusFilter === "all" && (
-              <Link href="/credentials/upload"><Button size="sm" variant="outline">Upload Credential</Button></Link>
+              <Link href="/user/credentials/upload"><Button size="sm" variant="outline">Upload Credential</Button></Link>
             )}
           </div>
         ) : (
@@ -237,7 +237,7 @@ export default function CredentialsPage() {
                       <Eye className="h-3.5 w-3.5" />
                     </button>
                     {cred.verificationStatus !== "verified" && (
-                      <button onClick={() => router.push(`/credentials/edit/${cred._id}`)}
+                      <button onClick={() => router.push(`/user/credentials/edit/${cred._id}`)}
                         className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                         title="Edit">
                         <Edit className="h-3.5 w-3.5" />

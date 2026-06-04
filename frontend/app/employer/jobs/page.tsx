@@ -109,7 +109,7 @@ export default function EmployerJobsPage() {
       {/* Filters */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex text-[16px] items-center gap-2">
             <Filter className="h-5 w-5" />
             Filter Jobs
           </CardTitle>
@@ -148,7 +148,7 @@ export default function EmployerJobsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold">{job.title}</h3>
+                        <h6 className="text-xl font-bold">{job.title}</h6>
                         <Badge variant={job.status === 'open' ? 'default' : 'secondary'} className="rounded-xl">
                           {job.status}
                         </Badge>

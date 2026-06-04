@@ -200,7 +200,7 @@ export default function EmployerDashboardPage() {
         <Link href="/employer/search">
           <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center text-[18px] gap-2">
                 <Search className="h-5 w-5 text-primary" />
                 Search Talent
               </CardTitle>
@@ -220,7 +220,7 @@ export default function EmployerDashboardPage() {
         <Link href="/employer/jobs">
           <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center text-[18px] gap-2">
                 <Briefcase className="h-5 w-5 text-primary" />
                 Manage Jobs
               </CardTitle>
@@ -240,7 +240,7 @@ export default function EmployerDashboardPage() {
         <Link href="/employer/bookmarks">
           <Card className="hover:shadow-md transition-shadow cursor-pointer rounded-xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center text-[18px] gap-2">
                 <Bookmark className="h-5 w-5 text-primary" />
                 Bookmarks
               </CardTitle>
@@ -264,7 +264,7 @@ export default function EmployerDashboardPage() {
         <Card className="rounded-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Jobs</CardTitle>
+              <CardTitle className="text-[18px]">Recent Jobs</CardTitle>
               <Link href="/employer/jobs" className="text-sm text-primary hover:underline">
                 View all
               </Link>
@@ -272,13 +272,13 @@ export default function EmployerDashboardPage() {
           </CardHeader>
           <CardContent>
             {recentJobs.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {recentJobs.map((job) => (
-                  <Link key={job._id} href={`/employer/jobs/${job._id}`}>
-                    <div className="p-3 bg-muted/50 rounded-xl hover:bg-muted transition-colors">
+                  <Link  className="" key={job._id} href={`/employer/jobs/${job._id}`}>
+                    <div className="p-3 bg-muted/50 rounded-xl space-y-3  hover:bg-muted transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="font-semibold">{job.title}</h4>
+                          <p className="  font-semibold">{job.title}</p>
                           <p className="text-sm text-muted-foreground mt-1">
                             {job.applicationsCount || 0} applications
                           </p>
@@ -313,7 +313,7 @@ export default function EmployerDashboardPage() {
         <Card className="rounded-xl">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Recent Applications</CardTitle>
+              <CardTitle className="text-[18px]">Recent Applications</CardTitle>
               <Link href="/employer/applications" className="text-sm text-primary hover:underline">
                 View all
               </Link>
@@ -321,12 +321,12 @@ export default function EmployerDashboardPage() {
           </CardHeader>
           <CardContent>
             {stats?.recentApplications && stats.recentApplications.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {stats.recentApplications.map((app: any) => (
                   <div key={app._id} className="p-3 bg-muted/50 rounded-xl">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</h4>
+                        <p className="font-semibold">{app.learnerId?.name || 'Unknown learner'}</p>
                         <p className="text-sm text-muted-foreground">{app.jobId?.title || 'Job'}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {new Date(app.appliedAt || app.createdAt).toLocaleDateString()}

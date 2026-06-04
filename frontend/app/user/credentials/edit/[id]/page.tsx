@@ -70,7 +70,7 @@ export default function EditCredentialPage() {
           description: "Verified credentials cannot be edited",
           variant: "destructive",
         });
-        router.push('/credentials');
+        router.push('/user/credentials');
         return;
       }
 
@@ -93,7 +93,7 @@ export default function EditCredentialPage() {
         description: error.response?.data?.error || "Failed to load credential",
         variant: "destructive",
       });
-      router.push('/credentials');
+      router.push('/user/credentials');
     } finally {
       setLoading(false);
     }
@@ -153,7 +153,7 @@ export default function EditCredentialPage() {
         description: "Credential updated successfully. NSQF level recalculated.",
       });
 
-      router.push('/credentials');
+      router.push('/user/credentials');
     } catch (error: any) {
       toast({
         title: "Error",

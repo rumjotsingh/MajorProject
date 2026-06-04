@@ -8,6 +8,19 @@ export interface User {
   avatar?: string;
 }
 
+export function getDashboardPathForRole(role?: string | null): string {
+  switch (role) {
+    case "Employer":
+      return "/employer/dashboard";
+    case "Issuer":
+      return "/issuer/dashboard";
+    case "Admin":
+      return "/admin/dashboard";
+    default:
+      return "/user/dashboard";
+  }
+}
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -28,7 +41,7 @@ export const authService = {
     try {
       // Step 1: Login to get token
       const loginResponse = await api.post("/auth/login", credentials);
-      console.log("Login response:", loginResponse.data);
+      // console.log("Login response:", loginResponse.data);
       
       const { token, refreshToken } = loginResponse.data;
       

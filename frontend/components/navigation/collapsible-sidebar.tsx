@@ -163,12 +163,12 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
       className="relative hidden h-full shrink-0 flex-col bg-background transition-[width] duration-200 ease-in-out md:flex"
     >
       {/* Logo */}
-      <div className={cn("flex h-14 items-center px-4", collapsed ? "justify-center" : "justify-between")}>
+      <div className={cn("flex h-12 items-center px-3", collapsed ? "justify-center" : "justify-between")}>
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Award className="h-4 w-4" />
           </span>
-          {!collapsed && <span className="text-sm font-semibold tracking-tight truncate">CredMatrix</span>}
+          {!collapsed && <span className="text-[14px] font-semibold tracking-tight truncate">CredMatrix</span>}
         </Link>
         {!collapsed && (
           <button 
@@ -195,11 +195,11 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
       )}
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {sections.map((section) => (
           <div key={section.title}>
             {!collapsed && (
-              <p className="mb-1.5 px-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+              <p className="mb-1.5 px-2 text-[12px] font-semibold uppercase tracking-wide text-muted-foreground/60">
                 {section.title}
               </p>
             )}
@@ -211,7 +211,7 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
                   <Link key={item.href} href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm transition-colors",
+                      "flex items-center gap-2.5 rounded-comfortable px-2.5 py-2 text-[14px] leading-5 transition-colors",
                       collapsed && "justify-center px-2",
                       active
                         ? "bg-primary/10 text-primary font-medium"
@@ -239,8 +239,8 @@ export function CollapsibleSidebar({ role = "learner" }: CollapsibleSidebarProps
         {!collapsed && (
           <>
             <Link className="flex-1 min-w-0" href={getProfileLink()}>
-              <p className="text-xs font-medium truncate">{userData.name}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{userData.email}</p>
+              <p className="text-[14px] font-medium leading-5 truncate">{userData.name}</p>
+              <p className="text-[12px] text-muted-foreground leading-4 truncate">{userData.email}</p>
             </Link>
             <button
               onClick={() => { localStorage.clear(); window.location.href = "/"; }}

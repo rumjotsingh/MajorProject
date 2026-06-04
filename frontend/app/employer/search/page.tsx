@@ -100,7 +100,7 @@ export default function EmployerSearchPage() {
       {/* Search & Filters */}
       <Card className="rounded-xl">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle  className="flex items-center text-[18px] gap-2">
             <Filter className="h-5 w-5" />
             Search Filters
           </CardTitle>

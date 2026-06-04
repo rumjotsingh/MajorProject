@@ -29,15 +29,15 @@ const getRedirectUrl = (n: Notification): string => {
   switch (n.type) {
     case "CredentialVerified":
     case "CredentialAdded":
-      if (n.metadata?.credentialId) return `/credentials`;
-      return "/credentials";
+      if (n.metadata?.credentialId) return `/user/credentials`;
+      return "/user/credentials";
     case "JobMatch":
-      if (n.metadata?.jobId) return `/jobs/recommended`;
-      return "/jobs/recommended";
+      if (n.metadata?.jobId) return `/user/jobs/recommended`;
+      return "/user/jobs/recommended";
     case "EmployerContact":
-      return "/notifications";
+      return "/user/notifications";
     default:
-      return "/notifications";
+      return "/user/notifications";
   }
 };
 
