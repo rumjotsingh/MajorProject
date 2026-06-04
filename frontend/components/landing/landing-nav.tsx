@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Award, LayoutDashboard, User, Settings, LogOut, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authService } from "@/lib/auth";
+import { authService, getDashboardPathForRole } from "@/lib/auth";
 
 const navLinks = [
   { label: "Features", href: "/#features" },
@@ -28,6 +28,8 @@ export function LandingNav() {
   const [user, setUser] = useState<any>(null);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showDashboardMenu, setShowDashboardMenu] = useState(false);
+  const dashboardMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const loggedIn = authService.isAuthenticated();
@@ -36,6 +38,7 @@ export function LandingNav() {
       setUser(authService.getCurrentUser());
     }
   }, []);
+  //console.log("LandingNav - User:", user);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -43,21 +46,24 @@ export function LandingNav() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (dashboardMenuRef.current && !dashboardMenuRef.current.contains(event.target as Node)) {
+        setShowDashboardMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
   const getInitials = (name: string) => {
     if (!name) return "U";
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
   };
 
-  const getDashboardPath = () => {
-    if (!user) return "/dashboard";
-    const map: Record<string, string> = {
-      Learner: "/dashboard",
-      Employer: "/employer/dashboard",
-      Issuer: "/issuer/dashboard",
-      Admin: "/admin/dashboard",
-    };
-    return map[user.role] || "/dashboard";
-  };
+  const getDashboardPath = () => getDashboardPathForRole(user?.role);
+  //console.log("LandingNav - Dashboard Path:", getDashboardPath());
 
   return (
     <>
@@ -98,13 +104,44 @@ export function LandingNav() {
           {/* Right Side */}
           <div className="flex items-center gap-2">
             {isLoggedIn && user ? (
-              <div className="hidden sm:flex items-center gap-2">
-                <Link href={getDashboardPath()}>
-                  <Button size="sm" className="gap-2">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
-                  </Button>
-                </Link>
+              <div ref={dashboardMenuRef} className="relative flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className="gap-2 px-3"
+                  onClick={() => setShowDashboardMenu((open) => !open)}
+                  aria-expanded={showDashboardMenu}
+                  aria-haspopup="menu"
+                >
+                  <LayoutDashboard className="h-4 w-4" />
+                  Dashboard
+                </Button>
+
+                {showDashboardMenu && (
+                  <div className="absolute right-0 top-full z-[100] mt-2 w-52 rounded-standard border border-whisper bg-white p-1 text-near-black shadow-notion-card">
+                    <div className="px-2 py-1.5">
+                      <p className="text-body-semibold">{user.name}</p>
+                      <p className="text-caption text-warm-gray-500">{user.role}</p>
+                    </div>
+                    <div className="my-1 h-px bg-warm-gray-300/30" />
+                    <Link
+                      href={getDashboardPath()}
+                      onClick={() => setShowDashboardMenu(false)}
+                      className="flex items-center gap-2 rounded-micro px-2 py-1.5 text-body outline-none transition-colors hover:bg-warm-white"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      My Dashboard
+                    </Link>
+                    <div className="my-1 h-px bg-warm-gray-300/30" />
+                    <button
+                      type="button"
+                      onClick={() => authService.logout()}
+                      className="flex w-full items-center gap-2 rounded-micro px-2 py-1.5 text-left text-body text-orange outline-none transition-colors hover:bg-orange/5"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </button>
+                  </div>
+                )}
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

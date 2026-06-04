@@ -16,7 +16,7 @@ export default function TermsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="mx-auto max-w-3xl space-y-12"
           >
-            <div className="text-center space-y-4 pb-8 border-b border-whisper">
+            <div className="text-center space-y-4 pb-8 ">
               <h1 className="text-display-large md:text-display-xlarge font-bold text-near-black">
                 Terms of Service
               </h1>
@@ -192,7 +192,7 @@ export default function TermsPage() {
                 </p>
               </section>
 
-              <section className="space-y-4 pt-8 border-t border-whisper">
+              <section className="space-y-4 pt-8 x">
                 <h2 className="text-display-small font-bold text-near-black">Contact Us</h2>
                 <p className="text-body-large text-warm-gray-500 leading-relaxed">
                   If you have questions about these Terms of Service, please contact us at{" "}

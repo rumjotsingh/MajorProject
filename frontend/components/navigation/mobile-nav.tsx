@@ -101,7 +101,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none" />
         
         <div className="relative flex justify-center pb-4 px-4">
-          <div className="bg-background/85 backdrop-blur-2xl rounded-2xl px-2 py-2 shadow-xl shadow-primary/[0.06] dark:shadow-black/[0.3] border border-border/40 max-w-fit">
+          <div className="bg-background/85 backdrop-blur-2xl rounded-comfortable px-2 py-2 shadow-xl shadow-primary/[0.06] dark:shadow-black/[0.3] border border-border/40 max-w-fit">
             <div className="flex items-center justify-center gap-0.5">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
@@ -114,7 +114,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                         whileTap={{ scale: 0.9 }}
                         className="mx-1"
                       >
-                        <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 -mt-3">
+                        <div className="relative w-11 h-11 rounded-comfortable bg-gradient-to-br from-primary to-primary/80 text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/30 -mt-3">
                           <Icon className="h-5 w-5" />
                         </div>
                       </motion.div>
@@ -127,7 +127,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                     <motion.div
                       whileTap={{ scale: 0.9 }}
                       className={cn(
-                        "relative flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200",
+                        "relative flex flex-col items-center justify-center w-14 h-11 rounded-comfortable transition-all duration-200",
                         isActive && "bg-primary/10"
                       )}
                     >
@@ -139,7 +139,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                       />
                       <span
                         className={cn(
-                          "text-[10px] mt-0.5 font-medium transition-colors",
+                          "text-[12px] mt-0.5 font-medium leading-4 transition-colors",
                           isActive ? "text-primary" : "text-muted-foreground"
                         )}
                       >
@@ -164,12 +164,12 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setShowMenu(!showMenu)}
                 className={cn(
-                  "relative flex flex-col items-center justify-center w-14 h-12 rounded-xl transition-all duration-200",
+                  "relative flex flex-col items-center justify-center w-14 h-11 rounded-comfortable transition-all duration-200",
                   showMenu ? "bg-primary/10 text-primary" : "text-muted-foreground"
                 )}
               >
                 <Menu className="h-5 w-5" />
-                <span className="text-[10px] mt-0.5 font-medium">More</span>
+                <span className="text-[12px] mt-0.5 font-medium leading-4">More</span>
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-2 h-2 w-2 rounded-full bg-primary animate-pulse" />
                 )}
@@ -198,12 +198,12 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
               transition={{ type: "spring", damping: 30, stiffness: 300 }}
               className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
             >
-              <div className="bg-background rounded-t-3xl border-t border-border/50 shadow-2xl p-5 pb-8">
+              <div className="bg-background rounded-t-[12px] border-t border-border/50 shadow-2xl p-4 pb-7">
                 {/* Handle bar */}
                 <div className="w-10 h-1 rounded-full bg-primary/20 mx-auto mb-5" />
 
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Menu</h3>
+                  <h3 className="text-[12px] font-semibold text-muted-foreground uppercase tracking-wide">Menu</h3>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -224,7 +224,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                         <motion.button
                           key={item.label}
                           whileTap={{ scale: 0.98 }}
-                          className="w-full flex items-center gap-3 p-3.5 rounded-xl text-destructive hover:bg-destructive/5 transition-colors"
+                          className="w-full flex items-center gap-3 p-3 rounded-comfortable text-destructive hover:bg-destructive/5 transition-colors"
                           onClick={() => {
                             localStorage.clear();
                             window.location.href = "/";
@@ -233,7 +233,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                           <div className="h-9 w-9 rounded-xl bg-destructive/10 flex items-center justify-center">
                             <Icon className="h-4 w-4" />
                           </div>
-                          <span className="font-medium">{item.label}</span>
+                          <span className="text-[14px] leading-5 font-medium">{item.label}</span>
                         </motion.button>
                       );
                     }
@@ -246,7 +246,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                       >
                         <motion.div
                           whileTap={{ scale: 0.98 }}
-                          className="flex items-center gap-3 p-3.5 rounded-xl hover:bg-muted/60 transition-colors"
+                          className="flex items-center gap-3 p-3 rounded-comfortable hover:bg-muted/60 transition-colors"
                         >
                           <div className="relative h-9 w-9 rounded-xl bg-muted flex items-center justify-center">
                             <Icon className="h-4 w-4" />
@@ -256,7 +256,7 @@ export function MobileNav({ role = "learner" }: MobileNavProps) {
                               </span>
                             )}
                           </div>
-                          <span className="font-medium flex-1">{item.label}</span>
+                          <span className="text-[14px] leading-5 font-medium flex-1">{item.label}</span>
                           {isNotifications && unreadCount > 0 && (
                             <span className="h-6 px-2.5 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
                               {unreadCount > 99 ? "99+" : unreadCount}

@@ -14,6 +14,7 @@ import api from "@/lib/api";
 import { dashboardAPI, type Credential, type LearnerProfile, type DashboardStats } from "@/lib/dashboard-api";
 import { useToast } from "@/hooks/use-toast";
 import { PricingModal } from "@/components/pricing-modal";
+import { authService, getDashboardPathForRole } from "@/lib/auth";
 
 const nsqfNames: Record<number, string> = {
   1: "Basic", 2: "Elementary", 3: "Intermediate", 4: "Secondary",
@@ -38,12 +39,23 @@ export default function DashboardPage() {
 
   const init = async () => {
     try {
+      if (!authService.isAuthenticated()) {
+        router.replace("/login");
+        return;
+      }
+
       const { data } = await api.get("/auth/me");
-      if (data.role === "Issuer")    { router.push("/issuer/dashboard");   return; }
-      if (data.role === "Employer")  { router.push("/employer/dashboard"); return; }
-      if (data.role === "Admin")     { router.push("/admin/dashboard");    return; }
+      if (data.role !== "Learner") {
+        router.replace(getDashboardPathForRole(data.role));
+        return;
+      }
       await load();
     } catch (e: any) {
+      if (e.response?.status === 401 || e.response?.status === 403) {
+        authService.logout();
+        return;
+      }
+
       toast({ title: "Error", description: e.response?.data?.error || "Failed to load", variant: "destructive" });
       setLoading(false);
     }
@@ -113,7 +125,7 @@ export default function DashboardPage() {
           </button>
           <p className="text-xs text-muted-foreground mt-0.5">{profile?.userId?.email}</p>
         </div>
-        <Link href="/credentials/upload">
+        <Link href="/user/credentials/upload">
           <Button size="sm" className="gap-2 shrink-0">
             <Plus className="h-4 w-4" /> Add Credential
           </Button>

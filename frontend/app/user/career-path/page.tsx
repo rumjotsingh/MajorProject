@@ -842,7 +842,7 @@ export default function CareerPathPage() {
               <p className="font-semibold text-sm">Ready to grow?</p>
               <p className="text-xs text-muted-foreground">Upload more credentials for better insights</p>
             </div>
-            <Link href="/credentials/upload"><Button size="sm">Upload Credential</Button></Link>
+            <Link href="/user/credentials/upload"><Button size="sm">Upload Credential</Button></Link>
           </div>
         </CardContent>
       </Card>

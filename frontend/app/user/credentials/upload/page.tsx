@@ -140,7 +140,7 @@ export default function UploadCredentialPage() {
         description: response.data.message || `You earned ${response.data.creditsEarned} credits!`,
       });
 
-      setTimeout(() => router.push("/credentials"), 2000);
+      setTimeout(() => router.push("/user/credentials"), 2000);
     } catch (error: any) {
       if (error.response?.status === 403 && error.response?.data?.error === "Credential limit reached") {
         toast({
@@ -189,7 +189,7 @@ export default function UploadCredentialPage() {
 
       {/* ── Header ── */}
       <motion.div custom={0} variants={fadeUp} className="flex items-center gap-4">
-        <Link href="/credentials">
+        <Link href="/user/credentials">
           <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
             <ArrowLeft className="h-4 w-4" />
           </Button>
@@ -433,7 +433,7 @@ export default function UploadCredentialPage() {
                   type="button"
                   variant="outline"
                   className="flex-1 rounded-full border-[rgba(0,0,0,0.1)]"
-                  onClick={() => router.push("/credentials")}
+                  onClick={() => router.push("/usera/credentials")}
                   disabled={loading}
                 >
                   Cancel

@@ -9,6 +9,7 @@ import logger from '../utils/logger.js';
 export const register = async (req, res, next) => {
   try {
     const { name, email, password, role, mobile, companyName, institutionName } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
     // Validate mobile if provided
     if (mobile && !/^\d{10}$/.test(mobile)) {
@@ -27,7 +28,7 @@ export const register = async (req, res, next) => {
     }
 
     // Check if user exists
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).json({ error: 'Email already exists' });
     }
@@ -35,7 +36,7 @@ export const register = async (req, res, next) => {
     // Create user
     const user = new User({
       name,
-      email,
+      email: normalizedEmail,
       mobile,
       passwordHash: password, // Will be hashed by pre-save hook
       role: role || 'Learner',
@@ -51,13 +52,13 @@ export const register = async (req, res, next) => {
         await Employer.create({
           userId: user._id,
           companyName,
-          contactEmail: email,
+          contactEmail: normalizedEmail,
           mobile,
         });
       } else if (user.role === 'Issuer') {
         await Issuer.create({
           name: institutionName,
-          contactEmail: email,
+          contactEmail: normalizedEmail,
           mobile,
         });
       }
@@ -71,7 +72,7 @@ export const register = async (req, res, next) => {
     const token = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id, user.role);
 
-    logger.info(`User registered: ${email} as ${role}`);
+    logger.info(`User registered: ${normalizedEmail} as ${role}`);
 
     res.status(201).json({
       userId: user._id,
@@ -87,8 +88,9 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = String(email || '').trim().toLowerCase();
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: normalizedEmail });
     if (!user || !user.isActive) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -101,7 +103,7 @@ export const login = async (req, res, next) => {
     const token = generateAccessToken(user._id, user.role);
     const refreshToken = generateRefreshToken(user._id, user.role);
 
-    logger.info(`User logged in: ${email}`);
+    logger.info(`User logged in: ${normalizedEmail}`);
 
     res.json({ token, refreshToken });
   } catch (error) {

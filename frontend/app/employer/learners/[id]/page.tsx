@@ -363,7 +363,7 @@ export default function EmployerLearnerDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <Award className="h-5 w-5 text-emerald-600" />
-                      <h3 className="font-semibold">{credential.title}</h3>
+                      <p className="font-semibold">{credential.title}</p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(credential.verificationStatus)}`}>
                         {credential.verificationStatus}
                       </span>

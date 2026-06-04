@@ -168,7 +168,7 @@ export const getUserById = async (req, res, next) => {
         .sort({ createdAt: -1 });
       additionalData = { profile, credentials };
     } else if (user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       const issuedCredentials = await Credential.countDocuments({ issuerId: issuer?._id });
       additionalData = { issuer, issuedCredentials };
     }
@@ -292,7 +292,7 @@ export const deleteUser = async (req, res, next) => {
         Credential.deleteMany({ userId: id }),
       ]);
     } else if (user.role === 'Issuer') {
-      const issuer = await Issuer.findOne({ contactEmail: user.email });
+      const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${user.email.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}$`, 'i') } });
       if (issuer) {
         await Issuer.deleteOne({ _id: issuer._id });
       }
@@ -434,9 +434,10 @@ export const rejectIssuer = async (req, res, next) => {
 export const createIssuer = async (req, res, next) => {
   try {
     const { name, contactEmail, mobile, password, status } = req.body;
+    const normalizedContactEmail = String(contactEmail || '').trim().toLowerCase();
 
     // Validate required fields
-    if (!name || !contactEmail || !password) {
+    if (!name || !normalizedContactEmail || !password) {
       return res.status(400).json({
         error: 'Missing required fields',
         required: ['name', 'contactEmail', 'password'],
@@ -444,7 +445,7 @@ export const createIssuer = async (req, res, next) => {
     }
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email: contactEmail });
+    const existingUser = await User.findOne({ email: normalizedContactEmail });
     if (existingUser) {
       return res.status(409).json({ error: 'Email already exists' });
     }
@@ -452,7 +453,7 @@ export const createIssuer = async (req, res, next) => {
     // Create user account
     const user = new User({
       name,
-      email: contactEmail,
+      email: normalizedContactEmail,
       passwordHash: password,
       role: 'Issuer',
       isActive: true,
@@ -466,7 +467,7 @@ export const createIssuer = async (req, res, next) => {
     // Create issuer profile
     const issuer = new Issuer({
       name,
-      contactEmail,
+      contactEmail: normalizedContactEmail,
       mobile: mobile || '',
       apiKey,
       status: status || 'pending',
@@ -488,6 +489,7 @@ export const updateIssuer = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { name, contactEmail, mobile, status } = req.body;
+    const normalizedContactEmail = contactEmail ? String(contactEmail).trim().toLowerCase() : '';
 
     const issuer = await Issuer.findById(id);
     if (!issuer) {
@@ -496,7 +498,7 @@ export const updateIssuer = async (req, res, next) => {
 
     // Update issuer fields
     if (name) issuer.name = name;
-    if (contactEmail) issuer.contactEmail = contactEmail;
+    if (normalizedContactEmail) issuer.contactEmail = normalizedContactEmail;
     if (mobile !== undefined) issuer.mobile = mobile;
     if (status) issuer.status = status;
 
@@ -504,10 +506,11 @@ export const updateIssuer = async (req, res, next) => {
 
     // Update user account if email or name changed
     if (name || contactEmail) {
-      const user = await User.findOne({ email: issuer.contactEmail });
+      const escapedIssuerEmail = issuer.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const user = await User.findOne({ email: { $regex: new RegExp(`^${escapedIssuerEmail}$`, 'i') } });
       if (user) {
         if (name) user.name = name;
-        if (contactEmail) user.email = contactEmail;
+        if (normalizedContactEmail) user.email = normalizedContactEmail;
         await user.save();
       }
     }
@@ -545,7 +548,8 @@ export const deleteIssuer = async (req, res, next) => {
     await Issuer.deleteOne({ _id: id });
 
     // Delete associated user account
-    await User.deleteOne({ email: issuer.contactEmail });
+    const escapedIssuerEmail = issuer.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    await User.deleteOne({ email: { $regex: new RegExp(`^${escapedIssuerEmail}$`, 'i') } });
 
     logger.info(`Issuer deleted by admin: ${id}`);
     res.json({ message: 'Issuer deleted successfully' });

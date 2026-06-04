@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Award, Mail, Lock, Loader2, ArrowLeft, Eye, EyeOff, ShieldCheck, Sparkles, ArrowRight, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { authService } from "@/lib/auth";
+import { authService, getDashboardPathForRole } from "@/lib/auth";
 
 const highlights = [
   "Unified credential portfolio",
@@ -47,14 +47,7 @@ export default function LoginPage() {
     try {
       const { user } = await authService.login(formData);
 
-      const roleRedirectMap: Record<string, string> = {
-        Learner: "/user/dashboard",
-        Employer: "/employer/dashboard",
-        Issuer: "/issuer/dashboard",
-        Admin: "/admin/dashboard",
-      };
-
-      const redirectPath = roleRedirectMap[user.role] || "/dashboard";
+      const redirectPath = getDashboardPathForRole(user.role);
 
       // Use router.push instead of window.location.href to prevent page reload
       router.push(redirectPath);

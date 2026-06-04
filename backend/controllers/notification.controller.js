@@ -83,8 +83,9 @@ export const syncIssuerHistory = async (req, res, next) => {
     const Issuer = (await import('../models/Issuer.model.js')).default;
     const User = (await import('../models/User.model.js')).default;
 
-    // Find issuer by user email
-    const issuer = await Issuer.findOne({ contactEmail: req.user.email });
+    // Find issuer by user email (case-insensitive because Issuer model doesn't enforce lowercase)
+    const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const issuer = await Issuer.findOne({ contactEmail: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } });
     if (!issuer) {
       return res.status(404).json({ error: 'Issuer profile not found' });
     }

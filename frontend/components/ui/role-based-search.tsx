@@ -22,10 +22,10 @@ interface RoleBasedSearchProps {
 // Role-specific quick links
 const QUICK_LINKS = {
   learner: [
-    { id: "q1", type: "page", title: "Upload Credential", subtitle: "Add a new credential", href: "/credentials/upload" },
-    { id: "q2", type: "page", title: "My Credentials", subtitle: "View all credentials", href: "/credentials" },
-    { id: "q3", type: "page", title: "Career Studio", subtitle: "Skills & career paths", href: "/career-path" },
-    { id: "q4", type: "page", title: "Job Recommendations", subtitle: "Find matching jobs", href: "/jobs/recommended" },
+    { id: "q1", type: "page", title: "Upload Credential", subtitle: "Add a new credential", href: "/user/credentials/upload" },
+    { id: "q2", type: "page", title: "My Credentials", subtitle: "View all credentials", href: "/user/credentials" },
+    { id: "q3", type: "page", title: "Career Studio", subtitle: "Skills & career paths", href: "/user/career-path" },
+    { id: "q4", type: "page", title: "Job Recommendations", subtitle: "Find matching jobs", href: "/user/jobs/recommended" },
   ],
   employer: [
     { id: "e1", type: "page", title: "Search Talent", subtitle: "Find skilled learners", href: "/employer/search" },

@@ -1,5 +1,4 @@
-import { CollapsibleSidebar } from "@/components/navigation/collapsible-sidebar";
-import { MobileNav } from "@/components/navigation/mobile-nav";
+import { RoleGuard } from "@/components/auth/role-guard";
 
 export default function AdminDashboardLayout({
   children,
@@ -7,8 +6,6 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      {children}
-    </>
+    <RoleGuard expectedRole="Admin">{children}</RoleGuard>
   );
 }
